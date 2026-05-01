@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Deck Ingestion Flow</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased overflow-hidden">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-y-auto">
+<!-- Header -->
+<header class="flex items-center justify-between px-4 py-4 z-10">
+<button class="flex size-10 shrink-0 items-center justify-center rounded-full text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">close</span>
+</button>
+<h2 class="text-slate-900 dark:text-white text-base font-semibold tracking-tight absolute left-1/2 -translate-x-1/2">Importing Deck</h2>
+<div class="size-10"></div> <!-- Spacer for balance -->
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-md mx-auto">
+<!-- Visual Representation -->
+<div class="relative mb-10 group">
+<!-- Electric Blue Glow/Pulse Effect (Simulated with static blur and rings) -->
+<div class="absolute -inset-4 bg-primary/30 rounded-full blur-2xl opacity-60"></div>
+<div class="absolute -inset-1 bg-gradient-to-tr from-primary to-blue-400 rounded-2xl opacity-40 blur-md"></div>
+<!-- Card Container -->
+<div class="relative flex flex-col items-center justify-center w-48 h-64 bg-slate-100 dark:bg-[#1A2230] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+<!-- Preview Image -->
+<div class="w-full h-full bg-cover bg-center opacity-80 mix-blend-overlay" data-alt="Abstract medical pattern background with heart rhythm lines" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCtKWNyP1Sh1ePU04P81ELQk2TsCx1PEdJqGFk4av_92LtYPIodsImiAh7lCFSZjQiKlI30yxXZVcrvykT-4VMpx-xK5Pjralawpo3_xcRBovUSLR6g43GX8T5UXLbBovsov1uU3yxIq8EJiUyJGBgmZjDKD15M7CliTWXgE-hinTT88VKxoVHFVt-do-B7dPmQuGKHWfwjv_x-4c2AftiilQJpfQIk9p_8HdkkfWC20sDv5VrQutW_6I_NvJVDFmpndIra389Y3sfN');">
+</div>
+<!-- Icon Overlay -->
+<div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/20 backdrop-blur-[2px]">
+<div class="size-16 rounded-full bg-primary/20 flex items-center justify-center backdrop-blur-md border border-primary/30 shadow-[0_0_15px_rgba(19,91,236,0.5)]">
+<span class="material-symbols-outlined text-primary" style="font-size: 32px;">description</span>
+</div>
+<div class="px-3 py-1 rounded-full bg-black/40 border border-white/10 backdrop-blur-md mt-2">
+<span class="text-[10px] font-medium text-white tracking-wider uppercase">PDF</span>
+</div>
+</div>
+</div>
+<!-- Floating Particles/Indicators (Static decoration) -->
+<div class="absolute -right-6 top-10 p-2 bg-[#1A2230] rounded-lg border border-slate-700 shadow-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+<span class="text-[10px] text-slate-300 font-medium">AI Processing</span>
+</div>
+</div>
+<!-- Filename -->
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white text-center mb-1 tracking-tight">
+                Cardiology_Finals.pdf
+            </h1>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium mb-10 text-center">
+                12.4 MB • 42 Pages
+            </p>
+<!-- Progress Section -->
+<div class="w-full flex flex-col gap-3">
+<div class="flex justify-between items-end px-1">
+<span class="text-primary text-sm font-semibold tracking-wide flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base animate-spin">sync</span>
+                        Analyzing...
+                    </span>
+<span class="text-slate-900 dark:text-white text-lg font-bold font-mono">65%</span>
+</div>
+<!-- Progress Bar -->
+<div class="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative">
+<!-- Bar Fill -->
+<div class="h-full bg-primary rounded-full relative" style="width: 65%;">
+<!-- Shine effect on bar -->
+<div class="absolute top-0 right-0 bottom-0 width-full bg-gradient-to-l from-white/30 to-transparent w-20"></div>
+</div>
+</div>
+<!-- Status Text -->
+<div class="flex flex-col gap-1 mt-2">
+<p class="text-slate-900 dark:text-slate-200 text-sm font-medium text-center">
+                        AI analyzing document and generating concepts...
+                    </p>
+<p class="text-slate-500 dark:text-slate-500 text-xs text-center leading-relaxed px-4">
+                        Please wait while we extract key terms, identify relationships, and create spaced repetition flashcards.
+                    </p>
+</div>
+</div>
+</main>
+<!-- Footer Actions -->
+<footer class="p-6 w-full max-w-md mx-auto mb-4">
+<button class="w-full py-3.5 px-4 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-medium text-sm hover:bg-slate-100 dark:hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600">
+                Cancel Import
+            </button>
+</footer>
+</div>
+</body></html>

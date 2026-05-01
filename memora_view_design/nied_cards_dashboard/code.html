@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nied Cards Dashboard</title>
+<!-- Material Symbols Link -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {primary: "#135bec", "background-light": "#f6f6f8", "background-dark": "#101622", "surface-dark": "#192233", "surface-hover": "#232f48"}, fontFamily: {display: "Inter"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}}}};</script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased overflow-hidden">
+<!-- Mobile Container -->
+<div class="relative flex flex-col h-screen w-full max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-2xl overflow-hidden">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 pt-12 pb-4 bg-background-light dark:bg-background-dark z-20">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center ring-2 ring-white/10" data-alt="Profile picture of user Alex" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAkPGivR30RS0h2ciGPspjZTiC8P243BKeDdVbANzgSSCV_n5F6lPeeAX-7CZKOFAtzo7UMrU4UlqvNcgwT7e7LiNwuvoWDoRQYUzXUqs_gF5ATRXyIP9sPHuwIAWNqkyk6f1pKAQQrY4-ZptUzNzz2IOA3IW8I0sIpN2SztCs9p61JQ8CFrcV67f60bppspBjh4bO2Rqsw3kt56HiZsWhpPF4WlCAb14iX_0NkfBHoCLzBJlbooOou0TYN0YJd3tcbczcflat6bZQ3');"></div>
+<div>
+<h2 class="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide uppercase">Good evening</h2>
+<h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Alex</h1>
+</div>
+</div>
+<button class="flex items-center justify-center size-10 rounded-full text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<!-- Main Scrollable Content -->
+<main class="flex-1 overflow-y-auto no-scrollbar px-6 pb-32">
+<!-- Hero Card: Today's Focus -->
+<section class="mt-2 mb-8">
+<div class="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] dark:shadow-none relative overflow-hidden group border border-slate-200 dark:border-white/5">
+<!-- Decorative background glow -->
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 dark:bg-primary/20 blur-[60px] rounded-full pointer-events-none"></div>
+<div class="flex flex-col items-center justify-center mb-6 pt-2">
+<!-- Sophisticated Progress Ring -->
+<div class="relative w-48 h-48 flex items-center justify-center">
+<!-- SVG Chart -->
+<svg class="w-full h-full transform -rotate-90">
+<!-- Track -->
+<circle class="text-slate-100 dark:text-slate-700/50" cx="96" cy="96" fill="transparent" r="82" stroke="currentColor" stroke-width="8"></circle>
+<!-- Progress Indicator -->
+<circle class="text-primary drop-shadow-[0_0_4px_rgba(19,91,236,0.4)]" cx="96" cy="96" fill="transparent" r="82" stroke="currentColor" stroke-dasharray="515" stroke-dashoffset="180" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<!-- Inner Content -->
+<div class="absolute flex flex-col items-center justify-center inset-0">
+<span class="text-5xl font-bold text-slate-900 dark:text-white tracking-tighter">45</span>
+<span class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Cards Due</span>
+</div>
+</div>
+</div>
+<!-- Stats Row -->
+<div class="flex justify-between items-center mb-6 px-4 py-3 bg-slate-50 dark:bg-[#111722] rounded-xl border border-slate-100 dark:border-white/5">
+<div class="flex flex-col items-center flex-1">
+<span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Retention</span>
+<span class="text-lg font-bold text-slate-900 dark:text-white">85%</span>
+</div>
+<div class="h-8 w-[1px] bg-slate-200 dark:bg-white/10"></div>
+<div class="flex flex-col items-center flex-1">
+<span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Accuracy</span>
+<span class="text-lg font-bold text-slate-900 dark:text-white">92%</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-12 bg-primary hover:bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-primary/30">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                        Start Review
+                    </button>
+</div>
+</section>
+<!-- Recent Decks Section -->
+<section class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Recent Decks</h2>
+<button class="text-primary text-sm font-semibold hover:opacity-80 transition-opacity">See All</button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Deck Item 1 -->
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-surface-hover transition-colors cursor-pointer border border-slate-200 dark:border-white/5 shadow-sm">
+<div class="size-12 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">cardiology</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-1.5">
+<h3 class="font-semibold text-slate-900 dark:text-white truncate">Advanced Cardiology</h3>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">60%</span>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700/50 h-1.5 rounded-full mb-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 60%"></div>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400">120 Cards • 45 due today</p>
+</div>
+</div>
+<!-- Deck Item 2 -->
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-surface-hover transition-colors cursor-pointer border border-slate-200 dark:border-white/5 shadow-sm">
+<div class="size-12 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">gavel</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-1.5">
+<h3 class="font-semibold text-slate-900 dark:text-white truncate">Corporate Law</h3>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">30%</span>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700/50 h-1.5 rounded-full mb-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 30%"></div>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400">85 Cards • 12 due today</p>
+</div>
+</div>
+<!-- Deck Item 3 -->
+<div class="bg-white dark:bg-surface-dark p-4 rounded-xl flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-surface-hover transition-colors cursor-pointer border border-slate-200 dark:border-white/5 shadow-sm">
+<div class="size-12 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">translate</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-1.5">
+<h3 class="font-semibold text-slate-900 dark:text-white truncate">Spanish Vocabulary</h3>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">90%</span>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-700/50 h-1.5 rounded-full mb-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 90%"></div>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400">200 Cards • Review complete</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Primary Action (Create Deck) -->
+<div class="mt-8">
+<button class="group w-full h-14 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined group-hover:rotate-90 transition-transform duration-300">add</span>
+<span>Create AI Deck</span>
+<span class="material-symbols-outlined text-[18px] opacity-70">auto_awesome</span>
+</button>
+<p class="text-center text-[10px] text-slate-400 mt-3 pb-4">Use AI to generate flashcards from your notes or PDFs</p>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="absolute bottom-0 left-0 w-full bg-white/90 dark:bg-[#101622]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 pb-6 pt-3 px-8 flex justify-between items-center z-30">
+<button class="flex flex-col items-center gap-1 text-primary relative">
+<span class="material-symbols-outlined text-[26px] font-variation-settings-'FILL'1">dashboard</span>
+<span class="text-[10px] font-bold">Home</span>
+<div class="absolute -bottom-2 w-1 h-1 rounded-full bg-primary"></div>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[26px]">style</span>
+<span class="text-[10px] font-medium">Decks</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[26px]">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</nav>
+</div>
+</body></html>

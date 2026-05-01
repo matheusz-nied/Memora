@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nied Cards Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+          min-height: max(884px, 100dvh);
+        }.input-group:focus-within label {
+            color: #135bec;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased selection:bg-primary selection:text-white">
+<div class="relative mx-auto flex h-screen max-h-screen w-full max-w-md flex-col overflow-hidden bg-background-light dark:bg-background-dark shadow-2xl">
+<div class="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-[100px] pointer-events-none"></div>
+<div class="absolute top-[20%] -right-[10%] h-[40%] w-[40%] rounded-full bg-blue-500/5 blur-[80px] pointer-events-none"></div>
+<header class="flex w-full items-center justify-between px-6 pt-12 pb-4 z-10">
+<div class="w-8"></div>
+</header>
+<main class="flex flex-1 flex-col justify-center px-6 relative z-10">
+<div class="mb-10 w-full max-w-sm mx-auto">
+<h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white text-center mb-2">
+                Create Account
+            </h1>
+<p class="text-center text-slate-500 dark:text-slate-400 text-sm">
+                Join Nied Cards for AI-powered mastery.
+            </p>
+</div>
+<form class="space-y-6 w-full max-w-sm mx-auto">
+<div class="input-group">
+<label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 transition-colors" for="fullname">Full Name</label>
+<input class="block w-full rounded-xl border-0 bg-white dark:bg-[#1a2333] px-4 py-3.5 text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 transition-all duration-200 ease-in-out" id="fullname" placeholder="Jane Doe" type="text"/>
+</div>
+<div class="input-group">
+<label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 transition-colors" for="email">Email</label>
+<input class="block w-full rounded-xl border-0 bg-white dark:bg-[#1a2333] px-4 py-3.5 text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 transition-all duration-200 ease-in-out" id="email" placeholder="jane@example.com" type="email"/>
+</div>
+<div class="input-group">
+<label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 transition-colors" for="password">Password</label>
+<input class="block w-full rounded-xl border-0 bg-white dark:bg-[#1a2333] px-4 py-3.5 text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-200 dark:ring-white/10 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 transition-all duration-200 ease-in-out" id="password" placeholder="••••••••" type="password"/>
+</div>
+<div class="pt-4">
+<button class="group relative flex w-full items-center justify-center rounded-xl bg-primary py-4 px-6 text-base font-bold text-white shadow-[0_4px_20px_-4px_rgba(19,91,236,0.5)] transition-all hover:bg-blue-600 hover:shadow-[0_8px_25px_-4px_rgba(19,91,236,0.6)] hover:-translate-y-0.5 active:scale-[0.98]" type="button">
+<span>Sign Up</span>
+<span class="absolute right-6 material-symbols-outlined text-lg opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100">
+                        arrow_forward
+                    </span>
+</button>
+</div>
+</form>
+</main>
+<footer class="flex w-full flex-col items-center justify-center gap-4 px-6 pb-12 pt-4 z-10">
+<div class="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Already have an account? <a class="text-primary hover:text-blue-400 hover:underline transition-colors ml-1" href="#">Log in</a>
+</div>
+</footer>
+</div>
+
+</body></html>

@@ -278,58 +278,58 @@ supabase/
 
 ### `app_colors.dart` — todas as cores como `static const`
 
-**Primária (Violeta)**
+**Primária (Azul)**
 
 | Nome | Valor |
 |---|---|
-| `primary` | `Color(0xFF6C63FF)` |
-| `primaryHover` | `Color(0xFF5A52E0)` |
-| `primaryLight` | `Color(0xFFEEEDFE)` |
-| `primaryDark` | `Color(0xFF3C3489)` |
+| `primary` | `Color(0xFF135BEC)` |
+| `primaryHover` | `Color(0xFF0F4BB3)` |
+| `primaryLight` | `Color(0xFFD0E1FB)` |
+| `primaryDark` | `Color(0xFF07245E)` |
 
 **Neutros Light**
 
 | Nome | Valor |
 |---|---|
-| `background` | `Color(0xFFFAFAFA)` |
+| `background` | `Color(0xFFF6F6F8)` |
 | `surface` | `Color(0xFFFFFFFF)` |
-| `border` | `Color(0xFFE4E4E7)` |
-| `textPrimary` | `Color(0xFF18181B)` |
-| `textSecondary` | `Color(0xFF71717A)` |
-| `textTertiary` | `Color(0xFFA1A1AA)` |
+| `border` | `Color(0xFFE2E8F0)` |
+| `textPrimary` | `Color(0xFF0F172A)` |
+| `textSecondary` | `Color(0xFF64748B)` |
+| `textTertiary` | `Color(0xFF94A3B8)` |
 
 **Neutros Dark**
 
 | Nome | Valor |
 |---|---|
-| `backgroundDark` | `Color(0xFF0F0F0F)` |
-| `surfaceDark` | `Color(0xFF1A1A1A)` |
-| `borderDark` | `Color(0xFF2E2E2E)` |
-| `textPrimaryDark` | `Color(0xFFF4F4F5)` |
-| `textSecDark` | `Color(0xFFA1A1AA)` |
-| `textTertDark` | `Color(0xFF52525B)` |
+| `backgroundDark` | `Color(0xFF101622)` |
+| `surfaceDark` | `Color(0xFF1A212E)` |
+| `borderDark` | `Color(0xFF1E293B)` |
+| `textPrimaryDark` | `Color(0xFFFFFFFF)` |
+| `textSecDark` | `Color(0xFF94A3B8)` |
+| `textTertDark` | `Color(0xFF64748B)` |
 
 **Semânticas**
 
 | Nome | Valor | Fundo |
 |---|---|---|
-| `success` | `Color(0xFF22C55E)` | `successBg` → `Color(0xFFF0FDF4)` |
+| `success` | `Color(0xFF10B981)` | `successBg` → `Color(0xFFECFDF5)` |
 | `error` | `Color(0xFFEF4444)` | `errorBg` → `Color(0xFFFEF2F2)` |
 | `warning` | `Color(0xFFF59E0B)` | `warningBg` → `Color(0xFFFFFBEB)` |
-| `info` | `Color(0xFF3B82F6)` | `infoBg` → `Color(0xFFEFF6FF)` |
+| `info` | `Color(0xFF135BEC)` | `infoBg` → `Color(0xFFEFF6FF)` |
 
 ### `app_typography.dart` — TextStyles centralizados
 
 | Estilo | Fonte | Tamanho | Peso |
 |---|---|---|---|
-| `displayLarge` | Inter | 32px | w700 |
-| `headingLarge` | Inter | 22px | w600 |
+| `displayLarge` | Inter | 32px | w800 |
+| `headingLarge` | Inter | 24px | w700 |
 | `headingMedium` | Inter | 18px | w600 |
-| `bodyLarge` | Inter | 15px | w400 |
-| `bodyMedium` | Inter | 14px | w400 |
-| `bodySmall` | Inter | 13px | w400 |
-| `labelMedium` | Inter | 14px | w500 |
-| `labelSmall` | Inter | 11px | w500 |
+| `bodyLarge` | Inter | 16px | w400 |
+| `bodyMedium` | Inter | 14px | w500 |
+| `bodySmall` | Inter | 12px | w500 |
+| `labelMedium` | Inter | 14px | w600 |
+| `labelSmall` | Inter | 10px | w500 |
 
 ### `app_dimensions.dart` — constantes de espaçamento
 
@@ -347,6 +347,8 @@ supabase/
 | `radiusMd` | 12.0 |
 | `radiusLg` | 16.0 |
 | `radiusXl` | 20.0 |
+| `radius2Xl` | 24.0 |
+| `radius3Xl` | 32.0 |
 | `radiusFull` | 999.0 |
 
 ### `responsive.dart` — helpers de breakpoint

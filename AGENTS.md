@@ -58,11 +58,11 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 | `kContentMaxWidth` | 640.0 |
 | `kOnboardingKey` | `'onboarding_complete'` |
 
-**Cores:** primária `#6C63FF`, hover `#5A52E0`, light `#EEEDFE`, dark `#3C3489`. Neutros light/dark e semânticas (success, error, warning, info com respectivos Bg) definidos em `AppColors`.
+**Cores:** primária `#135BEC`, hover `#0F4BB3`, light `#F6F6F8` (background), dark `#101622` (background-dark), surface dark `#1A212E`. Neutros light/dark e semânticas (success, error, warning, info com respectivos Bg) definidos em `AppColors` baseados no Tailwind Slate/Emerald.
 
-**Tipografia (Inter):** displayLarge 32/700, headingLarge 22/600, headingMedium 18/600, bodyLarge 15/400, bodyMedium 14/400, bodySmall 13/400, labelMedium 14/500, labelSmall 11/500
+**Tipografia (Inter):** displayLarge 32/800, headingLarge 24/700, headingMedium 18/600, bodyLarge 16/400, bodyMedium 14/500, bodySmall 12/500, labelMedium 14/600, labelSmall 10/500
 
-**Dimensões:** xs=4, sm=8, md=12, lg=16, xl=20, xxl=24, xxxl=32, huge=48. Raios: sm=8, md=12, lg=16, xl=20, full=999.
+**Dimensões:** xs=4, sm=8, md=12, lg=16, xl=20, xxl=24, xxxl=32, huge=48. Raios: sm=8, md=12, lg=16, xl=20, 2xl=24, 3xl=32, full=999.
 
 **Breakpoints:** mobile <600, tablet 600-1023, desktop ≥1024
 

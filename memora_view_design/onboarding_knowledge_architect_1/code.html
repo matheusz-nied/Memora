@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Onboarding - Knowledge Architect</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom glow effect for the abstract card */
+        .glow-card {
+            box-shadow: 0 0 80px -20px rgba(19, 91, 236, 0.4);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased selection:bg-primary selection:text-white">
+<div class="relative mx-auto flex h-screen max-h-screen w-full max-w-md flex-col overflow-hidden bg-background-light dark:bg-background-dark shadow-2xl">
+<!-- Background decorative gradients -->
+<div class="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] rounded-full bg-primary/10 blur-[100px] pointer-events-none"></div>
+<div class="absolute top-[20%] -right-[10%] h-[40%] w-[40%] rounded-full bg-blue-500/5 blur-[80px] pointer-events-none"></div>
+<!-- Top Bar -->
+<header class="flex w-full items-center justify-end px-6 pt-12 pb-4 z-10">
+<button class="group flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium text-slate-500 transition-colors hover:text-primary dark:text-slate-400 dark:hover:text-white">
+                Skip
+            </button>
+</header>
+<!-- Main Content Area -->
+<main class="flex flex-1 flex-col items-center justify-center px-6 relative z-10">
+<!-- Hero Image / Icon -->
+<div class="relative mb-12 flex h-64 w-64 items-center justify-center">
+<!-- Inner glow container -->
+<div class="glow-card absolute inset-4 rounded-3xl bg-gradient-to-br from-primary/20 to-transparent"></div>
+<!-- 3D Card Representation -->
+<div class="relative h-full w-full overflow-hidden rounded-3xl bg-[#1a2333] border border-white/5 shadow-2xl transform rotate-[-5deg] transition-transform duration-700 hover:rotate-0">
+<img alt="Abstract 3D glowing blue cubic digital architecture representing AI knowledge structure" class="h-full w-full object-cover opacity-90 mix-blend-screen" data-alt="Abstract 3D glowing blue cubic digital architecture representing AI knowledge structure" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjb7pxXXo2WBK5rsro1oTHH2ZVqpKm6YUNnEJlVc-RogJWVcAeFcJQzxosX0jgjYL51SAP3caXQfiHapnmiNadxODjGixRBAJLL4Lf98csjltokk2cUlyIQvMYdrsUAnks2HwfKNp9UFmUWCz1B245mGLGds6A_cVy2tAgrnO2VMgzSugyEsviYVHgN1JgQooe6gWj8o4yVf_J1ZZUqHb2f6IIIG22eBFNpeczPxCZOWOhOYFLezVtB-RLzsZvadiYuALR9qgYyy8Z"/>
+<!-- Overlay gradient for depth -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60"></div>
+</div>
+<!-- Floating elements decoration -->
+<div class="absolute -right-4 top-10 h-12 w-12 rounded-xl bg-primary/20 backdrop-blur-md border border-white/10 rotate-12 animate-pulse"></div>
+<div class="absolute -left-6 bottom-16 h-8 w-8 rounded-lg bg-blue-400/20 backdrop-blur-md border border-white/10 -rotate-12"></div>
+</div>
+<!-- Text Content -->
+<div class="flex flex-col items-center text-center space-y-4 max-w-xs">
+<h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                    Master anything,<br/><span class="text-primary">faster.</span>
+</h1>
+<p class="text-base font-normal leading-relaxed tracking-wide text-slate-500 dark:text-slate-400">
+                    Upload PDFs and let AI architect your path to mastery.
+                </p>
+</div>
+</main>
+<!-- Footer / Action Area -->
+<footer class="flex w-full flex-col items-center gap-8 px-6 pb-12 pt-4 z-10">
+<!-- Pagination Indicators -->
+<div class="flex items-center gap-3">
+<!-- Active dot (Pill shape) -->
+<div class="h-2 w-6 rounded-full bg-primary transition-all duration-300"></div>
+<!-- Inactive dots -->
+<div class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+<div class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+</div>
+<!-- Next Button -->
+<button class="group relative flex w-full items-center justify-center rounded-xl bg-primary py-4 px-6 text-base font-semibold text-white shadow-lg shadow-blue-900/20 transition-all hover:bg-blue-600 hover:shadow-blue-900/40 active:scale-[0.98]">
+<span>Next</span>
+<span class="absolute right-6 material-symbols-outlined text-lg opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100">
+                    arrow_forward
+                </span>
+</button>
+</footer>
+</div>
+</body></html>

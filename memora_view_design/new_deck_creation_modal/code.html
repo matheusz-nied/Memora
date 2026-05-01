@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>New Deck Creation Modal</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-dark": "#1A2230", // Slightly lighter than background-dark for modal/cards
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<!-- Fonts: Inter and Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        /* Custom glow animation for the AI button */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px 0px rgba(19, 91, 236, 0.4); }
+            50% { box-shadow: 0 0 25px 5px rgba(19, 91, 236, 0.6); }
+        }
+        .ai-glow {
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 24px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex justify-center overflow-hidden">
+<!-- Mobile Container Simulation -->
+<div class="relative w-full max-w-md h-screen flex flex-col bg-background-light dark:bg-background-dark overflow-hidden shadow-2xl border-x border-slate-800">
+<!-- Header -->
+<header class="flex items-center justify-between p-5 pt-8 z-0">
+<div class="flex items-center gap-2">
+<button class="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-xl font-bold tracking-tight">Library</h1>
+</div>
+<button class="text-slate-500 dark:text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+</header>
+<!-- Main Content (Decks Grid) - Partially Obscured -->
+<div class="flex-1 overflow-y-auto px-4 pb-24 space-y-4">
+<!-- Filter Tabs -->
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar opacity-50 pointer-events-none">
+<span class="bg-primary text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap">All Decks</span>
+<span class="bg-surface-dark border border-slate-700 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap">Favorites</span>
+<span class="bg-surface-dark border border-slate-700 text-slate-400 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap">Recent</span>
+</div>
+<!-- Grid -->
+<div class="grid grid-cols-2 gap-3 opacity-30 pointer-events-none grayscale-[0.5]">
+<!-- Card 1 -->
+<div class="bg-surface-dark rounded-xl p-3 border border-slate-700/50 flex flex-col gap-3">
+<div class="h-24 w-full bg-cover bg-center rounded-lg" data-alt="Open book with spanish text" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD9-rddFbU9ytWfKmu4xh3FaXqoN_eVLoSS3OySmcYgE9u__OdaXHNt3AJW9wq-u_QaWg35mSQ_2fJrOXr3hheqmruLRFmDkpcA4aNbppObToyKeu5Pc1--o6OrE1MBFWdcEH0PXRncSUaDapFuhH1lWlJuwRr2RVbus3ioWjSWGhCo6OrUdSJVAmu6nKRn2Mx6ObOP0rGVqaTTXxLigjc_OSx-ulAGZpAY7X-KNPQ3yAFHHpKYzORQQc9zmLrvatvrABvozm9arnyH');"></div>
+<div>
+<h3 class="font-semibold text-sm leading-tight mb-1">Spanish Vocab</h3>
+<p class="text-xs text-slate-500">24 Cards • 85% Mastery</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-dark rounded-xl p-3 border border-slate-700/50 flex flex-col gap-3">
+<div class="h-24 w-full bg-cover bg-center rounded-lg" data-alt="Ancient greek statue head" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCQegBUTJC_XrKcaC0QzNXlIJS6NQ0QdpK7I3kCGC0108Ny9Wb6ajZV23g7bZrCK9oJOt0BQljs7rXVtWMj7c26SnO-vcTtDXsv0nLDxUtptLyXaPEqMGWflEIVWkj-Ghhg7T_GGhSMtHQC5CM44tp6Tg5rgJBsAS4i0OZuKtzltbFMmOljHGXeVP80_nvEACQjitiAhL_r1TOGmM5GbA_yBZ-E9Ziml1m8RgZZj5FQx8qE4sar8aLLDpI3Ue-io9_VHAgaDtagjE0v');"></div>
+<div>
+<h3 class="font-semibold text-sm leading-tight mb-1">History 101</h3>
+<p class="text-xs text-slate-500">110 Cards • 42% Mastery</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-dark rounded-xl p-3 border border-slate-700/50 flex flex-col gap-3">
+<div class="h-24 w-full bg-cover bg-center rounded-lg" data-alt="Python code on a computer screen" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0is-f6fqlnASFUe38jcWfrLLMDTBOcln0S213As36FWNrnbwbIZC8iefgl1YXX0SfpQ-rqz-eY6DOikYETWR0-ISECNHK3i9HvJQTBM_uUVWXjjWL9ICrgoKz68cj4wGBlehhr-jHX9YrwXPSywMsp0AlYS4D98M2ZO_CLOgO0x5ZZmUNVVJuhCkVhmTTRfOPWLJSddxdH5ypVi4IUoYmG1p2BxMXv5fpnycj83XeUBOKj4t4v8KbdoGIGeFnOpPAEp-hsZsNsgn6');"></div>
+<div>
+<h3 class="font-semibold text-sm leading-tight mb-1">Python Basics</h3>
+<p class="text-xs text-slate-500">45 Cards • 12% Mastery</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-dark rounded-xl p-3 border border-slate-700/50 flex flex-col gap-3">
+<div class="h-24 w-full bg-cover bg-center rounded-lg" data-alt="Colorful abstract oil painting" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDCZZ33mTh3HjzgHqWkPp7oHpbH6agzFYFpwxCzZXzdBfBLZHs6ceXcISpr7prgoWK1dy4ngGKgBwTNYvbDLlK-r4mQXXJLNesW4-I7yB3WsVJW_zaF78ksyM7uLAQPOHvZY4flEble7rDSHhqZYLrBh2EqGx82ut5GimAGWWUl06EsKZ1Jsmm-I_N0SFtl_5R6OTsUPgy3ado9FsGdbpiD6YXhdDDhLJTaB4RzGV-ApVbxj_2uvgjupQ4DJwv5fymWQJChAr78lJz6');"></div>
+<div>
+<h3 class="font-semibold text-sm leading-tight mb-1">Art History</h3>
+<p class="text-xs text-slate-500">30 Cards • New</p>
+</div>
+</div>
+<!-- Card 5 (Just to fill space) -->
+<div class="bg-surface-dark rounded-xl p-3 border border-slate-700/50 flex flex-col gap-3">
+<div class="h-24 w-full bg-cover bg-center rounded-lg" data-alt="Chemistry beaker with blue liquid" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHJkhQE8JGjmBXySoDCuAydzGGmY5gHSXbmDFo9BG-7LXH8TIPWbHbb2Sz_CtoUFzzSy9utcGKbe0EEEQHVEHWfVFBFZ6CvCKB94tDcXGmiTDPS62Wd1rIwKi7gOhoSdNW2Cce6CkW6X3_2WEEessB6oVu0F3OUVgvdhnp7vXz9L08YShbUDxCDcPh7W86OUnUG4N4NZ6WP_4YGxiSA3rwmzsBYgPXpfO6XIe8JyYDQiA_qn8BLXvy8raeDXlagHzj52XAsAA5POIT');"></div>
+<div>
+<h3 class="font-semibold text-sm leading-tight mb-1">Chemistry</h3>
+<p class="text-xs text-slate-500">55 Cards • 60% Mastery</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Backdrop Overlay -->
+<div class="absolute inset-0 bg-background-dark/60 backdrop-blur-sm z-30 transition-opacity duration-300"></div>
+<!-- Creation Modal (Bottom Sheet) -->
+<div class="absolute bottom-0 left-0 right-0 bg-[#151b26] dark:bg-[#151b26] z-40 rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.7)] border-t border-slate-800 transform transition-transform duration-300 ease-out flex flex-col max-h-[85vh]">
+<!-- Drag Handle -->
+<div class="w-full flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
+<div class="w-12 h-1.5 bg-slate-700 rounded-full opacity-50"></div>
+</div>
+<!-- Modal Content -->
+<div class="px-6 pt-4 pb-10 flex flex-col gap-6">
+<!-- Title -->
+<div class="flex items-center justify-between">
+<h2 class="text-2xl font-bold text-white tracking-tight">Create New Deck</h2>
+<button class="text-slate-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">close</span>
+</button>
+</div>
+<!-- Input Field -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-slate-400 ml-1" for="deck-name">Deck Name</label>
+<div class="relative">
+<input autofocus="" class="block w-full rounded-xl border-0 bg-surface-dark py-4 pl-4 pr-10 text-white shadow-sm ring-1 ring-inset ring-slate-700 placeholder:text-slate-600 focus:ring-2 focus:ring-inset focus:ring-primary text-base sm:text-lg sm:leading-6 transition-all" id="deck-name" placeholder="e.g., Biology Midterm, Python Basics..." type="text"/>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500">
+<span class="material-symbols-outlined" style="font-size: 20px;">edit</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-3 mt-2">
+<!-- AI Button -->
+<button class="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-primary px-4 py-4 text-base font-semibold text-white transition-all hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ai-glow overflow-hidden">
+<!-- Subtle internal shine effect -->
+<div class="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent z-0"></div>
+<span class="material-symbols-outlined z-10">auto_awesome</span>
+<span class="z-10">Generate with AI</span>
+</button>
+<!-- Manual Button -->
+<button class="flex w-full items-center justify-center gap-3 rounded-xl bg-transparent border border-slate-700 px-4 py-4 text-base font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-700">
+<span class="material-symbols-outlined text-slate-400">add_circle</span>
+                        Create Manually
+                    </button>
+</div>
+<!-- Helper Text -->
+<p class="text-center text-xs text-slate-600 mt-2">
+                    AI generation uses your notes or topic to create cards automatically.
+                </p>
+</div>
+<!-- Mobile Keyboard Spacer (Optional visual indicator) -->
+<div class="h-6 w-full"></div>
+</div>
+</div>
+</body></html>

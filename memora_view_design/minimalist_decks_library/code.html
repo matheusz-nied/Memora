@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Minimalist Decks Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622", // Deep charcoal
+                        "surface-dark": "#1A212E", // Slightly lighter charcoal for cards
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased overflow-hidden select-none">
+<!-- Mobile Container -->
+<div class="mx-auto flex h-screen w-full max-w-md flex-col overflow-hidden bg-background-light dark:bg-background-dark relative shadow-2xl">
+<!-- Status Bar Area (Mock) -->
+<div class="h-10 w-full shrink-0"></div>
+<!-- Header -->
+<header class="flex items-center justify-between px-6 py-4">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Your Decks</h1>
+<button class="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 transition-colors hover:bg-slate-300 dark:hover:bg-slate-700">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300" style="font-size: 24px;">account_circle</span>
+</button>
+</header>
+<!-- Main Content: Deck List -->
+<main class="flex-1 overflow-y-auto px-6 pb-32 no-scrollbar">
+<!-- Cards Grid -->
+<div class="flex flex-col gap-4">
+<!-- Card 1 -->
+<div class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark p-5 shadow-sm transition-all active:scale-[0.98]">
+<div class="flex w-full items-start justify-between">
+<div>
+<h3 class="text-lg font-semibold leading-tight text-slate-900 dark:text-white">Molecular Biology</h3>
+<p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Last studied 2h ago</p>
+</div>
+<span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/20">
+                            12 Due
+                        </span>
+</div>
+<div class="mt-6">
+<div class="mb-2 flex items-center justify-between text-xs">
+<span class="font-medium text-slate-500 dark:text-slate-400">Mastery</span>
+<span class="font-bold text-slate-700 dark:text-white">45%</span>
+</div>
+<div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+<div class="h-full rounded-full bg-primary" style="width: 45%"></div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark p-5 shadow-sm transition-all active:scale-[0.98]">
+<div class="flex w-full items-start justify-between">
+<div>
+<h3 class="text-lg font-semibold leading-tight text-slate-900 dark:text-white">Spanish Vocabulary</h3>
+<p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">Daily Goal Reached</p>
+</div>
+<span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-500 ring-1 ring-inset ring-emerald-500/20">
+                            Done
+                        </span>
+</div>
+<div class="mt-6">
+<div class="mb-2 flex items-center justify-between text-xs">
+<span class="font-medium text-slate-500 dark:text-slate-400">Mastery</span>
+<span class="font-bold text-slate-700 dark:text-white">80%</span>
+</div>
+<div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+<div class="h-full rounded-full bg-primary" style="width: 80%"></div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark p-5 shadow-sm transition-all active:scale-[0.98]">
+<div class="flex w-full items-start justify-between">
+<div>
+<h3 class="text-lg font-semibold leading-tight text-slate-900 dark:text-white">History of Art</h3>
+<p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">New cards added</p>
+</div>
+<span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/20">
+                            5 Due
+                        </span>
+</div>
+<div class="mt-6">
+<div class="mb-2 flex items-center justify-between text-xs">
+<span class="font-medium text-slate-500 dark:text-slate-400">Mastery</span>
+<span class="font-bold text-slate-700 dark:text-white">12%</span>
+</div>
+<div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+<div class="h-full rounded-full bg-primary" style="width: 12%"></div>
+</div>
+</div>
+</div>
+<!-- Card 4 (Scroll Indicator) -->
+<div class="opacity-50 group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark p-5 shadow-sm">
+<div class="flex w-full items-start justify-between">
+<div>
+<h3 class="text-lg font-semibold leading-tight text-slate-900 dark:text-white">Organic Chemistry</h3>
+</div>
+</div>
+<div class="mt-6 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700"></div>
+</div>
+</div>
+</main>
+<!-- Overlay for FAB Interaction (Simulating Open State) -->
+<div class="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-20 flex flex-col items-end justify-end pb-24 pr-6 pointer-events-none opacity-100 transition-opacity">
+<!-- Simulated Animation Container -->
+<div class="flex flex-col items-end gap-4 pointer-events-auto">
+<!-- Option 1: AI Deck -->
+<div class="flex items-center gap-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
+<span class="text-sm font-medium text-white bg-surface-dark px-3 py-1.5 rounded-lg shadow-lg border border-slate-700">AI Deck from PDF</span>
+<button class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform hover:scale-110">
+<span class="material-symbols-outlined" style="font-size: 24px;">auto_awesome</span>
+</button>
+</div>
+<!-- Option 2: Manual Deck -->
+<div class="flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in duration-300 delay-75">
+<span class="text-sm font-medium text-white bg-surface-dark px-3 py-1.5 rounded-lg shadow-lg border border-slate-700">Manual Deck</span>
+<button class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform hover:scale-110">
+<span class="material-symbols-outlined" style="font-size: 24px;">edit_note</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Floating Action Button (Active State) -->
+<div class="absolute bottom-[90px] right-6 z-30">
+<button class="group flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-xl shadow-primary/30 transition-transform active:scale-95 hover:bg-blue-600 rotate-45">
+<span class="material-symbols-outlined" style="font-size: 32px;">add</span>
+</button>
+</div>
+<!-- Bottom Navigation -->
+<nav class="absolute bottom-0 left-0 z-10 w-full border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-[#101622]/90 backdrop-blur-lg pb-5 pt-3">
+<div class="flex items-center justify-around">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined fill-1" style="font-variation-settings: 'FILL' 1; font-size: 24px;">style</span>
+<span class="text-[10px] font-medium">Library</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined" style="font-size: 24px;">search</span>
+<span class="text-[10px] font-medium">Search</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined" style="font-size: 24px;">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</nav>
+</div>
+</body></html>
