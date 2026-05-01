@@ -27,7 +27,7 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 - `lib/features/cards/` — card_model, card_repository, card_list_item, card_form_modal
 - `lib/features/generate/` — generate_repository, import_content_screen, review_cards_screen
 - `lib/features/agent/` — agent_templates, agent_repository, chat_screen, agent_config_screen
-- `lib/features/study/` — study_screen, card_rating_model, study_session_model, widgets/insight_screen
+- `lib/features/study/` — study_screen, card_rating_model, study_session_model, widgets/insight_widget
 - `supabase/functions/` — generate-cards/index.ts, chat/index.ts
 
 ## Regras invioláveis
@@ -82,11 +82,11 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 
 **chat:** entrada `{deckId, messages, userMessage}` | busca deck + últimos 20 cards → substitui `{name}`, `{deck_title}`, `{deck_context}`, `{language}`, `{level}` no agent_prompt → chama IA → retorna `{reply}`
 
-**card-insight:** entrada `{front, back, deckId}` | busca configurações do agente do deck → gera explicação aprofundada sobre o card → retorna `{insight}`. Requer conectividade.
+**card-insight:** entrada `{front, back, deckId}` | busca configurações do agente do deck → gera explicação aprofundada sobre o card → retorna `{insight}`. Requer conectividade. O insight retornado é salvo imediatamente na coluna `insight` da tabela `cards` (Drift local + sync Supabase) para nunca ser gerado novamente.
 
 ## Rotas
 
-`/onboarding`, `/login`, `/register`, `/forgot-password`, `/home`, `/deck/:deckId`, `/deck/:deckId/study`, `/deck/:deckId/study/insight`, `/deck/:deckId/generate`, `/deck/:deckId/generate/review`, `/deck/:deckId/chat`, `/deck/:deckId/agent-config`
+`/onboarding`, `/login`, `/register`, `/forgot-password`, `/home`, `/deck/:deckId`, `/deck/:deckId/study`, `/deck/:deckId/generate`, `/deck/:deckId/generate/review`, `/deck/:deckId/chat`, `/deck/:deckId/agent-config`
 
 **Redirecionamento:**
 - Primeiro acesso (sem flag `onboarding_complete`) → `/onboarding`
@@ -112,8 +112,12 @@ Definidos em `agent_templates.dart`: `general` (Tutor Geral), `english` (Profess
   - Avaliação salva localmente com algoritmo simplificado (ver abaixo)
   - TTS no idioma do agente do deck
   - Tela de conclusão com resumo (acertos, erros, cards a revisar)
-  - Botão "Ver Insight" disponível após revelar o verso (requer conexão)
-- **Insights:** tela separada (`/deck/:deckId/study/insight`) exibe análise aprofundada da IA sobre o card atual; mostra loading state, trata erro offline com mensagem clara; usa Edge Function `card-insight`
+  - **Insight inline:** após revelar o verso, a área de insight aparece na mesma tela (`insight_widget`)
+    - Se `card.insight != null` → exibe o insight imediatamente (sem chamada à IA)
+    - Se `card.insight == null` → exibe botão "Gerar Insight" (desabilitado com tooltip se offline)
+    - Ao gerar: mostra shimmer/loading → salva o insight na coluna `insight` do card (Drift local + sync Supabase) → exibe o conteúdo
+    - O insight gerado persiste para sempre; o usuário nunca precisa gerá-lo novamente
+- **Insights:** exibidos inline na tela de resposta do flashcard via `insight_widget.dart`; sem rota separada; persistidos na coluna `insight` do card
 
 ## Algoritmo de avaliação (offline-first, simplificado)
 
@@ -141,13 +145,13 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 | Progresso de estudo | Drift (`cards.syncPending = true`) | Background ao recuperar conexão |
 | Onboarding flag | `shared_preferences` | Nunca (local only) |
 | Chat messages | Não persiste offline | Online only |
-| Insights | Não persiste offline | Online only |
+| Insights gerados | Drift (`cards.insight`) + Supabase | Gerado uma vez, persiste para sempre |
 
 ## Banco Drift local — Schema
 
 **DecksTable:** id (TEXT PK), userId (TEXT), title (TEXT), description (TEXT nullable), agentName (TEXT), agentPrompt (TEXT nullable), agentTemplate (TEXT), agentLanguage (TEXT), agentLevel (TEXT), createdAt (INTEGER — epoch ms), updatedAt (INTEGER)
 
-**CardsTable:** id (TEXT PK), deckId (TEXT — FK lógico para DecksTable), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), createdAt (INTEGER), updatedAt (INTEGER)
+**CardsTable:** id (TEXT PK), deckId (TEXT — FK lógico para DecksTable), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), insight (TEXT nullable), createdAt (INTEGER), updatedAt (INTEGER)
 
 **Regras do banco Drift:**
 - Nunca modificar arquivos `.g.dart` manualmente
@@ -157,7 +161,8 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 
 - Usar `connectivity_plus` exposto via `ConnectivityService` (Riverpod provider)
 - Exibir `OfflineBanner` quando offline
-- Funcionalidades que requerem rede (chat, insight, geração) mostram aviso claro e desabilitam o botão correspondente
+- Funcionalidades que requerem rede (chat, geração de cards, gerar insight) mostram aviso claro e desabilitam o botão correspondente
+- O botão "Gerar Insight" fica desabilitado com tooltip se offline; se o insight já foi gerado, é exibido normalmente mesmo offline
 
 ## O que não fazer
 

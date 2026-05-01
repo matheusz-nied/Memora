@@ -132,7 +132,7 @@ lib/
 │       │   └── study_repository.dart   ← lógica offline de rating + sync
 │       └── presentation/
 │           ├── study_screen.dart
-│           ├── insight_screen.dart      ← tela de insight da IA sobre o card
+│           ├── insight_widget.dart     ← widget inline de insight (na tela de resposta)
 │           └── widgets/
 │               ├── study_card_widget.dart  ← card com flip animado
 │               └── rating_buttons.dart    ← Não sei / Difícil / Bom / Fácil
@@ -160,7 +160,7 @@ supabase/
 | `/home` | Home com lista de decks |
 | `/deck/:deckId` | Tela do deck |
 | `/deck/:deckId/study` | Modo estudo |
-| `/deck/:deckId/study/insight` | Insight de IA sobre o card atual |
+| `/deck/:deckId/study` | Modo estudo (inclui estado de resposta com insight inline) |
 | `/deck/:deckId/generate` | Importar conteúdo |
 | `/deck/:deckId/generate/review` | Revisar cards gerados |
 | `/deck/:deckId/chat` | Chat com agente |
@@ -202,6 +202,7 @@ supabase/
 | `ease_factor` | real | DEFAULT 2.5 |
 | `interval_days` | integer | DEFAULT 1 |
 | `due_date` | date | DEFAULT now() |
+| `insight` | text | nullable |
 | `created_at` | timestamptz | DEFAULT now() |
 | `updated_at` | timestamptz | DEFAULT now() |
 
@@ -209,9 +210,9 @@ supabase/
 
 **DecksTable:** id (TEXT PK), userId (TEXT), title (TEXT), description (TEXT nullable), agentName (TEXT), agentPrompt (TEXT nullable), agentTemplate (TEXT), agentLanguage (TEXT), agentLevel (TEXT), createdAt (INTEGER — epoch ms), updatedAt (INTEGER)
 
-**CardsTable:** id (TEXT PK), deckId (TEXT), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), createdAt (INTEGER), updatedAt (INTEGER)
+**CardsTable:** id (TEXT PK), deckId (TEXT), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), insight (TEXT nullable), createdAt (INTEGER), updatedAt (INTEGER)
 
-> `syncPending = true` indica que o progresso de avaliação foi salvo localmente mas ainda não foi enviado ao Supabase. O sync ocorre em background quando a conexão é restaurada.
+> `syncPending = true` indica que o progresso de avaliação foi salvo localmente mas ainda não foi enviado ao Supabase. O sync ocorre em background quando a conexão é restaurada. O campo `insight` é sincronizado para o Supabase após a geração e nunca é apagado.
 
 ### Tabela: `chat_messages`
 
@@ -266,7 +267,6 @@ supabase/
 | `kRouteHome` | `'/home'` |
 | `kRouteDeck` | `'/deck/:deckId'` |
 | `kRouteStudy` | `'/deck/:deckId/study'` |
-| `kRouteInsight` | `'/deck/:deckId/study/insight'` |
 | `kRouteGenerate` | `'/deck/:deckId/generate'` |
 | `kRouteReview` | `'/deck/:deckId/generate/review'` |
 | `kRouteChat` | `'/deck/:deckId/chat'` |
@@ -532,13 +532,16 @@ supabase/
 
 `due_date = hoje + interval_days`
 
-### Insights de IA
+### Insights de IA (inline, persistentes)
 
-- Acessível via botão "Ver Insight" na tela de estudo, após revelar o verso
-- Navega para `/deck/:deckId/study/insight` passando `{front, back}` como extras de rota
-- Exibe: indicador de loading → conteúdo markdown formatado do insight
-- Em caso de erro de rede: mensagem clara com botão "Tentar novamente"
-- Botão de fechar retorna para a tela de estudo no card atual (sem reiniciar a sessão)
+- Exibidos na **mesma tela de resposta** do flashcard via `insight_widget.dart` (sem navegação separada)
+- Comportamento baseado no campo `card.insight`:
+  - **`insight != null`** → exibe o conteúdo imediatamente, sem nenhuma chamada à IA
+  - **`insight == null`** → exibe botão "Gerar Insight"
+    - Se offline: botão desabilitado com `Tooltip('Requer conexão com a internet')`
+    - Se online: ao clicar, exibe shimmer/loading → chama Edge Function `card-insight` → salva o texto retornado em `cards.insight` no Drift (local) e faz sync para o Supabase → exibe o insight
+- O insight é permanente: uma vez gerado, está disponível para sempre, inclusive offline
+- O usuário nunca é forçado a gerar o insight; é opt-in
 - Usa a Edge Function `card-insight`
 
 ---
@@ -552,7 +555,7 @@ supabase/
 | Progresso de estudo | Drift `cards.syncPending = true` | Background ao recuperar conexão |
 | Onboarding flag | `shared_preferences` (único uso) | Nunca (local only) |
 | Chat messages | Não persistido | Online only |
-| Insights | Não persistido | Online only |
+| Insights gerados | Drift `cards.insight` + Supabase | Gerado uma vez, persiste para sempre |
 
 - `connectivity_plus` exposto via `ConnectivityService` (singleton Riverpod provider)
 - `offline_banner.dart`: widget global exibido no topo quando offline
