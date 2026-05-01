@@ -1,8 +1,8 @@
 # Memora — Prompt Mestre
 
-Você é um desenvolvedor Flutter sênior. Vamos construir juntos o **Memora**, uma plataforma de aprendizado personalizado com IA. O usuário cria decks de flashcards, gera cards com IA a partir de texto ou PDF, estuda os cards e conversa com um agente de IA configurável por deck para praticar qualquer tema — inglês, biologia, programação, etc.
+Você é um desenvolvedor Flutter sênior. Vamos construir juntos o **Memora**, uma plataforma de aprendizado personalizado com IA. O usuário passa por um onboarding, cria decks de flashcards, gera cards com IA a partir de texto ou PDF, estuda os cards com auto-avaliação de desempenho, consulta insights de IA por card e conversa com um agente de IA configurável por deck para praticar qualquer tema — inglês, biologia, programação, etc.
 
-O app funciona em **web, Android e iOS**. É totalmente responsivo. Siga cada etapa com precisão. **Não avance para a próxima etapa sem minha confirmação explícita de que a atual está funcionando.**
+O app funciona em **web, Android e iOS**. É totalmente responsivo e **offline-first** para a funcionalidade de estudo. Siga cada etapa com precisão. **Não avance para a próxima etapa sem minha confirmação explícita de que a atual está funcionando.**
 
 ---
 
@@ -21,6 +21,11 @@ O app funciona em **web, Android e iOS**. É totalmente responsivo. Siga cada et
 | `file_picker` | Upload de PDF |
 | `pdfx` | Extração de texto de PDF |
 | `shimmer` | Loading states |
+| `drift` + `drift_flutter` | Banco SQLite local type-safe (offline-first) |
+| `shared_preferences` | Somente flag de onboarding |
+| `connectivity_plus` | Detecção de estado de rede |
+
+**Dev dependencies:** `drift_dev`, `build_runner`
 
 ### Backend
 
@@ -35,8 +40,8 @@ O app funciona em **web, Android e iOS**. É totalmente responsivo. Siga cada et
 
 | Modelo | Uso |
 |---|---|
-| Gemini 1.5 Flash | Geração de cards e chat |
-| GPT-4o mini (OpenAI) | Fallback |
+| DeepSeek-chat | Geração de cards, chat e insights |
+| Gemini 1.5 Flash | Fallback |
 
 ---
 
@@ -59,16 +64,24 @@ lib/
 │   │   └── app_dimensions.dart     ← espaçamentos e tamanhos
 │   ├── utils/
 │   │   ├── responsive.dart         ← helpers de breakpoint
-│   │   └── validators.dart         ← validações de formulário
+│   │   ├── validators.dart         ← validações de formulário
+│   │   └── connectivity_service.dart ← stream de estado de rede
 │   └── widgets/
 │       ├── app_button.dart         ← botão padrão reutilizável
 │       ├── app_input.dart          ← input padrão reutilizável
 │       ├── app_card.dart           ← card container reutilizável
 │       ├── empty_state.dart        ← widget de estado vazio
 │       ├── error_state.dart        ← widget de erro
-│       └── loading_state.dart      ← widget de loading
+│       ├── loading_state.dart      ← widget de loading
+│       └── offline_banner.dart     ← banner de status offline
 │
 ├── features/
+│   ├── onboarding/
+│   │   └── presentation/
+│   │       ├── onboarding_screen.dart   ← PageView com 4 páginas
+│   │       └── widgets/
+│   │           └── onboarding_page.dart ← widget de página individual
+│   │
 │   ├── auth/
 │   │   ├── data/
 │   │   │   └── auth_repository.dart
@@ -80,7 +93,7 @@ lib/
 │   ├── decks/
 │   │   ├── data/
 │   │   │   ├── deck_model.dart
-│   │   │   └── deck_repository.dart
+│   │   │   └── deck_repository.dart    ← cache local + Supabase sync
 │   │   └── presentation/
 │   │       ├── home_screen.dart
 │   │       ├── deck_screen.dart
@@ -90,8 +103,8 @@ lib/
 │   │
 │   ├── cards/
 │   │   ├── data/
-│   │   │   ├── card_model.dart
-│   │   │   └── card_repository.dart
+│   │   │   ├── card_model.dart         ← inclui ease_factor, interval_days, due_date
+│   │   │   └── card_repository.dart    ← cache local + Supabase sync
 │   │   └── presentation/
 │   │       └── widgets/
 │   │           ├── card_list_item.dart
@@ -106,20 +119,31 @@ lib/
 │   │
 │   ├── agent/
 │   │   ├── data/
+│   │   │   ├── agent_templates.dart
 │   │   │   └── agent_repository.dart
 │   │   └── presentation/
 │   │       ├── chat_screen.dart
 │   │       └── agent_config_screen.dart
 │   │
 │   └── study/
+│       ├── data/
+│       │   ├── card_rating_model.dart   ← enum: doesNotKnow, hard, good, easy
+│       │   ├── study_session_model.dart ← progresso da sessão atual
+│       │   └── study_repository.dart   ← lógica offline de rating + sync
 │       └── presentation/
-│           └── study_screen.dart
+│           ├── study_screen.dart
+│           ├── insight_screen.dart      ← tela de insight da IA sobre o card
+│           └── widgets/
+│               ├── study_card_widget.dart  ← card com flip animado
+│               └── rating_buttons.dart    ← Não sei / Difícil / Bom / Fácil
 │
 supabase/
 └── functions/
     ├── generate-cards/
     │   └── index.ts
-    └── chat/
+    ├── chat/
+    │   └── index.ts
+    └── card-insight/
         └── index.ts
 ```
 
@@ -129,16 +153,23 @@ supabase/
 
 | Rota | Tela |
 |---|---|
+| `/onboarding` | Onboarding (4 páginas) |
 | `/login` | Login |
 | `/register` | Cadastro |
 | `/forgot-password` | Recuperar senha |
 | `/home` | Home com lista de decks |
 | `/deck/:deckId` | Tela do deck |
 | `/deck/:deckId/study` | Modo estudo |
+| `/deck/:deckId/study/insight` | Insight de IA sobre o card atual |
 | `/deck/:deckId/generate` | Importar conteúdo |
 | `/deck/:deckId/generate/review` | Revisar cards gerados |
 | `/deck/:deckId/chat` | Chat com agente |
 | `/deck/:deckId/agent-config` | Configurar agente |
+
+**Redirecionamento:**
+- Primeiro acesso (sem flag `kOnboardingKey` no SharedPreferences) → `/onboarding`
+- Não autenticado acessando rota protegida → `/login`
+- Autenticado acessando `/login` ou `/register` → `/home`
 
 ---
 
@@ -160,16 +191,27 @@ supabase/
 | `created_at` | timestamptz | DEFAULT now() |
 | `updated_at` | timestamptz | DEFAULT now() |
 
-### Tabela: `cards`
+### Tabela: `cards` (Supabase)
 
 | Coluna | Tipo | Flags |
 |---|---|---|
 | `id` | uuid | PK |
-| `deck_id` | uuid | FK → decks |
+| `deck_id` | uuid | FK → decks (cascade) |
 | `front` | text | NOT NULL |
 | `back` | text | NOT NULL |
+| `ease_factor` | real | DEFAULT 2.5 |
+| `interval_days` | integer | DEFAULT 1 |
+| `due_date` | date | DEFAULT now() |
 | `created_at` | timestamptz | DEFAULT now() |
 | `updated_at` | timestamptz | DEFAULT now() |
+
+### Banco Drift local — Schema
+
+**DecksTable:** id (TEXT PK), userId (TEXT), title (TEXT), description (TEXT nullable), agentName (TEXT), agentPrompt (TEXT nullable), agentTemplate (TEXT), agentLanguage (TEXT), agentLevel (TEXT), createdAt (INTEGER — epoch ms), updatedAt (INTEGER)
+
+**CardsTable:** id (TEXT PK), deckId (TEXT), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), createdAt (INTEGER), updatedAt (INTEGER)
+
+> `syncPending = true` indica que o progresso de avaliação foi salvo localmente mas ainda não foi enviado ao Supabase. O sync ocorre em background quando a conexão é restaurada.
 
 ### Tabela: `chat_messages`
 
@@ -202,6 +244,7 @@ supabase/
 | `kMaxDeckDescription` | 200 | Limite da descrição do deck |
 | `kMaxChatMessages` | 40 | Histórico máximo por sessão |
 | `kContentMaxWidth` | 640.0 | Largura máxima do conteúdo web |
+| `kOnboardingKey` | `'onboarding_complete'` | Flag de onboarding no SharedPreferences (único uso) |
 
 ### `supabase_constants.dart`
 
@@ -216,12 +259,14 @@ supabase/
 
 | Constante | Valor |
 |---|---|
+| `kRouteOnboarding` | `'/onboarding'` |
 | `kRouteLogin` | `'/login'` |
 | `kRouteRegister` | `'/register'` |
 | `kRouteForgotPass` | `'/forgot-password'` |
 | `kRouteHome` | `'/home'` |
 | `kRouteDeck` | `'/deck/:deckId'` |
 | `kRouteStudy` | `'/deck/:deckId/study'` |
+| `kRouteInsight` | `'/deck/:deckId/study/insight'` |
 | `kRouteGenerate` | `'/deck/:deckId/generate'` |
 | `kRouteReview` | `'/deck/:deckId/generate/review'` |
 | `kRouteChat` | `'/deck/:deckId/chat'` |
@@ -373,6 +418,31 @@ supabase/
 4. Chamar a IA com system + histórico + nova mensagem
 5. Retornar `{ "reply": "string" }`
 
+### `card-insight`
+
+**Entrada:**
+
+```json
+{
+  "front": "string",
+  "back": "string",
+  "deckId": "uuid"
+}
+```
+
+**Processo:**
+1. Buscar deck pelo `deckId` para obter configurações do agente (idioma, nível, contexto)
+2. Montar prompt: "Explique de forma aprofundada o seguinte flashcard, trazendo exemplos, contexto histórico, dicas de memorização e conexões com outros conceitos. Idioma: {language}. Nível: {level}. Frente: {front}. Verso: {back}."
+3. Chamar IA e retornar `{ "insight": "string" }`
+
+**Saída (erro):**
+
+```json
+{
+  "error": "string"
+}
+```
+
 ---
 
 ## Templates de Agente
@@ -400,6 +470,14 @@ supabase/
 
 ## Comportamento por Feature
 
+### Onboarding
+
+- 4 páginas em `PageView` com indicador de progresso (dots)
+- Conteúdo sugerido: (1) Boas-vindas + proposta de valor, (2) Crie seus decks, (3) Estude com IA, (4) Converse com seu tutor
+- Botão "Pular" disponível nas páginas 1–3
+- Última página tem botão "Começar" → salva `kOnboardingKey = true` no SharedPreferences → navega para `/login`
+- Não exibido após o primeiro acesso completo
+
 ### Auth
 - Sessão persiste após fechar o app
 - Erros de auth exibem mensagem legível (não o erro raw)
@@ -408,26 +486,75 @@ supabase/
 - Autenticado acessando `/login` ou `/register` → `/home`
 
 ### Decks
-- Lista atualiza em tempo real via Stream do Supabase
-- Deletar deck apaga os cards e mensagens via cascade
+- Lista atualiza via `Stream` do Drift (`decksDao.watchAllDecks()`)
+- Ao abrir o app com conexão: busca decks do Supabase e faz upsert no banco Drift local
+- Deletar deck apaga cards locais via `cardsDao.deleteByDeckId(deckId)` antes de deletar do Supabase
 - Grid 2 colunas em telas ≥ 600px
 
 ### Geração de Cards
 - Nenhum card é salvo antes da revisão do usuário
 - O usuário pode editar, remover e adicionar cards na revisão
 - Erros de PDF exibem mensagem específica (protegido, escaneado, muito grande, poucas páginas, texto insuficiente)
+- Requer conexão — exibir aviso e desabilitar botão quando offline
 
 ### Chat
 - Histórico máximo de `kMaxChatMessages` (40) por sessão
 - Ao atingir o limite: aviso + botão "Nova conversa"
 - Indicador de digitação durante loading da resposta
 - Mensagens salvas no Supabase após cada troca
+- Requer conexão — exibir aviso e desabilitar input quando offline
 
-### Estudo
-- Cards sempre embaralhados ao iniciar
-- Flip animado em 350ms
-- Text-to-speech usa o idioma do agente do deck
-- Tela de conclusão com opção de repetir
+### Estudo (offline-first)
+
+- Cards carregados via `cardsDao.watchCardsByDeck(deckId)` (Drift Stream — funciona offline)
+- Ao abrir o deck com conexão: sync Supabase → Drift em background
+- Cards ordenados por `dueDate` (Drift); embaralhados se offline e sem dados locais
+- Flip animado em 350ms ao tocar no card
+- Após revelar o verso, exibir:
+  - Botões de auto-avaliação: **Não sei** / **Difícil** / **Bom** / **Fácil**
+  - Botão **"Ver Insight"** (desabilitado com tooltip se offline)
+- Avaliação calculada localmente → `cardsDao.updateProgress(id, easeFactor, intervalDays, dueDate)` → `syncPending = true`
+- Sync com Supabase em background quando online → `syncPending = false` após confirmação
+- TTS usa o idioma do agente do deck
+- Tela de conclusão com: total de cards estudados, quantos "Não sei", "Difícil", "Bom" e "Fácil", e próxima data de revisão estimada
+- Botão "Estudar novamente" na tela de conclusão
+
+#### Algoritmo de avaliação (simplificado)
+
+| Botão | Ação sobre `interval_days` | Ação sobre `ease_factor` |
+|---|---|---|
+| **Não sei** | `= 1` | `-= 0.2` (mínimo 1.3) |
+| **Difícil** | `= max(1, interval_days - 1)` | `-= 0.15` |
+| **Bom** | `= round(interval_days * ease_factor)` | sem alteração |
+| **Fácil** | `= round(interval_days * ease_factor * 1.3)` | `+= 0.1` |
+
+`due_date = hoje + interval_days`
+
+### Insights de IA
+
+- Acessível via botão "Ver Insight" na tela de estudo, após revelar o verso
+- Navega para `/deck/:deckId/study/insight` passando `{front, back}` como extras de rota
+- Exibe: indicador de loading → conteúdo markdown formatado do insight
+- Em caso de erro de rede: mensagem clara com botão "Tentar novamente"
+- Botão de fechar retorna para a tela de estudo no card atual (sem reiniciar a sessão)
+- Usa a Edge Function `card-insight`
+
+---
+
+## Offline-first — Estratégia Geral
+
+| Dado | Armazenamento local | Sincronização |
+|---|---|---|
+| Decks | Drift `decks` table | Ao abrir app com conexão |
+| Cards | Drift `cards` table | Ao abrir deck com conexão |
+| Progresso de estudo | Drift `cards.syncPending = true` | Background ao recuperar conexão |
+| Onboarding flag | `shared_preferences` (único uso) | Nunca (local only) |
+| Chat messages | Não persistido | Online only |
+| Insights | Não persistido | Online only |
+
+- `connectivity_plus` exposto via `ConnectivityService` (singleton Riverpod provider)
+- `offline_banner.dart`: widget global exibido no topo quando offline
+- Funcionalidades que requerem rede: botão desabilitado + `Tooltip('Requer conexão com a internet')`
 
 ---
 
@@ -460,10 +587,20 @@ supabase/
 
 9. **Nunca hardcodar strings** de rotas, tabelas ou buckets — usar as constantes de `route_constants.dart` e `supabase_constants.dart`.
 
-10. **Nunca salve segredos** (API keys) no código Flutter. As chaves `GEMINI_API_KEY` e `DEEPSEEK_API_KEY` ficam apenas nas Edge Functions.
+10. **Nunca salve segredos** (API keys) no código Flutter. As chaves ficam apenas nas Edge Functions.
 
 11. **Não use `BuildContext`** fora da árvore de widgets.
 
 12. **Não faça chamadas ao Supabase** diretamente nas telas — sempre via repositório.
 
 13. **Não crie providers globais** para estado local de tela.
+
+14. **Offline-first obrigatório para estudo:** Nunca bloquear a tela de estudo por falta de conexão. Salvar progresso no Drift antes de qualquer tentativa de sync remoto.
+
+15. **Não implemente SRS completo.** Usar exclusivamente o algoritmo simplificado dos 4 botões descrito acima.
+
+16. **Drift — regras obrigatórias:**
+    - Nunca modificar arquivos `.g.dart` manualmente
+    - Rodar `flutter pub run build_runner build --delete-conflicting-outputs` após qualquer alteração em tabelas ou DAOs
+    - DAOs retornam `Stream<List<T>>` para listas observáveis e `Future<T>` para operações pontuais
+    - O banco é aberto uma única vez via provider Riverpod e injetado nos repositórios
