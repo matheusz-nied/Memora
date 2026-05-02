@@ -17,7 +17,7 @@ Implementar a base técnica do app seguindo as seções:
 
 Checkpoint: validar que o projeto Flutter está estruturado, dependências configuradas e padrões globais respeitados antes de avançar.
 
-### Etapa 2 — Constantes, tema e responsividade
+### Concluído: Etapa 2 — Constantes, tema e responsividade
 
 Implementar constantes, rotas, design system e helpers responsivos seguindo as seções:
 - [Constantes Globais](#constantes-globais)
