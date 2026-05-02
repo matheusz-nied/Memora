@@ -1,0 +1,300 @@
+{
+  "sp_card_layout": "orbital-glass",
+  "sp_analytics_last_entry_at": 1777723036653,
+  "sp_analytics_last_active_date": "2026-05-02",
+  "sp_search_provider": 0,
+  "sp_categories": [
+    "dev",
+    "trabalho",
+    "entretenimento",
+    "ai",
+    "estudo",
+    "projetos",
+    "social"
+  ],
+  "sp_analytics_open_count": 312,
+  "sp_theme": "premium-dark",
+  "sp_news_topics": [
+    "relevant"
+  ],
+  "sp_sites": [
+    {
+      "name": "Claude",
+      "url": "https://claude.ai/new",
+      "category": "ai",
+      "id": "1777397118983",
+      "order": 0
+    },
+    {
+      "name": "Kimi",
+      "url": "https://www.kimi.com/?chat_enter_method=change_model",
+      "category": "ai",
+      "id": "1777283508595-4",
+      "order": 1
+    },
+    {
+      "name": "Chatgpt",
+      "url": "https://chatgpt.com/",
+      "category": "ai",
+      "id": "1777283508595-2",
+      "order": 2
+    },
+    {
+      "name": "Gemini",
+      "url": "https://gemini.google.com/app?hl=pt-BR",
+      "category": "ai",
+      "id": "1777283508595-3",
+      "order": 3
+    },
+    {
+      "name": "Chat",
+      "url": "https://chat.z.ai/",
+      "category": "ai",
+      "id": "1777283508595-0",
+      "order": 4
+    },
+    {
+      "name": "Codex",
+      "url": "https://chatgpt.com/codex/cloud/settings/analytics#usage",
+      "category": "ai",
+      "id": "1777365866225",
+      "order": 5
+    },
+    {
+      "name": "Opencode",
+      "url": "https://opencode.ai/workspace/wrk_01KNVYMW04V8Y91HB7DPKXDPQA/go",
+      "category": "ai",
+      "id": "1777365860170",
+      "order": 6
+    },
+    {
+      "name": "Windsurf",
+      "url": "https://windsurf.com/subscription/usage",
+      "category": "ai",
+      "id": "1777365877041",
+      "order": 7
+    },
+    {
+      "id": "1",
+      "name": "GitHub",
+      "url": "https://github.com",
+      "category": "dev",
+      "order": 8
+    },
+    {
+      "id": "3",
+      "name": "YouTube",
+      "url": "https://youtube.com",
+      "category": "entretenimento",
+      "order": 9
+    },
+    {
+      "name": "Chat",
+      "url": "https://chat.deepseek.com/",
+      "category": "ai",
+      "id": "1777283508595-1",
+      "order": 10
+    },
+    {
+      "name": "Openrouter",
+      "url": "https://openrouter.ai/chat",
+      "category": "ai",
+      "id": "1777586904262",
+      "order": 11
+    },
+    {
+      "id": "4",
+      "name": "x",
+      "url": "https://x.com",
+      "category": "all",
+      "order": 12
+    },
+    {
+      "name": "Grok",
+      "url": "https://grok.com/",
+      "category": "ai",
+      "id": "1777283508595-5",
+      "order": 13
+    },
+    {
+      "name": "Perplexity",
+      "url": "https://www.perplexity.ai/",
+      "category": "ai",
+      "id": "1777283508595-6",
+      "order": 14
+    },
+    {
+      "name": "Reddit",
+      "url": "https://www.reddit.com/?feed=home",
+      "category": "entretenimento",
+      "id": "1777283517050-0",
+      "order": 15
+    },
+    {
+      "name": "Notebooklm",
+      "url": "https://notebooklm.google.com/",
+      "category": "ai",
+      "id": "1777283508595-7",
+      "order": 16
+    },
+    {
+      "name": "Stitch",
+      "url": "https://stitch.withgoogle.com/",
+      "category": "ai",
+      "id": "1777283508595-8",
+      "order": 17
+    },
+    {
+      "name": "Supabase",
+      "url": "https://supabase.com/dashboard/org/bobvgapgcwzkscmvxefg",
+      "category": "dev",
+      "id": "1777283541868-0",
+      "order": 18
+    },
+    {
+      "name": "Neon",
+      "url": "https://neon.com/",
+      "category": "dev",
+      "id": "1777283541868-1",
+      "order": 19
+    },
+    {
+      "name": "Cloud",
+      "url": "https://cloud.appwrite.io/console/organization-6586ecc971f3bdc6e891",
+      "category": "dev",
+      "id": "1777283541868-2",
+      "order": 20
+    },
+    {
+      "name": "Theus-dev",
+      "url": "https://theus-dev.vercel.app/minimal",
+      "category": "projetos",
+      "id": "1777283562236-0",
+      "order": 21
+    },
+    {
+      "name": "Localhost",
+      "url": "http://localhost:8765/",
+      "category": "projetos",
+      "id": "1777283562236-1",
+      "order": 22
+    },
+    {
+      "name": "Investimentos",
+      "url": "https://docs.google.com/spreadsheets/d/1pqwajO8LWTv3g_TIhrC99i-EwIOhwJdlJ_NyMG8-BRE/edit?gid=715533832#gid=715533832",
+      "category": "projetos",
+      "id": "1777283562236-2",
+      "order": 23
+    },
+    {
+      "name": "IFB",
+      "url": "https://umobidigital.atlassian.net/jira/software/c/projects/PED/boards/93",
+      "category": "trabalho",
+      "id": "1777283612213",
+      "order": 24
+    },
+    {
+      "name": "Fujioka",
+      "url": "https://umobidigital.atlassian.net/jira/software/projects/RF20/boards/98?jql=assignee%20%3D%205fe9d91634847e0069aa1f01",
+      "category": "trabalho",
+      "id": "1777283623880",
+      "order": 25
+    },
+    {
+      "name": "Outlook",
+      "url": "https://outlook.live.com/mail/0/",
+      "category": "trabalho",
+      "id": "1777312121698",
+      "order": 26
+    },
+    {
+      "id": "7",
+      "name": "Gmail",
+      "url": "https://mail.google.com",
+      "category": "trabalho",
+      "order": 27
+    },
+    {
+      "name": "Sigaa",
+      "url": "https://sso.ufg.br/cas/login?locale=pt_BR&service=https%3A%2F%2Fsigaa.sistemas.ufg.br%2Fsigaa%2FverTelaLogin.do",
+      "category": "estudo",
+      "id": "1777328738993",
+      "order": 28
+    },
+    {
+      "name": "Notion",
+      "url": "https://www.notion.so/7b2181d726eb44d9a3be8c0d68d20874?v=1d63433006494f84ac181e2c4dd44cec",
+      "category": "estudo",
+      "id": "1777328747436",
+      "order": 29
+    },
+    {
+      "name": "Whatsapp",
+      "url": "https://web.whatsapp.com/",
+      "category": "social",
+      "id": "1777335632253",
+      "order": 30
+    },
+    {
+      "name": "Instapaper",
+      "url": "https://www.instapaper.com/",
+      "category": "estudo",
+      "id": "1777336963394",
+      "order": 31
+    },
+    {
+      "name": "Replit",
+      "url": "https://replit.com/@m28141489/Prayer-Moments",
+      "category": "ai",
+      "id": "1777283529005-0",
+      "order": 32
+    },
+    {
+      "name": "Lovable",
+      "url": "https://lovable.dev/",
+      "category": "ai",
+      "id": "1777283529005-1",
+      "order": 33
+    },
+    {
+      "id": "8",
+      "name": "Netflix",
+      "url": "https://netflix.com",
+      "category": "entretenimento",
+      "order": 34
+    },
+    {
+      "id": "5",
+      "name": "Reddit",
+      "url": "https://reddit.com",
+      "category": "all",
+      "order": 35
+    },
+    {
+      "id": "6",
+      "name": "LinkedIn",
+      "url": "https://linkedin.com",
+      "category": "trabalho",
+      "order": 36
+    },
+    {
+      "id": "2",
+      "name": "Stack Overflow",
+      "url": "https://stackoverflow.com",
+      "category": "dev",
+      "order": 37
+    },
+    {
+      "name": "ChatLLM",
+      "url": "http://localhost:3000/",
+      "category": "projetos",
+      "id": "1777553329474",
+      "order": 38
+    }
+  ],
+  "sp_deepseek_apikey": "sk-a10979dfd4304c069ac4e10c2819cd63",
+  "sp_analytics_id": "3f63bc23-335e-430f-840f-6621aa33fa0c",
+  "sp_welcome_seen": true,
+  "sp_analytics_active_days_count": 6,
+  "sp_open_in_new_tab": false
+}

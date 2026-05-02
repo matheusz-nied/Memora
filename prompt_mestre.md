@@ -8,7 +8,7 @@ O app funciona em **web, Android e iOS**. É totalmente responsivo e **offline-f
 
 ## Etapas de Execução
 
-### Etapa 1 — Base do projeto
+### Concluído: Etapa 1 — Base do projeto
 
 Implementar a base técnica do app seguindo as seções:
 - [Stack Tecnológica](#stack-tecnológica)
