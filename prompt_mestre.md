@@ -6,6 +6,97 @@ O app funciona em **web, Android e iOS**. É totalmente responsivo e **offline-f
 
 ---
 
+## Etapas de Execução
+
+### Etapa 1 — Base do projeto
+
+Implementar a base técnica do app seguindo as seções:
+- [Stack Tecnológica](#stack-tecnológica)
+- [Estrutura de Pastas](#estrutura-de-pastas)
+- [Padrão de Código](#padrão-de-código)
+
+Checkpoint: validar que o projeto Flutter está estruturado, dependências configuradas e padrões globais respeitados antes de avançar.
+
+### Etapa 2 — Constantes, tema e responsividade
+
+Implementar constantes, rotas, design system e helpers responsivos seguindo as seções:
+- [Constantes Globais](#constantes-globais)
+- [Tema e Design System](#tema-e-design-system)
+- [Rotas](#rotas)
+
+Checkpoint: validar que cores, tipografia, dimensões, rotas, tabelas e buckets usam constantes, sem valores hardcodados.
+
+### Etapa 3 — Banco de dados e offline-first
+
+Implementar Supabase, Drift local, schemas, DAOs, RLS e estratégia de sincronização seguindo as seções:
+- [Banco de Dados](#banco-de-dados)
+- [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
+
+Checkpoint: validar tabelas, banco local, geração Drift e sincronização base antes de avançar.
+
+### Etapa 4 — Onboarding, autenticação e redirecionamento
+
+Implementar fluxo inicial, autenticação e regras de navegação seguindo as seções:
+- [Rotas](#rotas)
+- [Onboarding](#onboarding)
+- [Auth](#auth)
+
+Checkpoint: validar primeiro acesso, flag de onboarding, login, cadastro, recuperação de senha, persistência de sessão e redirects.
+
+### Etapa 5 — Decks e cards
+
+Implementar listagem, criação, edição, exclusão, cache local e sync de decks/cards seguindo as seções:
+- [Decks](#decks)
+- [Banco de Dados](#banco-de-dados)
+- [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
+
+Checkpoint: validar streams Drift, sync com Supabase quando online, delete em cascade e responsividade da grid.
+
+### Etapa 6 — Geração de cards com IA
+
+Implementar importação de texto/PDF, revisão de cards e Edge Function de geração seguindo as seções:
+- [Geração de Cards](#geração-de-cards)
+- [Edge Functions](#edge-functions)
+
+Checkpoint: validar geração online, erros específicos de PDF, revisão antes de salvar e bloqueio adequado quando offline.
+
+### Etapa 7 — Estudo offline-first
+
+Implementar modo estudo, flip, TTS, avaliação, progresso local e sync em background seguindo as seções:
+- [Estudo (offline-first)](#estudo-offline-first)
+- [Algoritmo de avaliação (simplificado)](#algoritmo-de-avaliação-simplificado)
+- [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
+
+Checkpoint: validar estudo funcionando offline, cálculo dos 4 botões, persistência local imediata e sync posterior.
+
+### Etapa 8 — Insights de IA inline
+
+Implementar insight persistente por card e Edge Function `card-insight` seguindo as seções:
+- [Insights de IA (inline, persistentes)](#insights-de-ia-inline-persistentes)
+- [Edge Functions](#edge-functions)
+
+Checkpoint: validar que insight já salvo aparece offline, insight novo exige conexão, salva em Drift + Supabase e nunca é gerado novamente para o mesmo card.
+
+### Etapa 9 — Chat e agente configurável
+
+Implementar templates, configuração do agente, chat online e Edge Function `chat` seguindo as seções:
+- [Templates de Agente](#templates-de-agente)
+- [Chat](#chat)
+- [Edge Functions](#edge-functions)
+
+Checkpoint: validar interpolação de variáveis, limite de mensagens, indicador de digitação, nova conversa e bloqueio quando offline.
+
+### Etapa 10 — Revisão final
+
+Revisar todo o app contra:
+- [Padrão de Código](#padrão-de-código)
+- [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
+- [Comportamento por Feature](#comportamento-por-feature)
+
+Checkpoint: validar loading/error/data, responsividade, touch targets, inputs com fonte 16, ausência de secrets no Flutter, ausência de chamadas diretas ao Supabase nas telas e geração correta dos arquivos Drift.
+
+---
+
 ## Stack Tecnológica
 
 ### Frontend
