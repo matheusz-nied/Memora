@@ -28,11 +28,12 @@ Checkpoint: validar que cores, tipografia, dimensões, rotas, tabelas e buckets 
 
 ### Etapa 3 — Banco de dados e offline-first
 
-Implementar Supabase, Drift local, schemas, DAOs, RLS e estratégia de sincronização seguindo as seções:
+Implementar a camada de backend desacoplada, Supabase como implementação remota inicial, Drift local, schemas, DAOs, RLS e estratégia de sincronização seguindo as seções:
+- [Backend Desacoplado](#backend-desacoplado)
 - [Banco de Dados](#banco-de-dados)
 - [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
 
-Checkpoint: validar tabelas, banco local, geração Drift e sincronização base antes de avançar.
+Checkpoint: validar contratos de backend, provider central, tabelas, banco local, geração Drift e sincronização base antes de avançar.
 
 ### Etapa 4 — Onboarding, autenticação e redirecionamento
 
@@ -50,13 +51,13 @@ Implementar listagem, criação, edição, exclusão, cache local e sync de deck
 - [Banco de Dados](#banco-de-dados)
 - [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
 
-Checkpoint: validar streams Drift, sync com Supabase quando online, delete em cascade e responsividade da grid.
+Checkpoint: validar streams Drift, sync via backend remoto quando online, delete em cascade e responsividade da grid.
 
 ### Etapa 6 — Geração de cards com IA
 
-Implementar importação de texto/PDF, revisão de cards e Edge Function de geração seguindo as seções:
+Implementar importação de texto/PDF, revisão de cards e geração via `AiGateway` seguindo as seções:
 - [Geração de Cards](#geração-de-cards)
-- [Edge Functions](#edge-functions)
+- [Edge Functions — implementação inicial do AiGateway](#edge-functions--implementação-inicial-do-aigateway)
 
 Checkpoint: validar geração online, erros específicos de PDF, revisão antes de salvar e bloqueio adequado quando offline.
 
@@ -71,18 +72,18 @@ Checkpoint: validar estudo funcionando offline, cálculo dos 4 botões, persist�
 
 ### Etapa 8 — Insights de IA inline
 
-Implementar insight persistente por card e Edge Function `card-insight` seguindo as seções:
+Implementar insight persistente por card e geração via `AiGateway` seguindo as seções:
 - [Insights de IA (inline, persistentes)](#insights-de-ia-inline-persistentes)
-- [Edge Functions](#edge-functions)
+- [Edge Functions — implementação inicial do AiGateway](#edge-functions--implementação-inicial-do-aigateway)
 
-Checkpoint: validar que insight já salvo aparece offline, insight novo exige conexão, salva em Drift + Supabase e nunca é gerado novamente para o mesmo card.
+Checkpoint: validar que insight já salvo aparece offline, insight novo exige conexão, salva em Drift + backend remoto e nunca é gerado novamente para o mesmo card.
 
 ### Etapa 9 — Chat e agente configurável
 
-Implementar templates, configuração do agente, chat online e Edge Function `chat` seguindo as seções:
+Implementar templates, configuração do agente, chat online e envio via `AiGateway` seguindo as seções:
 - [Templates de Agente](#templates-de-agente)
 - [Chat](#chat)
-- [Edge Functions](#edge-functions)
+- [Edge Functions — implementação inicial do AiGateway](#edge-functions--implementação-inicial-do-aigateway)
 
 Checkpoint: validar interpolação de variáveis, limite de mensagens, indicador de digitação, nova conversa e bloqueio quando offline.
 
@@ -93,7 +94,7 @@ Revisar todo o app contra:
 - [Offline-first — Estratégia Geral](#offline-first--estratégia-geral)
 - [Comportamento por Feature](#comportamento-por-feature)
 
-Checkpoint: validar loading/error/data, responsividade, touch targets, inputs com fonte 16, ausência de secrets no Flutter, ausência de chamadas diretas ao Supabase nas telas e geração correta dos arquivos Drift.
+Checkpoint: validar loading/error/data, responsividade, touch targets, inputs com fonte 16, ausência de secrets no Flutter, ausência de imports diretos do SDK de backend fora da infraestrutura e geração correta dos arquivos Drift.
 
 ---
 
@@ -118,14 +119,16 @@ Checkpoint: validar loading/error/data, responsividade, touch targets, inputs co
 
 **Dev dependencies:** `drift_dev`, `build_runner`
 
-### Backend
+### Backend remoto inicial
 
 | Tecnologia | Uso |
 |---|---|
-| Supabase Auth | Autenticação |
-| Supabase Postgres | Banco de dados |
-| Supabase Storage | Armazenamento de PDFs |
-| Supabase Edge Functions (Deno) | Chamadas à IA |
+| Supabase Auth | Implementação inicial de autenticação por trás de `AuthGateway` |
+| Supabase Postgres | Implementação inicial do banco remoto por trás de `RemoteDatabaseGateway` |
+| Supabase Storage | Implementação inicial de armazenamento por trás de `StorageGateway` |
+| Supabase Edge Functions (Deno) | Implementação inicial de IA por trás de `AiGateway` |
+
+> Supabase é a infraestrutura remota inicial, não uma dependência direta das telas ou features. O app Flutter depende de contratos internos em `core/backend/`. Para trocar por backend próprio no futuro, substituir a implementação fornecida pelo provider/factory central de `BackendClient`.
 
 ### IA
 
@@ -147,7 +150,23 @@ lib/
 │   ├── constants/
 │   │   ├── app_constants.dart      ← limites, configs globais
 │   │   ├── route_constants.dart    ← nomes das rotas
-│   │   └── supabase_constants.dart ← nomes de tabelas e buckets
+│   │   └── backend_constants.dart  ← nomes neutros de recursos remotos
+│   ├── backend/
+│   │   ├── backend_client.dart     ← contrato agregado do backend remoto
+│   │   ├── backend_provider.dart   ← provider/factory central de BackendClient
+│   │   ├── contracts/
+│   │   │   ├── auth_gateway.dart
+│   │   │   ├── remote_database_gateway.dart
+│   │   │   ├── storage_gateway.dart
+│   │   │   └── ai_gateway.dart
+│   │   ├── models/                ← DTOs remotos neutros
+│   │   └── supabase/              ← implementação inicial com Supabase SDK
+│   │       ├── supabase_backend_client.dart
+│   │       ├── supabase_auth_gateway.dart
+│   │       ├── supabase_remote_database_gateway.dart
+│   │       ├── supabase_storage_gateway.dart
+│   │       ├── supabase_ai_gateway.dart
+│   │       └── supabase_constants.dart
 │   ├── theme/
 │   │   ├── app_theme.dart          ← ThemeData light e dark
 │   │   ├── app_colors.dart         ← paleta de cores centralizada
@@ -184,7 +203,7 @@ lib/
 │   ├── decks/
 │   │   ├── data/
 │   │   │   ├── deck_model.dart
-│   │   │   └── deck_repository.dart    ← cache local + Supabase sync
+│   │   │   └── deck_repository.dart    ← cache local + sync remoto via contratos
 │   │   └── presentation/
 │   │       ├── home_screen.dart
 │   │       ├── deck_screen.dart
@@ -195,7 +214,7 @@ lib/
 │   ├── cards/
 │   │   ├── data/
 │   │   │   ├── card_model.dart         ← inclui ease_factor, interval_days, due_date
-│   │   │   └── card_repository.dart    ← cache local + Supabase sync
+│   │   │   └── card_repository.dart    ← cache local + sync remoto via contratos
 │   │   └── presentation/
 │   │       └── widgets/
 │   │           ├── card_list_item.dart
@@ -240,6 +259,83 @@ supabase/
 
 ---
 
+## Backend Desacoplado
+
+O Flutter nunca deve depender diretamente do Supabase fora de `lib/core/backend/supabase/`. Supabase é apenas a implementação remota inicial. O restante do app usa contratos neutros e repositories de feature.
+
+**Fluxo obrigatório:**
+
+```text
+UI
+→ Feature Repository
+→ Core Backend Contracts
+→ BackendClient atual
+→ SDK/API da infraestrutura remota
+```
+
+**Troca futura de backend:**
+
+```text
+UI
+→ Feature Repository
+→ Core Backend Contracts
+→ CustomBackendClient
+→ API própria
+```
+
+### Contratos mínimos
+
+```dart
+abstract interface class BackendClient {
+  AuthGateway get auth;
+  RemoteDatabaseGateway get database;
+  StorageGateway get storage;
+  AiGateway get ai;
+}
+```
+
+```dart
+abstract interface class AuthGateway {
+  Stream<AuthSession?> watchSession();
+  Future<AuthSession?> currentSession();
+  Future<void> signIn(String email, String password);
+  Future<void> signUp(String email, String password);
+  Future<void> resetPassword(String email);
+  Future<void> signOut();
+}
+```
+
+```dart
+abstract interface class RemoteDatabaseGateway {
+  Future<List<RemoteDeck>> fetchDecks();
+  Future<void> upsertDeck(RemoteDeck deck);
+  Future<void> deleteDeck(String deckId);
+
+  Future<List<RemoteCard>> fetchCards(String deckId);
+  Future<void> upsertCards(List<RemoteCard> cards);
+  Future<void> updateCardProgress(CardProgressSyncPayload payload);
+  Future<void> updateCardInsight(String cardId, String insight);
+}
+```
+
+```dart
+abstract interface class AiGateway {
+  Future<List<GeneratedCardPayload>> generateCards(GenerateCardsRequest request);
+  Future<String> sendChatMessage(ChatRequest request);
+  Future<String> generateCardInsight(CardInsightRequest request);
+}
+```
+
+```dart
+abstract interface class StorageGateway {
+  Future<StoredFile> uploadPdf(PdfUploadRequest request);
+}
+```
+
+`backendClientProvider` é o único ponto que escolhe a implementação ativa. Inicialmente ele retorna `SupabaseBackendClient`. Para migrar para backend próprio, trocar esse provider/factory para retornar `CustomBackendClient`, mantendo telas, widgets, DAOs e repositories de feature sem saber qual infraestrutura remota está em uso.
+
+---
+
 ## Rotas
 
 | Rota | Tela |
@@ -266,7 +362,9 @@ supabase/
 
 ## Banco de Dados
 
-### Tabela: `decks`
+As tabelas abaixo descrevem o schema remoto inicial no Supabase. O domínio do app e os repositories devem usar modelos neutros; Supabase Postgres é apenas o destino remoto atual do sync via `RemoteDatabaseGateway`.
+
+### Tabela remota inicial: `decks`
 
 | Coluna | Tipo | Flags |
 |---|---|---|
@@ -282,7 +380,7 @@ supabase/
 | `created_at` | timestamptz | DEFAULT now() |
 | `updated_at` | timestamptz | DEFAULT now() |
 
-### Tabela: `cards` (Supabase)
+### Tabela remota inicial: `cards`
 
 | Coluna | Tipo | Flags |
 |---|---|---|
@@ -303,9 +401,9 @@ supabase/
 
 **CardsTable:** id (TEXT PK), deckId (TEXT), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), insight (TEXT nullable), createdAt (INTEGER), updatedAt (INTEGER)
 
-> `syncPending = true` indica que o progresso de avaliação foi salvo localmente mas ainda não foi enviado ao Supabase. O sync ocorre em background quando a conexão é restaurada. O campo `insight` é sincronizado para o Supabase após a geração e nunca é apagado.
+> `syncPending = true` indica que o progresso de avaliação foi salvo localmente mas ainda não foi enviado ao backend remoto. O sync ocorre em background quando a conexão é restaurada. O campo `insight` é sincronizado para o backend remoto após a geração e nunca é apagado.
 
-### Tabela: `chat_messages`
+### Tabela remota inicial: `chat_messages`
 
 | Coluna | Tipo | Flags |
 |---|---|---|
@@ -316,7 +414,7 @@ supabase/
 | `content` | text | NOT NULL |
 | `created_at` | timestamptz | DEFAULT now() |
 
-> **RLS:** Todas as tabelas com Row Level Security ativo. Acesso restrito a registros onde `user_id = auth.uid()`. Para `cards` e `chat_messages`, verificado via join com `decks`. Nunca desativar RLS nem criar políticas permissivas demais.
+> **RLS:** Na implementação Supabase, todas as tabelas têm Row Level Security ativo. Acesso restrito a registros onde `user_id = auth.uid()`. Para `cards` e `chat_messages`, verificado via join com `decks`. Nunca desativar RLS nem criar políticas permissivas demais. Em backend próprio futuro, manter isolamento equivalente por usuário no servidor.
 
 ---
 
@@ -338,7 +436,7 @@ supabase/
 | `kContentMaxWidth` | 640.0 | Largura máxima do conteúdo web |
 | `kOnboardingKey` | `'onboarding_complete'` | Flag de onboarding no SharedPreferences (único uso) |
 
-### `supabase_constants.dart`
+### `backend_constants.dart`
 
 | Constante | Valor |
 |---|---|
@@ -346,6 +444,8 @@ supabase/
 | `kTableCards` | `'cards'` |
 | `kTableChatMessages` | `'chat_messages'` |
 | `kBucketPdfs` | `'pdfs'` |
+
+> Constantes específicas do Supabase ficam em `lib/core/backend/supabase/supabase_constants.dart` e não devem ser importadas por telas, widgets ou repositories de feature.
 
 ### `route_constants.dart`
 
@@ -453,7 +553,9 @@ supabase/
 
 ---
 
-## Edge Functions
+## Edge Functions — implementação inicial do AiGateway
+
+As Edge Functions abaixo são a implementação inicial do `AiGateway` no adaptador Supabase. Telas e repositories de feature não chamam Edge Functions diretamente; eles chamam `AiGateway`.
 
 ### `generate-cards`
 
@@ -580,8 +682,8 @@ supabase/
 
 ### Decks
 - Lista atualiza via `Stream` do Drift (`decksDao.watchAllDecks()`)
-- Ao abrir o app com conexão: busca decks do Supabase e faz upsert no banco Drift local
-- Deletar deck apaga cards locais via `cardsDao.deleteByDeckId(deckId)` antes de deletar do Supabase
+- Ao abrir o app com conexão: busca decks via `RemoteDatabaseGateway` e faz upsert no banco Drift local
+- Deletar deck apaga cards locais via `cardsDao.deleteByDeckId(deckId)` antes de deletar no backend remoto
 - Grid 2 colunas em telas ≥ 600px
 
 ### Geração de Cards
@@ -594,20 +696,20 @@ supabase/
 - Histórico máximo de `kMaxChatMessages` (40) por sessão
 - Ao atingir o limite: aviso + botão "Nova conversa"
 - Indicador de digitação durante loading da resposta
-- Mensagens salvas no Supabase após cada troca
+- Mensagens salvas no backend remoto após cada troca
 - Requer conexão — exibir aviso e desabilitar input quando offline
 
 ### Estudo (offline-first)
 
 - Cards carregados via `cardsDao.watchCardsByDeck(deckId)` (Drift Stream — funciona offline)
-- Ao abrir o deck com conexão: sync Supabase → Drift em background
+- Ao abrir o deck com conexão: sync backend remoto → Drift em background
 - Cards ordenados por `dueDate` (Drift); embaralhados se offline e sem dados locais
 - Flip animado em 350ms ao tocar no card
 - Após revelar o verso, exibir:
   - Botões de auto-avaliação: **Não sei** / **Difícil** / **Bom** / **Fácil**
   - Botão **"Ver Insight"** (desabilitado com tooltip se offline)
 - Avaliação calculada localmente → `cardsDao.updateProgress(id, easeFactor, intervalDays, dueDate)` → `syncPending = true`
-- Sync com Supabase em background quando online → `syncPending = false` após confirmação
+- Sync com backend remoto em background quando online → `syncPending = false` após confirmação
 - TTS usa o idioma do agente do deck
 - Tela de conclusão com: total de cards estudados, quantos "Não sei", "Difícil", "Bom" e "Fácil", e próxima data de revisão estimada
 - Botão "Estudar novamente" na tela de conclusão
@@ -630,10 +732,10 @@ supabase/
   - **`insight != null`** → exibe o conteúdo imediatamente, sem nenhuma chamada à IA
   - **`insight == null`** → exibe botão "Gerar Insight"
     - Se offline: botão desabilitado com `Tooltip('Requer conexão com a internet')`
-    - Se online: ao clicar, exibe shimmer/loading → chama Edge Function `card-insight` → salva o texto retornado em `cards.insight` no Drift (local) e faz sync para o Supabase → exibe o insight
+    - Se online: ao clicar, exibe shimmer/loading → chama `AiGateway.generateCardInsight` → salva o texto retornado em `cards.insight` no Drift (local) e faz sync para o backend remoto → exibe o insight
 - O insight é permanente: uma vez gerado, está disponível para sempre, inclusive offline
 - O usuário nunca é forçado a gerar o insight; é opt-in
-- Usa a Edge Function `card-insight`
+- Usa `AiGateway.generateCardInsight`; na implementação inicial, o adaptador Supabase chama a Edge Function `card-insight`
 
 ---
 
@@ -646,7 +748,7 @@ supabase/
 | Progresso de estudo | Drift `cards.syncPending = true` | Background ao recuperar conexão |
 | Onboarding flag | `shared_preferences` (único uso) | Nunca (local only) |
 | Chat messages | Não persistido | Online only |
-| Insights gerados | Drift `cards.insight` + Supabase | Gerado uma vez, persiste para sempre |
+| Insights gerados | Drift `cards.insight` + backend remoto | Gerado uma vez, persiste para sempre |
 
 - `connectivity_plus` exposto via `ConnectivityService` (singleton Riverpod provider)
 - `offline_banner.dart`: widget global exibido no topo quando offline
@@ -681,13 +783,13 @@ supabase/
 
 8. **Touch targets mínimos de 48px** em botões, ícones clicáveis e itens de lista.
 
-9. **Nunca hardcodar strings** de rotas, tabelas ou buckets — usar as constantes de `route_constants.dart` e `supabase_constants.dart`.
+9. **Nunca hardcodar strings** de rotas, recursos remotos, tabelas ou buckets — usar `route_constants.dart` e `backend_constants.dart`. Constantes Supabase-specific só podem existir dentro de `core/backend/supabase/`.
 
-10. **Nunca salve segredos** (API keys) no código Flutter. As chaves ficam apenas nas Edge Functions.
+10. **Nunca salve segredos** (API keys) no código Flutter. As chaves ficam apenas no backend remoto ou nas Edge Functions da implementação Supabase.
 
 11. **Não use `BuildContext`** fora da árvore de widgets.
 
-12. **Não faça chamadas ao Supabase** diretamente nas telas — sempre via repositório.
+12. **Não faça chamadas ao SDK de backend diretamente nas telas.** Telas usam repositories; repositories usam contratos de `core/backend/`.
 
 13. **Não crie providers globais** para estado local de tela.
 
@@ -700,3 +802,9 @@ supabase/
     - Rodar `flutter pub run build_runner build --delete-conflicting-outputs` após qualquer alteração em tabelas ou DAOs
     - DAOs retornam `Stream<List<T>>` para listas observáveis e `Future<T>` para operações pontuais
     - O banco é aberto uma única vez via provider Riverpod e injetado nos repositórios
+
+17. **Backend desacoplado — regras obrigatórias:**
+    - Nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`
+    - `supabase_flutter` só pode ser importado dentro de `lib/core/backend/supabase/`
+    - Repositories de feature dependem de `BackendClient`/gateways por provider/injeção
+    - A troca futura de backend deve ocorrer no provider/factory central de `BackendClient`, sem alterar UI ou regras de domínio

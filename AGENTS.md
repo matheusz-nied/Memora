@@ -6,17 +6,18 @@ Leia este arquivo por completo antes de escrever qualquer código.
 
 Memora — plataforma de aprendizado personalizado com IA. Decks de flashcards, geração de cards via IA (texto/PDF), estudo com avaliação de desempenho, insights de IA por card e chat com agente configurável por deck.
 
-**Plataformas:** Web, Android, iOS (Flutter) | **Backend:** Supabase | **IA:** DeepSeek-chat (fallback: Gemini 1.5 Flash)
+**Plataformas:** Web, Android, iOS (Flutter) | **Backend remoto inicial:** Supabase via camada de abstração | **IA:** DeepSeek-chat (fallback: Gemini 1.5 Flash)
 
 ## Stack
 
-Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flutter_tts, file_picker, pdfx, shimmer, drift, drift_flutter, shared_preferences (somente flag de onboarding), connectivity_plus, Supabase (Auth, Postgres, Storage, Edge Functions/Deno)
+Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flutter_tts, file_picker, pdfx, shimmer, drift, drift_flutter, shared_preferences (somente flag de onboarding), connectivity_plus, Supabase como implementação inicial de backend remoto (Auth, Postgres, Storage, Edge Functions/Deno) por trás de contratos internos em `core/backend/`
 
 **Dev dependencies:** drift_dev, build_runner
 
 ## Estrutura de pastas
 
-- `lib/core/constants/` — app_constants, route_constants, supabase_constants
+- `lib/core/constants/` — app_constants, route_constants, backend_constants
+- `lib/core/backend/` — backend_client, backend_provider, contracts/auth_gateway, contracts/remote_database_gateway, contracts/storage_gateway, contracts/ai_gateway, models neutros, supabase/ com implementação inicial
 - `lib/core/theme/` — app_theme, app_colors, app_typography, app_dimensions
 - `lib/core/utils/` — responsive, validators, connectivity_service
 - `lib/core/widgets/` — app_button, app_input, app_card, empty_state, error_state, loading_state, offline_banner
@@ -28,19 +29,37 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 - `lib/features/generate/` — generate_repository, import_content_screen, review_cards_screen
 - `lib/features/agent/` — agent_templates, agent_repository, chat_screen, agent_config_screen
 - `lib/features/study/` — study_screen, card_rating_model, study_session_model, widgets/insight_widget
-- `supabase/functions/` — generate-cards/index.ts, chat/index.ts
+- `supabase/functions/` — generate-cards/index.ts, chat/index.ts, card-insight/index.ts (implementação inicial do `AiGateway`)
 
 ## Regras invioláveis
 
 1. **Nunca hardcodar valores visuais** — usar `AppColors`, `AppTypography`, `AppDimensions`
-2. **Nunca hardcodar strings** — usar `RouteConstants` e `SupabaseConstants`
-3. **Toda tela com dados do Supabase deve ter 3 estados:** loading → error → data
+2. **Nunca hardcodar strings** — usar `RouteConstants` e constantes neutras de backend; constantes Supabase ficam apenas no adaptador Supabase
+3. **Toda tela com dados remotos deve ter 3 estados:** loading → error → data
 4. **Responsividade obrigatória** — conteúdo centralizado com `maxWidth: kContentMaxWidth` acima de 640px; usar `Responsive.isMobile/isTablet/isDesktop`
 5. **Inputs com `fontSize: 16`** (evita zoom no iOS)
 6. **Touch targets mínimos de 48px**
 7. **Widgets > 100 linhas** → extrair para `widgets/` da feature
-8. **Offline-first:** toda escrita vai primeiro no banco Drift local; sync com Supabase é secundário. Nunca bloquear UX por falta de rede.
+8. **Offline-first:** toda escrita vai primeiro no banco Drift local; sync com backend remoto é secundário. Nunca bloquear UX por falta de rede.
 9. **Nunca gerar código Drift manualmente** — usar `flutter pub run build_runner build` para gerar os arquivos `.g.dart`.
+10. **Backend desacoplado:** nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`; somente `lib/core/backend/supabase/` pode conhecer o SDK Supabase.
+
+## Backend desacoplado
+
+Supabase é a implementação remota inicial, não uma dependência direta do app. O restante do Flutter depende de contratos internos:
+
+```text
+UI → Feature Repository → Core Backend Contracts → BackendClient atual → SDK/API remota
+```
+
+Contratos mínimos:
+- `BackendClient` agrega `AuthGateway`, `RemoteDatabaseGateway`, `StorageGateway` e `AiGateway`
+- `AuthGateway` cobre sessão, login, cadastro, recuperação de senha e logout
+- `RemoteDatabaseGateway` cobre fetch/upsert/delete remoto de decks/cards, progresso e insight
+- `StorageGateway` cobre upload remoto de PDF
+- `AiGateway` cobre gerar cards, chat e insight
+
+`backendClientProvider` é o único ponto que escolhe a implementação ativa. Inicialmente retorna `SupabaseBackendClient`. Para migrar para backend próprio, trocar esse provider/factory para `CustomBackendClient`; telas, widgets, DAOs, repositories de feature e regras de domínio não devem saber qual infraestrutura remota está em uso.
 
 ## Constantes
 
@@ -74,15 +93,17 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 
 **chat_messages:** id uuid PK, deck_id FK→decks(cascade), user_id FK→auth.users(cascade), role CHECK('user'|'assistant'), content NOT NULL, created_at
 
-**RLS ativo em todas as tabelas.** Acesso restrito a `user_id = auth.uid()`. Para cards/chat_messages, via join com decks. Nunca desativar RLS.
+**RLS ativo em todas as tabelas na implementação Supabase.** Acesso restrito a `user_id = auth.uid()`. Para cards/chat_messages, via join com decks. Nunca desativar RLS. Em backend próprio futuro, manter isolamento equivalente por usuário no servidor.
 
 ## Edge Functions
+
+As Edge Functions são a implementação inicial do `AiGateway` no adaptador Supabase. Telas e repositories de feature não chamam Edge Functions diretamente; eles chamam `AiGateway`.
 
 **generate-cards:** entrada `{text, quantity, deckId}` | validações: text 100-4000 chars, quantity [5,10,15], JWT válido | saída `{cards: [{front, back}]}` ou `{error}`
 
 **chat:** entrada `{deckId, messages, userMessage}` | busca deck + últimos 20 cards → substitui `{name}`, `{deck_title}`, `{deck_context}`, `{language}`, `{level}` no agent_prompt → chama IA → retorna `{reply}`
 
-**card-insight:** entrada `{front, back, deckId}` | busca configurações do agente do deck → gera explicação aprofundada sobre o card → retorna `{insight}`. Requer conectividade. O insight retornado é salvo imediatamente na coluna `insight` da tabela `cards` (Drift local + sync Supabase) para nunca ser gerado novamente.
+**card-insight:** entrada `{front, back, deckId}` | busca configurações do agente do deck → gera explicação aprofundada sobre o card → retorna `{insight}`. Requer conectividade. O insight retornado é salvo imediatamente na coluna `insight` da tabela `cards` (Drift local + sync remoto via `RemoteDatabaseGateway`) para nunca ser gerado novamente.
 
 ## Rotas
 
@@ -101,7 +122,7 @@ Definidos em `agent_templates.dart`: `general` (Tutor Geral), `english` (Profess
 
 - **Onboarding:** 4 páginas em PageView (proposta de valor + features); controlado por flag `kOnboardingKey` no `shared_preferences` (único uso de shared_preferences no app); skip disponível na página 1-3; último slide tem botão "Começar" → `/login`
 - **Auth:** sessão persiste, erros legíveis, logout → `/login`
-- **Decks:** lista atualiza via Stream do Drift (`watchAllDecks()`); sync com Supabase quando online; delete em cascade; grid 2 colunas ≥600px
+- **Decks:** lista atualiza via Stream do Drift (`watchAllDecks()`); sync via `RemoteDatabaseGateway` quando online; delete em cascade; grid 2 colunas ≥600px
 - **Geração:** cards só salvos após revisão; erros de PDF específicos; requer conexão (aviso explícito offline)
 - **Chat:** máximo `kMaxChatMessages` por sessão, aviso + "Nova conversa" no limite, indicador de digitação; requer conexão (aviso explícito offline)
 - **Estudo (offline-first):**
@@ -115,7 +136,7 @@ Definidos em `agent_templates.dart`: `general` (Tutor Geral), `english` (Profess
   - **Insight inline:** após revelar o verso, a área de insight aparece na mesma tela (`insight_widget`)
     - Se `card.insight != null` → exibe o insight imediatamente (sem chamada à IA)
     - Se `card.insight == null` → exibe botão "Gerar Insight" (desabilitado com tooltip se offline)
-    - Ao gerar: mostra shimmer/loading → salva o insight na coluna `insight` do card (Drift local + sync Supabase) → exibe o conteúdo
+    - Ao gerar: mostra shimmer/loading → salva o insight na coluna `insight` do card (Drift local + sync remoto via `RemoteDatabaseGateway`) → exibe o conteúdo
     - O insight gerado persiste para sempre; o usuário nunca precisa gerá-lo novamente
 - **Insights:** exibidos inline na tela de resposta do flashcard via `insight_widget.dart`; sem rota separada; persistidos na coluna `insight` do card
 
@@ -133,8 +154,8 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 - `due_date = today + interval_days`
 - Salvar no banco Drift local imediatamente via `cardsDao.updateProgress(cardId, easeFactor, intervalDays, dueDate)`
 - Marcar o card com `syncPending = true` no Drift
-- Sincronizar com Supabase (`cards.ease_factor`, `cards.interval_days`, `cards.due_date`) quando online; após sync, setar `syncPending = false`
-- Colunas `ease_factor`, `interval_days`, `due_date` devem existir tanto na tabela Drift quanto na tabela Supabase `cards`
+- Sincronizar com backend remoto (`cards.ease_factor`, `cards.interval_days`, `cards.due_date`) quando online via `RemoteDatabaseGateway`; após sync, setar `syncPending = false`
+- Colunas `ease_factor`, `interval_days`, `due_date` devem existir tanto na tabela Drift quanto na tabela remota inicial `cards`
 
 ## Offline-first — Estratégia geral
 
@@ -145,7 +166,7 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 | Progresso de estudo | Drift (`cards.syncPending = true`) | Background ao recuperar conexão |
 | Onboarding flag | `shared_preferences` | Nunca (local only) |
 | Chat messages | Não persiste offline | Online only |
-| Insights gerados | Drift (`cards.insight`) + Supabase | Gerado uma vez, persiste para sempre |
+| Insights gerados | Drift (`cards.insight`) + backend remoto | Gerado uma vez, persiste para sempre |
 
 ## Banco Drift local — Schema
 
@@ -166,10 +187,11 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 
 ## O que não fazer
 
-- Não salve API keys no código Flutter (ficam nas Edge Functions)
+- Não salve API keys no código Flutter (ficam no backend remoto ou nas Edge Functions da implementação Supabase)
 - Não crie arquivos de tema fora de `core/theme/`
 - Não use `BuildContext` fora da árvore de widgets
-- Não chame Supabase diretamente nas telas — use repositórios
+- Não chame SDK de backend diretamente nas telas — use repositórios
+- Não importe `supabase_flutter` fora de `lib/core/backend/supabase/`
 - Não crie providers globais para estado local de tela
 - Não avance sem checkpoint aprovado pelo desenvolvedor
 - Não bloqueie a tela de estudo por falta de conexão
