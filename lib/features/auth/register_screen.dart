@@ -186,6 +186,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: _submit,
               isLoading: _isLoading,
             ),
+            if (_successMessage != null) ...[
+              const SizedBox(height: AppDimensions.md),
+              TextButton(
+                onPressed: _isLoading
+                    ? null
+                    : () => context.go(RouteConstants.kRouteLogin),
+                child: const Text(AuthText.goToLogin),
+              ),
+            ],
           ],
         ),
       ),

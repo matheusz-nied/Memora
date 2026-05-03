@@ -5,4 +5,5 @@ class BackendConstants {
   static const String kTableCards = 'cards';
   static const String kTableChatMessages = 'chat_messages';
   static const String kBucketPdfs = 'pdfs';
+  static const String kAuthRedirectUrl = 'com.example.memora://auth-callback';
 }

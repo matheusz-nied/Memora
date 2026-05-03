@@ -29,7 +29,7 @@ class SupabaseBackendClient implements BackendClient {
       await dotenv.load(fileName: '.env', isOptional: true);
     }
 
-    final url = dotenv.maybeGet(_envSupabaseUrl);
+    final url = _normalizeSupabaseUrl(dotenv.maybeGet(_envSupabaseUrl));
     final anonKey = dotenv.maybeGet(_envSupabaseAnonKey);
 
     if (url == null || url.isEmpty || anonKey == null || anonKey.isEmpty) {
@@ -61,4 +61,19 @@ class SupabaseBackendClient implements BackendClient {
 
   @override
   final AiGateway ai;
+}
+
+String? _normalizeSupabaseUrl(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return null;
+  }
+
+  final uri = Uri.tryParse(trimmed);
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+    return trimmed;
+  }
+
+  final port = uri.hasPort ? ':${uri.port}' : '';
+  return '${uri.scheme}://${uri.host}$port';
 }

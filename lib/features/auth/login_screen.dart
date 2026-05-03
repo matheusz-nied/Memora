@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:memora/core/theme/app_colors.dart';
 
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_dimensions.dart';
@@ -111,8 +112,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: TextButton(
                 onPressed: _isLoading
                     ? null
-                    : () => context.go(RouteConstants.kRouteForgotPass),
-                child: const Text(AuthText.forgotPassword),
+                    : () => context.push(RouteConstants.kRouteForgotPass),
+                child: const Text(
+                  AuthText.forgotPassword,
+                  style: TextStyle(color: AppColors.textTertiary),
+                ),
               ),
             ),
             const SizedBox(height: AppDimensions.md),
@@ -136,7 +140,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: _isLoading
                       ? null
                       : () => context.go(RouteConstants.kRouteRegister),
-                  child: const Text(AuthText.createAccount),
+                  child: Text(
+                    AuthText.createAccount,
+                    style: TextStyle(color: AppColors.textTertiary),
+                  ),
                 ),
               ],
             ),

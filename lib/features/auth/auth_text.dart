@@ -32,6 +32,7 @@ class AuthText {
   static const String signIn = 'Entrar';
   static const String checkEmail =
       'Cadastro criado. Verifique seu email para confirmar a conta.';
+  static const String goToLogin = 'Ir para login';
 
   static const String forgotTitle = 'Recuperar senha';
   static const String forgotSubtitle =

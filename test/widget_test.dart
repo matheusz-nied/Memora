@@ -134,6 +134,34 @@ void main() {
     expect(find.text(RouteConstants.kRouteHome), findsOneWidget);
   });
 
+  testWidgets('register without immediate session asks user to check email', (
+    tester,
+  ) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+    final backend = _FakeBackendClient(signUpReturnsSession: false);
+
+    await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text(AuthText.createAccount));
+    await tester.tap(find.text(AuthText.createAccount));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'Jane Doe');
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'jane@example.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(2), '123456');
+    await tester.enterText(find.byType(TextFormField).at(3), '123456');
+    await tester.ensureVisible(find.text(AuthText.registerAction));
+    await tester.tap(find.text(AuthText.registerAction));
+    await tester.pumpAndSettle();
+
+    expect(backend.auth.signUpCount, 1);
+    expect(find.text(AuthText.checkEmail), findsOneWidget);
+    expect(find.text(AuthText.goToLogin), findsOneWidget);
+  });
+
   testWidgets('social login buttons are visible but disabled', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
 
@@ -181,8 +209,13 @@ final _session = BackendSession(
 );
 
 class _FakeBackendClient implements BackendClient {
-  _FakeBackendClient({BackendSession? initialSession})
-    : auth = _FakeAuthGateway(initialSession);
+  _FakeBackendClient({
+    BackendSession? initialSession,
+    bool signUpReturnsSession = true,
+  }) : auth = _FakeAuthGateway(
+         initialSession,
+         signUpReturnsSession: signUpReturnsSession,
+       );
 
   @override
   final _FakeAuthGateway auth;
@@ -198,9 +231,10 @@ class _FakeBackendClient implements BackendClient {
 }
 
 class _FakeAuthGateway implements AuthGateway {
-  _FakeAuthGateway(this._session);
+  _FakeAuthGateway(this._session, {required this.signUpReturnsSession});
 
   final _controller = StreamController<BackendSession?>.broadcast();
+  final bool signUpReturnsSession;
   BackendSession? _session;
   int signInCount = 0;
   int signUpCount = 0;
@@ -231,6 +265,9 @@ class _FakeAuthGateway implements AuthGateway {
   }) async {
     signUpCount += 1;
     lastDisplayName = displayName;
+    if (!signUpReturnsSession) {
+      return null;
+    }
     _session = _sessionFor(email, displayName: displayName);
     _controller.add(_session);
     return _session;
