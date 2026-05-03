@@ -8,6 +8,10 @@ Memora — plataforma de aprendizado personalizado com IA. Decks de flashcards, 
 
 **Plataformas:** Web, Android, iOS (Flutter) | **Backend remoto inicial:** Supabase via camada de abstração | **IA:** DeepSeek-chat (fallback: Gemini 1.5 Flash)
 
+## Referência visual
+
+Existe um design inicial feito no Stitch em `memora_view_design/`, com imagens e HTML de cada view. As telas Flutter não precisam copiar o design literalmente, mas devem manter a direção visual, hierarquia, espaçamentos, componentes e intenção de UX dessa referência. Melhorias são permitidas quando deixarem a experiência mais consistente, responsiva, acessível ou alinhada ao design system do projeto.
+
 ## Stack
 
 Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flutter_tts, file_picker, pdfx, shimmer, drift, drift_flutter, shared_preferences (somente flag de onboarding), connectivity_plus, Supabase como implementação inicial de backend remoto (Auth, Postgres, Storage, Edge Functions/Deno) por trás de contratos internos em `core/backend/`
