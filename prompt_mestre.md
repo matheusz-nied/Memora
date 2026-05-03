@@ -26,7 +26,7 @@ Implementar constantes, rotas, design system e helpers responsivos seguindo as s
 
 Checkpoint: validar que cores, tipografia, dimensões, rotas, tabelas e buckets usam constantes, sem valores hardcodados.
 
-### Etapa 3 — Banco de dados e offline-first
+### Concluído: Etapa 3 — Banco de dados e offline-first
 
 Implementar a camada de backend desacoplada, Supabase como implementação remota inicial, Drift local, schemas, DAOs, RLS e estratégia de sincronização seguindo as seções:
 - [Backend Desacoplado](#backend-desacoplado)
@@ -35,7 +35,7 @@ Implementar a camada de backend desacoplada, Supabase como implementação remot
 
 Checkpoint: validar contratos de backend, provider central, tabelas, banco local, geração Drift e sincronização base antes de avançar.
 
-### Etapa 4 — Onboarding, autenticação e redirecionamento
+### Concluído: Etapa 4 — Onboarding, autenticação e redirecionamento
 
 Implementar fluxo inicial, autenticação e regras de navegação seguindo as seções:
 - [Rotas](#rotas)
