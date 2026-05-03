@@ -13,6 +13,7 @@ abstract interface class AuthGateway {
   Future<BackendSession?> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   });
 
   Future<void> resetPasswordForEmail(String email);

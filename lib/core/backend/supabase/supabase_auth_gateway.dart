@@ -42,10 +42,15 @@ class SupabaseAuthGateway implements AuthGateway {
   Future<BackendSession?> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
+    final trimmedDisplayName = displayName?.trim();
     final response = await _client.auth.signUp(
       email: email,
       password: password,
+      data: trimmedDisplayName == null || trimmedDisplayName.isEmpty
+          ? null
+          : {'display_name': trimmedDisplayName, 'name': trimmedDisplayName},
     );
     return _sessionFromSupabase(response.session);
   }
@@ -65,9 +70,17 @@ class SupabaseAuthGateway implements AuthGateway {
       return null;
     }
 
+    final metadata = session.user.userMetadata;
+    final displayName =
+        metadata?['display_name']?.toString() ?? metadata?['name']?.toString();
+
     return BackendSession(
       accessToken: session.accessToken,
-      user: BackendUser(id: session.user.id, email: session.user.email),
+      user: BackendUser(
+        id: session.user.id,
+        email: session.user.email,
+        displayName: displayName,
+      ),
     );
   }
 }

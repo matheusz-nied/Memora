@@ -9,6 +9,9 @@ class AppDimensions {
   static const double xxl = 24.0;
   static const double xxxl = 32.0;
   static const double huge = 48.0;
+  static const double onboardingHeroSize = 180.0;
+  static const double authMaxWidth = 448.0;
+  static const double authFormMaxWidth = 384.0;
 
   static const double radiusSm = 8.0;
   static const double radiusMd = 12.0;

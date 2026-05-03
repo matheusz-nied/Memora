@@ -8,69 +8,157 @@ import 'core/sync/app_sync_service.dart';
 import 'core/theme/app_dimensions.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/responsive.dart';
+import 'features/auth/auth_repository.dart';
+import 'features/auth/forgot_password_screen.dart';
+import 'features/auth/login_screen.dart';
+import 'features/auth/register_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
+import 'features/onboarding/onboarding_state.dart';
+
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final authRepository = ref.read(authRepositoryProvider);
+  final notifier = _RouterRefreshNotifier(
+    onboardingCompleted: ref.read(onboardingCompletedProvider),
+    isAuthenticated: authRepository.currentSession != null,
+  );
+
+  ref.listen<bool>(onboardingCompletedProvider, (previous, next) {
+    notifier.updateOnboardingCompleted(next);
+  });
+  ref.listen(authStateProvider, (previous, next) {
+    final isAuthenticated = next.maybeWhen(
+      data: (session) => session != null,
+      orElse: () => ref.read(authRepositoryProvider).currentSession != null,
+    );
+    notifier.updateIsAuthenticated(isAuthenticated);
+  });
+
+  final router = GoRouter(
+    refreshListenable: notifier,
+    initialLocation: RouteConstants.kRouteHome,
+    redirect: (context, state) => _redirect(state, notifier),
+    routes: _routes,
+  );
+  ref.onDispose(router.dispose);
+  ref.onDispose(notifier.dispose);
+  return router;
+});
+
+String? _redirect(GoRouterState state, _RouterRefreshNotifier notifier) {
+  final path = state.uri.path;
+  final isOnboardingRoute = path == RouteConstants.kRouteOnboarding;
+  final isAuthRoute =
+      path == RouteConstants.kRouteLogin ||
+      path == RouteConstants.kRouteRegister;
+  final isForgotRoute = path == RouteConstants.kRouteForgotPass;
+
+  if (!notifier.onboardingCompleted) {
+    return isOnboardingRoute ? null : RouteConstants.kRouteOnboarding;
+  }
+
+  if (isOnboardingRoute) {
+    return notifier.isAuthenticated
+        ? RouteConstants.kRouteHome
+        : RouteConstants.kRouteLogin;
+  }
+
+  if (!notifier.isAuthenticated && !isAuthRoute && !isForgotRoute) {
+    return RouteConstants.kRouteLogin;
+  }
+
+  if (notifier.isAuthenticated && isAuthRoute) {
+    return RouteConstants.kRouteHome;
+  }
+
+  return null;
+}
+
+final _routes = [
+  GoRoute(
+    path: RouteConstants.kRouteOnboarding,
+    builder: (context, state) => const OnboardingScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteLogin,
+    builder: (context, state) => const LoginScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteRegister,
+    builder: (context, state) => const RegisterScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteForgotPass,
+    builder: (context, state) => const ForgotPasswordScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteHome,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteDeck,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteStudy,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteGenerate,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteReview,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteChat,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteAgentConfig,
+    builder: (context, state) => const _RoutePlaceholder(),
+  ),
+];
+
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier({
+    required this.onboardingCompleted,
+    required this.isAuthenticated,
+  });
+
+  bool onboardingCompleted;
+  bool isAuthenticated;
+
+  void updateOnboardingCompleted(bool value) {
+    if (onboardingCompleted == value) {
+      return;
+    }
+    onboardingCompleted = value;
+    notifyListeners();
+  }
+
+  void updateIsAuthenticated(bool value) {
+    if (isAuthenticated == value) {
+      return;
+    }
+    isAuthenticated = value;
+    notifyListeners();
+  }
+}
 
 class MemoraApp extends ConsumerWidget {
   const MemoraApp({super.key});
 
-  static final GoRouter _router = GoRouter(
-    initialLocation: RouteConstants.kRouteHome,
-    routes: [
-      GoRoute(
-        path: RouteConstants.kRouteOnboarding,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteLogin,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteRegister,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteForgotPass,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteHome,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteDeck,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteStudy,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteGenerate,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteReview,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteChat,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-      GoRoute(
-        path: RouteConstants.kRouteAgentConfig,
-        builder: (context, state) => const _RoutePlaceholder(),
-      ),
-    ],
-  );
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(appAutoSyncProvider);
+    final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
       title: AppConstants.appName,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      routerConfig: _router,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }

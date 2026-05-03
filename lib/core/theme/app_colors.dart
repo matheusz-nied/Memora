@@ -7,10 +7,14 @@ class AppColors {
   static const Color primaryHover = Color(0xFF0F4BB3);
   static const Color primaryLight = Color(0xFFD0E1FB);
   static const Color primaryDark = Color(0xFF07245E);
+  static const Color primaryShadow = Color(0x1A135BEC);
+  static const Color primaryStrongShadow = Color(0x80135BEC);
 
   static const Color background = Color(0xFFF6F6F8);
   static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSubtle = Color(0x0DFFFFFF);
   static const Color border = Color(0xFFE2E8F0);
+  static const Color borderStrong = Color(0xFFCBD5E1);
   static const Color textPrimary = Color(0xFF0F172A);
   static const Color textSecondary = Color(0xFF64748B);
   static const Color textTertiary = Color(0xFF94A3B8);
@@ -18,6 +22,7 @@ class AppColors {
   static const Color backgroundDark = Color(0xFF101622);
   static const Color surfaceDark = Color(0xFF1A212E);
   static const Color borderDark = Color(0xFF1E293B);
+  static const Color borderDarkStrong = Color(0xFF334155);
   static const Color textPrimaryDark = Color(0xFFFFFFFF);
   static const Color textSecDark = Color(0xFF94A3B8);
   static const Color textTertDark = Color(0xFF64748B);
