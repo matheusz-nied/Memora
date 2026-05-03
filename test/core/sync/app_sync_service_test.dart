@@ -20,6 +20,7 @@ void main() {
       database: database,
       remoteDatabase: remote,
       isOnline: () async => true,
+      retryDelay: Duration.zero,
     );
   });
 
@@ -143,6 +144,128 @@ void main() {
     expect(await database.decksDao.getDeckById('deck-1'), isNull);
     expect(await database.cardsDao.getCardsForDeck('deck-1'), isEmpty);
   });
+
+  test('syncDecks removes local synced deck missing from remote', () async {
+    final now = DateTime(2026, 5, 2);
+
+    await database.decksDao.upsertDeck(
+      DecksTableCompanion.insert(
+        id: 'deck-1',
+        userId: 'user-1',
+        title: 'Remote deleted deck',
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-1',
+        deckId: 'deck-1',
+        front: 'Front',
+        back: 'Back',
+        dueDate: now.millisecondsSinceEpoch,
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+
+    await syncService.syncDecks();
+
+    expect(await database.decksDao.getDeckById('deck-1'), isNull);
+    expect(await database.cardsDao.getCardsForDeck('deck-1'), isEmpty);
+  });
+
+  test('syncCards removes local synced card missing from remote', () async {
+    final now = DateTime(2026, 5, 2);
+
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-1',
+        deckId: 'deck-1',
+        front: 'Remote deleted front',
+        back: 'Back',
+        dueDate: now.millisecondsSinceEpoch,
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+
+    await syncService.syncCards('deck-1');
+
+    expect(await database.cardsDao.getCardById('card-1'), isNull);
+  });
+
+  test('syncCards preserves pending local card missing from remote', () async {
+    final now = DateTime(2026, 5, 2);
+
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-1',
+        deckId: 'deck-1',
+        front: 'Offline front',
+        back: 'Offline back',
+        dueDate: now.millisecondsSinceEpoch,
+        syncPending: const Value(true),
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+
+    await syncService.syncCards('deck-1');
+
+    final card = await database.cardsDao.getCardById('card-1');
+    expect(card, isNotNull);
+    expect(card!.front, 'Offline front');
+    expect(remote.cards['card-1']!.front, 'Offline front');
+  });
+
+  test('syncPendingCards retries remote upsert before succeeding', () async {
+    final now = DateTime(2026, 5, 2);
+    remote.failUpsertCardAttempts = 2;
+
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-1',
+        deckId: 'deck-1',
+        front: 'Front',
+        back: 'Back',
+        dueDate: now.millisecondsSinceEpoch,
+        syncPending: const Value(true),
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+
+    await syncService.syncPendingCards();
+
+    expect(remote.upsertCardCalls, 3);
+    expect((await database.cardsDao.getCardById('card-1'))!.syncPending, false);
+  });
+
+  test('syncPendingCards keeps pending card when retries fail', () async {
+    final now = DateTime(2026, 5, 2);
+    remote.failUpsertCardAttempts = 3;
+
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-1',
+        deckId: 'deck-1',
+        front: 'Front',
+        back: 'Back',
+        dueDate: now.millisecondsSinceEpoch,
+        syncPending: const Value(true),
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+
+    await expectLater(syncService.syncPendingCards(), throwsException);
+
+    final card = await database.cardsDao.getCardById('card-1');
+    expect(card, isNotNull);
+    expect(card!.syncPending, true);
+    expect(remote.cards.containsKey('card-1'), false);
+  });
 }
 
 BackendDeck _deck({
@@ -188,6 +311,8 @@ class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
   final Map<String, BackendCard> cards = {};
   final List<String> deletedDecks = [];
   final List<String> deletedCards = [];
+  int failUpsertCardAttempts = 0;
+  int upsertCardCalls = 0;
 
   @override
   Future<List<BackendDeck>> fetchDecks() async => decks.values.toList();
@@ -211,6 +336,12 @@ class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
 
   @override
   Future<BackendCard> upsertCard(BackendCard card) async {
+    upsertCardCalls += 1;
+    if (failUpsertCardAttempts > 0) {
+      failUpsertCardAttempts -= 1;
+      throw Exception('upsert card failed');
+    }
+
     cards[card.id] = card;
     return card;
   }

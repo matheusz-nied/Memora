@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/constants/route_constants.dart';
+import 'core/sync/app_sync_service.dart';
 import 'core/theme/app_dimensions.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/responsive.dart';
 
-class MemoraApp extends StatelessWidget {
+class MemoraApp extends ConsumerWidget {
   const MemoraApp({super.key});
 
   static final GoRouter _router = GoRouter(
@@ -61,7 +63,9 @@ class MemoraApp extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(appAutoSyncProvider);
+
     return MaterialApp.router(
       title: AppConstants.appName,
       theme: AppTheme.lightTheme,

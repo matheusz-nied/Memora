@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../backend/backend_provider.dart';
@@ -11,16 +13,24 @@ class AppSyncService {
     required AppDatabase database,
     required RemoteDatabaseGateway remoteDatabase,
     Future<bool> Function()? isOnline,
+    Future<bool> Function()? canSync,
+    Duration retryDelay = const Duration(milliseconds: 300),
   }) : _database = database,
        _remoteDatabase = remoteDatabase,
-       _isOnline = isOnline ?? (() async => true);
+       _isOnline = isOnline ?? (() async => true),
+       _canSync = canSync ?? (() async => true),
+       _retryDelay = retryDelay;
 
   final AppDatabase _database;
   final RemoteDatabaseGateway _remoteDatabase;
   final Future<bool> Function() _isOnline;
+  final Future<bool> Function() _canSync;
+  final Duration _retryDelay;
+
+  static const int _maxSyncAttempts = 3;
 
   Future<void> syncDecks() async {
-    if (!await _isOnline()) {
+    if (!await _shouldSync()) {
       return;
     }
 
@@ -29,27 +39,39 @@ class AppSyncService {
 
     for (final deck in pendingDecks) {
       if (deck.deletedAt != null) {
-        await _remoteDatabase.deleteDeck(deck.id);
+        await _withRetry(() => _remoteDatabase.deleteDeck(deck.id));
         await _database.cardsDao.deleteCardsForDeckPermanently(deck.id);
         await _database.decksDao.deleteDeckPermanently(deck.id);
       } else {
-        final syncedDeck = await _remoteDatabase.upsertDeck(
-          deck.toBackendDeck(),
+        final syncedDeck = await _withRetry(
+          () => _remoteDatabase.upsertDeck(deck.toBackendDeck()),
         );
         await _database.decksDao.upsertDeck(syncedDeck.toLocalDeckCompanion());
       }
     }
 
-    final remoteDecks = await _remoteDatabase.fetchDecks();
+    final remoteDecks = await _withRetry(_remoteDatabase.fetchDecks);
+    final remoteDeckIds = remoteDecks.map((deck) => deck.id).toSet();
     final decksToCache = remoteDecks
         .where((deck) => !protectedDeckIds.contains(deck.id))
         .map((deck) => deck.toLocalDeckCompanion())
         .toList();
     await _database.decksDao.upsertDecks(decksToCache);
+
+    final syncedLocalDecks = await _database.decksDao.getSyncedDecks();
+    final remotelyDeletedDecks = syncedLocalDecks.where(
+      (deck) =>
+          !remoteDeckIds.contains(deck.id) &&
+          !protectedDeckIds.contains(deck.id),
+    );
+    for (final deck in remotelyDeletedDecks) {
+      await _database.cardsDao.deleteCardsForDeckPermanently(deck.id);
+      await _database.decksDao.deleteDeckPermanently(deck.id);
+    }
   }
 
   Future<void> syncCards(String deckId) async {
-    if (!await _isOnline()) {
+    if (!await _shouldSync()) {
       return;
     }
 
@@ -60,48 +82,132 @@ class AppSyncService {
 
     for (final card in pendingCards) {
       if (card.deletedAt != null) {
-        await _remoteDatabase.deleteCard(card.id);
+        await _withRetry(() => _remoteDatabase.deleteCard(card.id));
         await _database.cardsDao.deleteCardPermanently(card.id);
       } else {
-        final syncedCard = await _remoteDatabase.upsertCard(
-          card.toBackendCard(),
+        final syncedCard = await _withRetry(
+          () => _remoteDatabase.upsertCard(card.toBackendCard()),
         );
         await _database.cardsDao.upsertCard(syncedCard.toLocalCardCompanion());
       }
     }
 
-    final remoteCards = await _remoteDatabase.fetchCards(deckId);
+    final remoteCards = await _withRetry(
+      () => _remoteDatabase.fetchCards(deckId),
+    );
+    final remoteCardIds = remoteCards.map((card) => card.id).toSet();
     final cardsToCache = remoteCards
         .where((card) => !protectedCardIds.contains(card.id))
         .map((card) => card.toLocalCardCompanion())
         .toList();
     await _database.cardsDao.upsertCards(cardsToCache);
+
+    final syncedLocalCards = await _database.cardsDao.getSyncedCardsForDeck(
+      deckId,
+    );
+    final remotelyDeletedCards = syncedLocalCards.where(
+      (card) =>
+          !remoteCardIds.contains(card.id) &&
+          !protectedCardIds.contains(card.id),
+    );
+    for (final card in remotelyDeletedCards) {
+      await _database.cardsDao.deleteCardPermanently(card.id);
+    }
   }
 
   Future<void> syncPendingCards() async {
-    if (!await _isOnline()) {
+    if (!await _shouldSync()) {
       return;
     }
 
     final pendingCards = await _database.cardsDao.getPendingSyncCards();
     for (final card in pendingCards) {
       if (card.deletedAt != null) {
-        await _remoteDatabase.deleteCard(card.id);
+        await _withRetry(() => _remoteDatabase.deleteCard(card.id));
         await _database.cardsDao.deleteCardPermanently(card.id);
       } else {
-        final syncedCard = await _remoteDatabase.upsertCard(
-          card.toBackendCard(),
+        final syncedCard = await _withRetry(
+          () => _remoteDatabase.upsertCard(card.toBackendCard()),
         );
         await _database.cardsDao.upsertCard(syncedCard.toLocalCardCompanion());
       }
     }
   }
+
+  Future<T> _withRetry<T>(Future<T> Function() operation) async {
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
+    for (var attempt = 1; attempt <= _maxSyncAttempts; attempt += 1) {
+      try {
+        return await operation();
+      } catch (error, stackTrace) {
+        lastError = error;
+        lastStackTrace = stackTrace;
+
+        if (attempt == _maxSyncAttempts) {
+          break;
+        }
+
+        await Future<void>.delayed(_retryDelay * attempt);
+      }
+    }
+
+    Error.throwWithStackTrace(lastError!, lastStackTrace!);
+  }
+
+  Future<bool> _shouldSync() async {
+    return await _canSync() && await _isOnline();
+  }
 }
 
 final appSyncServiceProvider = Provider<AppSyncService>((ref) {
+  final backendClient = ref.watch(backendClientProvider);
+
   return AppSyncService(
     database: ref.watch(appDatabaseProvider),
-    remoteDatabase: ref.watch(backendClientProvider).database,
+    remoteDatabase: backendClient.database,
     isOnline: ref.watch(connectivityServiceProvider).isOnline,
+    canSync: () async => backendClient.auth.currentSession != null,
   );
+});
+
+final appAutoSyncProvider = Provider<void>((ref) {
+  final connectivityService = ref.watch(connectivityServiceProvider);
+  var isSyncing = false;
+
+  Future<void> runGlobalPendingSync() async {
+    if (isSyncing) {
+      return;
+    }
+
+    isSyncing = true;
+    try {
+      if (!await connectivityService.isOnline()) {
+        return;
+      }
+
+      final syncService = ref.read(appSyncServiceProvider);
+      await syncService.syncDecks();
+      await syncService.syncPendingCards();
+    } catch (_) {
+      // Sync failures leave pending rows intact for the next online attempt.
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  unawaited(runGlobalPendingSync());
+  ref.listen<AsyncValue<bool>>(onlineStatusProvider, (previous, next) {
+    final wasOnline =
+        previous?.maybeWhen(data: (value) => value, orElse: () => false) ??
+        false;
+    final isOnline = next.maybeWhen(
+      data: (value) => value,
+      orElse: () => false,
+    );
+    if (!wasOnline && isOnline) {
+      unawaited(runGlobalPendingSync());
+    }
+  });
 });

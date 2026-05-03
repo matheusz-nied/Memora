@@ -43,6 +43,16 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
     return query.get();
   }
 
+  Future<List<LocalCard>> getSyncedCardsForDeck(String deckId) {
+    return (select(cardsTable)..where(
+          (table) =>
+              table.deckId.equals(deckId) &
+              table.deletedAt.isNull() &
+              table.syncPending.equals(false),
+        ))
+        .get();
+  }
+
   Future<void> upsertCard(CardsTableCompanion card) {
     return into(cardsTable).insertOnConflictUpdate(card);
   }

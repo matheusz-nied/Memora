@@ -32,11 +32,6 @@ class SupabaseStorageGateway implements StorageGateway {
           ),
         );
 
-    return StorageUploadResult(
-      path: path,
-      publicUrl: _client.storage
-          .from(BackendConstants.kBucketPdfs)
-          .getPublicUrl(path),
-    );
+    return StorageUploadResult(path: path);
   }
 }

@@ -36,6 +36,13 @@ class DecksDao extends DatabaseAccessor<AppDatabase> with _$DecksDaoMixin {
         .get();
   }
 
+  Future<List<LocalDeck>> getSyncedDecks() {
+    return (select(decksTable)..where(
+          (table) => table.deletedAt.isNull() & table.syncPending.equals(false),
+        ))
+        .get();
+  }
+
   Future<void> upsertDeck(DecksTableCompanion deck) {
     return into(decksTable).insertOnConflictUpdate(deck);
   }
