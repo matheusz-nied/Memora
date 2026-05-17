@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_typography.dart';
 import '../card_rating_model.dart';
 import '../study_text.dart';
 
@@ -67,14 +68,23 @@ class _RatingButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: AppDimensions.minTouchTarget,
+      height: 48,
       child: OutlinedButton(
         onPressed: enabled ? onPressed : null,
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
-          side: BorderSide(color: enabled ? color : AppColors.borderStrong),
+          side: BorderSide(
+            color: enabled ? color.withValues(alpha: 0.5) : AppColors.borderStrong,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
         ),
-        child: Text(label),
+        child: Text(
+          label,
+          style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

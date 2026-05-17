@@ -10,7 +10,6 @@ import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/connectivity_service.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/widgets/app_button.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
@@ -58,7 +57,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
       body: SafeArea(
         child: Responsive.constrainedContent(
           child: deck.when(
@@ -242,6 +244,8 @@ class _StudyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (cards.isEmpty) {
       return EmptyState(
         title: StudyText.emptyTitle,
@@ -269,84 +273,176 @@ class _StudyContent extends StatelessWidget {
 
     return Column(
       children: [
-        Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            border: Border(bottom: BorderSide(color: AppColors.border)),
+        // Header
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppDimensions.xl,
+            horizontal: AppDimensions.xl,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              SizedBox(
-                height: AppDimensions.minTouchTarget,
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Text(
-                        '${currentIndex + 1} de ${cards.length}',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.textSecondary,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Progress dots
+                  if (cards.length <= 20)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(cards.length, (index) {
+                        final isActive = index == currentIndex;
+                        final isPast = index < currentIndex;
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.xs / 2,
+                          ),
+                          height: 6,
+                          width: isActive ? 32 : 6,
+                          decoration: BoxDecoration(
+                            color: isActive || isPast
+                                ? AppColors.primary
+                                : (isDark
+                                    ? const Color(0xFF324467)
+                                    : AppColors.borderStrong),
+                            borderRadius:
+                                BorderRadius.circular(AppDimensions.radiusFull),
+                            boxShadow: isActive
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.6),
+                                      blurRadius: 8,
+                                    )
+                                  ]
+                                : null,
+                          ),
+                        );
+                      }),
+                    )
+                  else
+                    SizedBox(
+                      width: 200,
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusFull),
+                        backgroundColor: isDark
+                            ? const Color(0xFF324467)
+                            : AppColors.borderStrong,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  const SizedBox(height: AppDimensions.md),
+                  // Deck title
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.school,
+                        size: 14,
+                        color: (isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimary)
+                            .withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: AppDimensions.xs),
+                      Flexible(
+                        child: Text(
+                          'SESSÃO: ${deck.title}'.toUpperCase(),
+                          style: AppTypography.labelSmall.copyWith(
+                            color: (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimary)
+                                .withValues(alpha: 0.6),
+                            letterSpacing: 1.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      child: IconButton(
-                        icon: const Icon(Icons.close),
-                        color: AppColors.textSecondary,
-                        onPressed: onBackToDeck,
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
-              LinearProgressIndicator(
-                minHeight: 4,
-                value: progress,
-                color: AppColors.primary,
-                backgroundColor: AppColors.border,
+              // Close button
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  color:
+                      isDark ? AppColors.textSecDark : AppColors.textSecondary,
+                  onPressed: onBackToDeck,
+                ),
               ),
             ],
           ),
         ),
-        if (!isOnline) ...[const OfflineBanner(message: StudyText.offline)],
+        if (!isOnline) const OfflineBanner(message: StudyText.offline),
         Expanded(
           child: Padding(
-            padding: Responsive.contentPadding(context),
-            child: Column(
-              children: [
-                const SizedBox(height: AppDimensions.xxl),
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 500),
-                      child: SingleChildScrollView(
-                        child: StudyFlashcard(
-                          front: currentCard.front,
-                          back: currentCard.back,
-                          showBack: showBack,
-                          onToggle: onToggleCard,
-                          onSpeak: () => onSpeak(
-                            showBack ? currentCard.back : currentCard.front,
-                            deck,
-                          ),
+            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xl),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: StudyFlashcard(
+                  front: currentCard.front,
+                  back: currentCard.back,
+                  showBack: showBack,
+                  onToggle: onToggleCard,
+                  onSpeak: () => onSpeak(
+                    showBack ? currentCard.back : currentCard.front,
+                    deck,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Footer
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppDimensions.xl,
+            AppDimensions.lg,
+            AppDimensions.xl,
+            AppDimensions.xxxl,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: showBack
+                ? StudyRatingBar(enabled: !isSavingRating, onRating: onRating)
+                : SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: onToggleCard,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusXl),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.visibility, size: 20),
+                          const SizedBox(width: AppDimensions.sm),
+                          Text(
+                            StudyText.revealAnswer,
+                            style: AppTypography.labelMedium.copyWith(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppDimensions.xxl),
-                if (showBack)
-                  StudyRatingBar(enabled: !isSavingRating, onRating: onRating)
-                else
-                  AppButton(
-                    label: StudyText.revealAnswer,
-                    onPressed: onToggleCard,
-                  ),
-              ],
-            ),
           ),
         ),
       ],
