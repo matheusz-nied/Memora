@@ -171,6 +171,15 @@ class DisabledAiGateway implements AiGateway {
   }) {
     throw _notConfigured();
   }
+
+  @override
+  Future<List<GeneratedCard>> generateCardsFromPdf({
+    required String pdfPath,
+    required int quantity,
+    required String deckId,
+  }) {
+    throw _notConfigured();
+  }
 }
 
 BackendException _notConfigured() {

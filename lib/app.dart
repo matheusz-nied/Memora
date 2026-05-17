@@ -15,6 +15,9 @@ import 'features/auth/profile_screen.dart';
 import 'features/auth/register_screen.dart';
 import 'features/decks/deck_screen.dart';
 import 'features/decks/home_screen.dart';
+import 'features/generate/generated_cards_review_args.dart';
+import 'features/generate/import_content_screen.dart';
+import 'features/generate/review_cards_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_state.dart';
 
@@ -114,11 +117,19 @@ final _routes = [
   ),
   GoRoute(
     path: RouteConstants.kRouteGenerate,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return ImportContentScreen(deckId: deckId);
+    },
   ),
   GoRoute(
     path: RouteConstants.kRouteReview,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) {
+      final args = state.extra is GeneratedCardsReviewArgs
+          ? state.extra as GeneratedCardsReviewArgs
+          : null;
+      return ReviewCardsScreen(args: args);
+    },
   ),
   GoRoute(
     path: RouteConstants.kRouteChat,

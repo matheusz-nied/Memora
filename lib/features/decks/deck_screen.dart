@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/connectivity_service.dart';
 import '../../core/utils/responsive.dart';
@@ -34,6 +36,11 @@ class DeckScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          IconButton(
+            tooltip: DeckText.generateCards,
+            onPressed: () => context.push(RouteConstants.generatePath(deckId)),
+            icon: const Icon(Icons.auto_awesome),
+          ),
           deck.maybeWhen(
             data: (value) => value == null
                 ? const SizedBox.shrink()

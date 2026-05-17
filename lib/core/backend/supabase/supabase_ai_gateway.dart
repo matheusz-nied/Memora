@@ -9,6 +9,7 @@ class SupabaseAiGateway implements AiGateway {
   const SupabaseAiGateway(this._client);
 
   static const String _generateCardsFunction = 'generate-cards';
+  static const String _generateCardsFromPdfFunction = 'generate-cards-from-pdf';
   static const String _chatFunction = 'chat';
   static const String _cardInsightFunction = 'card-insight';
 
@@ -25,6 +26,24 @@ class SupabaseAiGateway implements AiGateway {
       'quantity': quantity,
       'deckId': deckId,
     });
+    return _generatedCardsFromData(data);
+  }
+
+  @override
+  Future<List<GeneratedCard>> generateCardsFromPdf({
+    required String pdfPath,
+    required int quantity,
+    required String deckId,
+  }) async {
+    final data = await _invoke(_generateCardsFromPdfFunction, {
+      'pdfPath': pdfPath,
+      'quantity': quantity,
+      'deckId': deckId,
+    });
+    return _generatedCardsFromData(data);
+  }
+
+  List<GeneratedCard> _generatedCardsFromData(Map<String, dynamic> data) {
     final cards = data['cards'];
     if (cards is! List) {
       throw const BackendException('Invalid generated cards response.');

@@ -20,6 +20,7 @@ void main() {
       database: database,
       remoteDatabase: remote,
       isOnline: () async => true,
+      currentUserId: () => 'user-1',
       retryDelay: Duration.zero,
     );
   });
@@ -56,8 +57,32 @@ void main() {
     expect(remote.decks['deck-1']!.title, 'Local title');
   });
 
+  test('syncDecks ignores pending decks from another local user', () async {
+    final now = DateTime(2026, 5, 2);
+
+    await database.decksDao.upsertDeck(
+      DecksTableCompanion.insert(
+        id: 'deck-other-user',
+        userId: 'user-2',
+        title: 'Other user deck',
+        syncPending: const Value(true),
+        createdAt: now.millisecondsSinceEpoch,
+        updatedAt: now.millisecondsSinceEpoch,
+      ),
+    );
+
+    await syncService.syncDecks();
+
+    expect(remote.decks.containsKey('deck-other-user'), false);
+
+    final deck = await database.decksDao.getDeckById('deck-other-user');
+    expect(deck, isNotNull);
+    expect(deck!.syncPending, isTrue);
+  });
+
   test('syncCards keeps pending local card from being overwritten', () async {
     final now = DateTime(2026, 5, 2);
+    await _insertLocalDeck(database, now);
     remote.cards['card-1'] = _card(
       id: 'card-1',
       front: 'Remote front',
@@ -88,6 +113,7 @@ void main() {
 
   test('syncCards deletes remote card and clears local tombstone', () async {
     final now = DateTime(2026, 5, 2);
+    await _insertLocalDeck(database, now);
     remote.cards['card-1'] = _card(id: 'card-1');
 
     await database.cardsDao.upsertCard(
@@ -177,6 +203,7 @@ void main() {
 
   test('syncCards removes local synced card missing from remote', () async {
     final now = DateTime(2026, 5, 2);
+    await _insertLocalDeck(database, now);
 
     await database.cardsDao.upsertCard(
       CardsTableCompanion.insert(
@@ -197,6 +224,7 @@ void main() {
 
   test('syncCards preserves pending local card missing from remote', () async {
     final now = DateTime(2026, 5, 2);
+    await _insertLocalDeck(database, now);
 
     await database.cardsDao.upsertCard(
       CardsTableCompanion.insert(
@@ -221,6 +249,7 @@ void main() {
 
   test('syncPendingCards retries remote upsert before succeeding', () async {
     final now = DateTime(2026, 5, 2);
+    await _insertLocalDeck(database, now);
     remote.failUpsertCardAttempts = 2;
 
     await database.cardsDao.upsertCard(
@@ -244,6 +273,7 @@ void main() {
 
   test('syncPendingCards keeps pending card when retries fail', () async {
     final now = DateTime(2026, 5, 2);
+    await _insertLocalDeck(database, now);
     remote.failUpsertCardAttempts = 3;
 
     await database.cardsDao.upsertCard(
@@ -266,6 +296,18 @@ void main() {
     expect(card!.syncPending, true);
     expect(remote.cards.containsKey('card-1'), false);
   });
+}
+
+Future<void> _insertLocalDeck(AppDatabase database, DateTime now) {
+  return database.decksDao.upsertDeck(
+    DecksTableCompanion.insert(
+      id: 'deck-1',
+      userId: 'user-1',
+      title: 'Deck',
+      createdAt: now.millisecondsSinceEpoch,
+      updatedAt: now.millisecondsSinceEpoch,
+    ),
+  );
 }
 
 BackendDeck _deck({

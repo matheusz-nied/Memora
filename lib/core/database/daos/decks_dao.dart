@@ -9,23 +9,32 @@ part 'decks_dao.g.dart';
 class DecksDao extends DatabaseAccessor<AppDatabase> with _$DecksDaoMixin {
   DecksDao(super.db);
 
-  Stream<List<LocalDeck>> watchAllDecks() {
-    return (select(decksTable)
-          ..where((table) => table.deletedAt.isNull())
-          ..orderBy([(table) => OrderingTerm.desc(table.updatedAt)]))
+  Stream<List<LocalDeck>> watchAllDecks({String? userId}) {
+    final query = select(decksTable)
+      ..where((table) => table.deletedAt.isNull());
+    if (userId != null) {
+      query.where((table) => table.userId.equals(userId));
+    }
+    return (query..orderBy([(table) => OrderingTerm.desc(table.updatedAt)]))
         .watch();
   }
 
-  Stream<LocalDeck?> watchDeckById(String id) {
-    return (select(decksTable)
-          ..where((table) => table.id.equals(id) & table.deletedAt.isNull()))
-        .watchSingleOrNull();
+  Stream<LocalDeck?> watchDeckById(String id, {String? userId}) {
+    final query = select(decksTable)
+      ..where((table) => table.id.equals(id) & table.deletedAt.isNull());
+    if (userId != null) {
+      query.where((table) => table.userId.equals(userId));
+    }
+    return query.watchSingleOrNull();
   }
 
-  Future<List<LocalDeck>> getAllDecks() {
-    return (select(decksTable)
-          ..where((table) => table.deletedAt.isNull())
-          ..orderBy([(table) => OrderingTerm.desc(table.updatedAt)]))
+  Future<List<LocalDeck>> getAllDecks({String? userId}) {
+    final query = select(decksTable)
+      ..where((table) => table.deletedAt.isNull());
+    if (userId != null) {
+      query.where((table) => table.userId.equals(userId));
+    }
+    return (query..orderBy([(table) => OrderingTerm.desc(table.updatedAt)]))
         .get();
   }
 
@@ -35,18 +44,32 @@ class DecksDao extends DatabaseAccessor<AppDatabase> with _$DecksDaoMixin {
         .getSingleOrNull();
   }
 
-  Future<List<LocalDeck>> getPendingSyncDecks() {
-    return (select(decksTable)
-          ..where((table) => table.syncPending.equals(true))
-          ..orderBy([(table) => OrderingTerm.asc(table.updatedAt)]))
+  Future<List<LocalDeck>> getPendingSyncDecks({String? userId}) {
+    final query = select(decksTable)
+      ..where((table) => table.syncPending.equals(true));
+    if (userId != null) {
+      query.where((table) => table.userId.equals(userId));
+    }
+    return (query..orderBy([(table) => OrderingTerm.asc(table.updatedAt)]))
         .get();
   }
 
-  Future<List<LocalDeck>> getSyncedDecks() {
-    return (select(decksTable)..where(
-          (table) => table.deletedAt.isNull() & table.syncPending.equals(false),
-        ))
-        .get();
+  Future<List<LocalDeck>> getSyncedDecks({String? userId}) {
+    final query = select(decksTable)
+      ..where(
+        (table) => table.deletedAt.isNull() & table.syncPending.equals(false),
+      );
+    if (userId != null) {
+      query.where((table) => table.userId.equals(userId));
+    }
+    return query.get();
+  }
+
+  Future<List<String>> getDeckIdsForUser(String userId) async {
+    final rows = await (select(
+      decksTable,
+    )..where((table) => table.userId.equals(userId))).get();
+    return rows.map((deck) => deck.id).toList();
   }
 
   Future<void> upsertDeck(DecksTableCompanion deck) {

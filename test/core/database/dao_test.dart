@@ -31,6 +31,10 @@ void main() {
     final watchedDecks = await database.decksDao.watchAllDecks().first;
     expect(watchedDecks, hasLength(1));
     expect(watchedDecks.single.title, 'Biology');
+    expect(
+      await database.decksDao.watchAllDecks(userId: 'user-2').first,
+      isEmpty,
+    );
 
     await database.decksDao.markDeckDeleted('deck-1', now + 1);
 

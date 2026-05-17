@@ -15,17 +15,20 @@ class AppSyncService {
     required RemoteDatabaseGateway remoteDatabase,
     Future<bool> Function()? isOnline,
     Future<bool> Function()? canSync,
+    String? Function()? currentUserId,
     Duration retryDelay = const Duration(milliseconds: 300),
   }) : _database = database,
        _remoteDatabase = remoteDatabase,
        _isOnline = isOnline ?? (() async => true),
        _canSync = canSync ?? (() async => true),
+       _currentUserId = currentUserId ?? (() => null),
        _retryDelay = retryDelay;
 
   final AppDatabase _database;
   final RemoteDatabaseGateway _remoteDatabase;
   final Future<bool> Function() _isOnline;
   final Future<bool> Function() _canSync;
+  final String? Function() _currentUserId;
   final Duration _retryDelay;
 
   static const int _maxSyncAttempts = 3;
@@ -34,8 +37,17 @@ class AppSyncService {
     if (!await _shouldSync(requireSync: requireSync)) {
       return;
     }
+    final userId = _currentUserId();
+    if (userId == null) {
+      if (requireSync) {
+        throw StateError('Sessão expirada. Entre novamente para sincronizar.');
+      }
+      return;
+    }
 
-    final pendingDecks = await _database.decksDao.getPendingSyncDecks();
+    final pendingDecks = await _database.decksDao.getPendingSyncDecks(
+      userId: userId,
+    );
     final protectedDeckIds = pendingDecks.map((deck) => deck.id).toSet();
 
     for (final deck in pendingDecks) {
@@ -59,7 +71,9 @@ class AppSyncService {
         .toList();
     await _database.decksDao.upsertDecks(decksToCache);
 
-    final syncedLocalDecks = await _database.decksDao.getSyncedDecks();
+    final syncedLocalDecks = await _database.decksDao.getSyncedDecks(
+      userId: userId,
+    );
     final remotelyDeletedDecks = syncedLocalDecks.where(
       (deck) =>
           !remoteDeckIds.contains(deck.id) &&
@@ -73,6 +87,17 @@ class AppSyncService {
 
   Future<void> syncCards(String deckId, {bool requireSync = false}) async {
     if (!await _shouldSync(requireSync: requireSync)) {
+      return;
+    }
+    final userId = _currentUserId();
+    if (userId == null) {
+      if (requireSync) {
+        throw StateError('Sessão expirada. Entre novamente para sincronizar.');
+      }
+      return;
+    }
+    final userDeckIds = await _database.decksDao.getDeckIdsForUser(userId);
+    if (!userDeckIds.contains(deckId)) {
       return;
     }
 
@@ -120,9 +145,21 @@ class AppSyncService {
     if (!await _shouldSync(requireSync: requireSync)) {
       return;
     }
+    final userId = _currentUserId();
+    if (userId == null) {
+      if (requireSync) {
+        throw StateError('Sessão expirada. Entre novamente para sincronizar.');
+      }
+      return;
+    }
 
+    final userDeckIds = (await _database.decksDao.getDeckIdsForUser(
+      userId,
+    )).toSet();
     final pendingCards = await _database.cardsDao.getPendingSyncCards();
-    for (final card in pendingCards) {
+    for (final card in pendingCards.where(
+      (card) => userDeckIds.contains(card.deckId),
+    )) {
       if (card.deletedAt != null) {
         await _withRetry(() => _remoteDatabase.deleteCard(card.id));
         await _database.cardsDao.deleteCardPermanently(card.id);
@@ -186,6 +223,7 @@ final appSyncServiceProvider = Provider<AppSyncService>((ref) {
     remoteDatabase: backendClient.database,
     isOnline: ref.watch(connectivityServiceProvider).isOnline,
     canSync: () async => backendClient.auth.currentSession != null,
+    currentUserId: () => backendClient.auth.currentSession?.user.id,
   );
 });
 

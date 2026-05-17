@@ -460,4 +460,13 @@ class _FakeAiGateway implements AiGateway {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<List<GeneratedCard>> generateCardsFromPdf({
+    required String pdfPath,
+    required int quantity,
+    required String deckId,
+  }) {
+    throw UnimplementedError();
+  }
 }

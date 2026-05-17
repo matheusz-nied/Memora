@@ -44,15 +44,23 @@ class DeckRepository {
   final Uuid _uuid = const Uuid();
 
   Stream<List<DeckModel>> watchDecks() {
+    final userId = _authRepository.currentSession?.user.id;
+    if (userId == null) {
+      return Stream<List<DeckModel>>.value([]);
+    }
     _runSyncSilently(syncDecks);
-    return _database.decksDao.watchAllDecks().map(
-      (decks) => decks.map(DeckModel.fromLocal).toList(),
-    );
+    return _database.decksDao
+        .watchAllDecks(userId: userId)
+        .map((decks) => decks.map(DeckModel.fromLocal).toList());
   }
 
   Stream<DeckModel?> watchDeck(String deckId) {
+    final userId = _authRepository.currentSession?.user.id;
+    if (userId == null) {
+      return Stream<DeckModel?>.value(null);
+    }
     return _database.decksDao
-        .watchDeckById(deckId)
+        .watchDeckById(deckId, userId: userId)
         .map((deck) => deck == null ? null : DeckModel.fromLocal(deck));
   }
 

@@ -8,6 +8,12 @@ abstract interface class AiGateway {
     required String deckId,
   });
 
+  Future<List<GeneratedCard>> generateCardsFromPdf({
+    required String pdfPath,
+    required int quantity,
+    required String deckId,
+  });
+
   Future<String> chat({
     required String deckId,
     required List<AiChatMessage> messages,

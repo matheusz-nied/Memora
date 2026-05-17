@@ -18,6 +18,7 @@ class DeckText {
   static const String edit = 'Editar';
   static const String study = 'Estudar';
   static const String addCard = 'Adicionar card';
+  static const String generateCards = 'Gerar com IA';
   static const String emptyTitle = 'Nenhum deck ainda';
   static const String emptyMessage = 'Crie seu primeiro deck para começar.';
   static const String cards = 'cards';
