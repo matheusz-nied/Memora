@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../backend/backend_provider.dart';
@@ -29,8 +30,8 @@ class AppSyncService {
 
   static const int _maxSyncAttempts = 3;
 
-  Future<void> syncDecks() async {
-    if (!await _shouldSync()) {
+  Future<void> syncDecks({bool requireSync = false}) async {
+    if (!await _shouldSync(requireSync: requireSync)) {
       return;
     }
 
@@ -70,8 +71,8 @@ class AppSyncService {
     }
   }
 
-  Future<void> syncCards(String deckId) async {
-    if (!await _shouldSync()) {
+  Future<void> syncCards(String deckId, {bool requireSync = false}) async {
+    if (!await _shouldSync(requireSync: requireSync)) {
       return;
     }
 
@@ -115,8 +116,8 @@ class AppSyncService {
     }
   }
 
-  Future<void> syncPendingCards() async {
-    if (!await _shouldSync()) {
+  Future<void> syncPendingCards({bool requireSync = false}) async {
+    if (!await _shouldSync(requireSync: requireSync)) {
       return;
     }
 
@@ -156,8 +157,24 @@ class AppSyncService {
     Error.throwWithStackTrace(lastError!, lastStackTrace!);
   }
 
-  Future<bool> _shouldSync() async {
-    return await _canSync() && await _isOnline();
+  Future<bool> _shouldSync({required bool requireSync}) async {
+    if (!await _canSync()) {
+      if (requireSync) {
+        throw StateError('Sessão expirada. Entre novamente para sincronizar.');
+      }
+      return false;
+    }
+
+    if (!await _isOnline()) {
+      if (requireSync) {
+        throw StateError(
+          'Sem conexão. Conecte-se à internet para sincronizar.',
+        );
+      }
+      return false;
+    }
+
+    return true;
   }
 }
 
@@ -190,7 +207,9 @@ final appAutoSyncProvider = Provider<void>((ref) {
       final syncService = ref.read(appSyncServiceProvider);
       await syncService.syncDecks();
       await syncService.syncPendingCards();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Global pending sync failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
       // Sync failures leave pending rows intact for the next online attempt.
     } finally {
       isSyncing = false;

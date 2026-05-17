@@ -11,6 +11,8 @@ class DeckText {
   static const String descriptionHint = 'Contexto, objetivo ou prova';
   static const String createManually = 'Criar manualmente';
   static const String save = 'Salvar';
+  static const String syncNow = 'Sincronizar agora';
+  static const String syncSuccess = 'Sincronização concluída.';
   static const String cancel = 'Cancelar';
   static const String delete = 'Excluir';
   static const String edit = 'Editar';
@@ -32,4 +34,6 @@ class DeckText {
   static const String descriptionTooLong = 'Use até 200 caracteres.';
   static const String loadError = 'Não foi possível carregar os decks.';
   static const String deckNotFound = 'Deck não encontrado.';
+  static const String syncErrorFallback =
+      'Não foi possível sincronizar. Verifique os logs.';
 }

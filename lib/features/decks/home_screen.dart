@@ -16,11 +16,18 @@ import 'deck_text.dart';
 import 'widgets/deck_card.dart';
 import 'widgets/deck_form_modal.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  var _isSyncing = false;
+
+  @override
+  Widget build(BuildContext context) {
     final decks = ref.watch(decksStreamProvider);
     final isOnline = ref
         .watch(onlineStatusProvider)
@@ -31,13 +38,23 @@ class HomeScreen extends ConsumerWidget {
         title: const Text(DeckText.subtitle),
         actions: [
           IconButton(
+            tooltip: DeckText.syncNow,
+            onPressed: _isSyncing ? null : _syncNow,
+            icon: _isSyncing
+                ? const SizedBox.square(
+                    dimension: AppDimensions.xl,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
+          ),
+          IconButton(
             onPressed: () => context.push(RouteConstants.kRouteProfile),
             icon: const Icon(Icons.account_circle_outlined),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showDeckForm(context, ref),
+        onPressed: () => _showDeckForm(context),
         child: const Icon(Icons.add),
       ),
       body: SafeArea(
@@ -63,15 +80,12 @@ class HomeScreen extends ConsumerWidget {
                         const ErrorState(message: DeckText.loadError),
                     data: (items) => _DeckGrid(
                       decks: items,
-                      onCreate: () => _showDeckForm(context, ref),
+                      onCreate: () => _showDeckForm(context),
                       onOpen: (deck) =>
                           context.push(RouteConstants.deckPath(deck.id)),
-                      onEdit: (deck) => _showDeckForm(context, ref, deck: deck),
-                      onDelete: (deck) => _confirmDeleteDeck(
-                        context: context,
-                        ref: ref,
-                        deck: deck,
-                      ),
+                      onEdit: (deck) => _showDeckForm(context, deck: deck),
+                      onDelete: (deck) =>
+                          _confirmDeleteDeck(context: context, deck: deck),
                     ),
                   ),
                 ),
@@ -83,11 +97,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showDeckForm(
-    BuildContext context,
-    WidgetRef ref, {
-    DeckModel? deck,
-  }) {
+  Future<void> _showDeckForm(BuildContext context, {DeckModel? deck}) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -114,7 +124,6 @@ class HomeScreen extends ConsumerWidget {
 
   Future<void> _confirmDeleteDeck({
     required BuildContext context,
-    required WidgetRef ref,
     required DeckModel deck,
   }) async {
     final confirmed = await showDialog<bool>(
@@ -137,6 +146,35 @@ class HomeScreen extends ConsumerWidget {
     if (confirmed ?? false) {
       await ref.read(deckRepositoryProvider).deleteDeck(deck.id);
     }
+  }
+
+  Future<void> _syncNow() async {
+    setState(() => _isSyncing = true);
+    try {
+      await ref.read(deckRepositoryProvider).syncDecks(requireSync: true);
+      if (mounted) {
+        _showSnackBar(DeckText.syncSuccess);
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar(_readableSyncError(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _readableSyncError(Object error) {
+    final message = error.toString().replaceFirst('Bad state: ', '').trim();
+    return message.isEmpty ? DeckText.syncErrorFallback : message;
   }
 }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -40,7 +41,9 @@ class CardRepository {
         .map((cards) => cards.map(CardModel.fromLocal).toList());
   }
 
-  Future<void> syncCards(String deckId) => _syncService.syncCards(deckId);
+  Future<void> syncCards(String deckId, {bool requireSync = false}) {
+    return _syncService.syncCards(deckId, requireSync: requireSync);
+  }
 
   Future<void> createCard({
     required String deckId,
@@ -96,6 +99,11 @@ class CardRepository {
   }
 
   void _runSyncSilently(Future<void> Function() sync) {
-    unawaited(sync().catchError((_) {}));
+    unawaited(
+      sync().catchError((Object error, StackTrace stackTrace) {
+        debugPrint('Card sync failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }),
+    );
   }
 }

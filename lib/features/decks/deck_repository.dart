@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -55,7 +56,9 @@ class DeckRepository {
         .map((deck) => deck == null ? null : DeckModel.fromLocal(deck));
   }
 
-  Future<void> syncDecks() => _syncService.syncDecks();
+  Future<void> syncDecks({bool requireSync = false}) {
+    return _syncService.syncDecks(requireSync: requireSync);
+  }
 
   Future<void> createDeck({required String title, String? description}) async {
     final session = _authRepository.currentSession;
@@ -116,6 +119,11 @@ class DeckRepository {
   }
 
   void _runSyncSilently(Future<void> Function() sync) {
-    unawaited(sync().catchError((_) {}));
+    unawaited(
+      sync().catchError((Object error, StackTrace stackTrace) {
+        debugPrint('Deck sync failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }),
+    );
   }
 }
