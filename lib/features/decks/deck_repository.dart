@@ -22,6 +22,13 @@ final decksStreamProvider = StreamProvider<List<DeckModel>>((ref) {
   return ref.watch(deckRepositoryProvider).watchDecks();
 });
 
+final decksPageProvider = StreamProvider.family<List<DeckModel>, int>((
+  ref,
+  limit,
+) {
+  return ref.watch(deckRepositoryProvider).watchDecksPage(limit: limit);
+});
+
 final deckStreamProvider = StreamProvider.family<DeckModel?, String>((
   ref,
   deckId,
@@ -52,6 +59,25 @@ class DeckRepository {
     return _database.decksDao
         .watchAllDecks(userId: userId)
         .map((decks) => decks.map(DeckModel.fromLocal).toList());
+  }
+
+  Stream<List<DeckModel>> watchDecksPage({required int limit}) {
+    final userId = _authRepository.currentSession?.user.id;
+    if (userId == null) {
+      return Stream<List<DeckModel>>.value([]);
+    }
+    _runSyncSilently(syncDecks);
+    return _database.decksDao
+        .watchDecksPage(userId: userId, limit: limit)
+        .map((decks) => decks.map(DeckModel.fromLocal).toList());
+  }
+
+  Future<int> countDecks() {
+    final userId = _authRepository.currentSession?.user.id;
+    if (userId == null) {
+      return Future<int>.value(0);
+    }
+    return _database.decksDao.countDecks(userId: userId);
   }
 
   Stream<DeckModel?> watchDeck(String deckId) {

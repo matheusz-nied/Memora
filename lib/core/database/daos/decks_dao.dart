@@ -19,6 +19,28 @@ class DecksDao extends DatabaseAccessor<AppDatabase> with _$DecksDaoMixin {
         .watch();
   }
 
+  Stream<List<LocalDeck>> watchDecksPage({
+    required String userId,
+    required int limit,
+  }) {
+    return (select(decksTable)
+          ..where(
+            (table) => table.userId.equals(userId) & table.deletedAt.isNull(),
+          )
+          ..orderBy([(table) => OrderingTerm.desc(table.updatedAt)])
+          ..limit(limit))
+        .watch();
+  }
+
+  Future<int> countDecks({required String userId}) async {
+    final count = decksTable.id.count();
+    final query = selectOnly(decksTable)
+      ..addColumns([count])
+      ..where(decksTable.userId.equals(userId) & decksTable.deletedAt.isNull());
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
   Stream<LocalDeck?> watchDeckById(String id, {String? userId}) {
     final query = select(decksTable)
       ..where((table) => table.id.equals(id) & table.deletedAt.isNull());

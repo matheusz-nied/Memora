@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/connectivity_service.dart';
@@ -24,11 +25,28 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _scrollController = ScrollController();
   var _isSyncing = false;
+  var _visibleDeckLimit = AppConstants.kLocalPageSize;
+  var _hasMoreDecks = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_loadMoreDecksIfNeeded);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_loadMoreDecksIfNeeded)
+      ..dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final decks = ref.watch(decksStreamProvider);
+    final decks = ref.watch(decksPageProvider(_visibleDeckLimit));
     final isOnline = ref
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
@@ -78,15 +96,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     loading: () => const LoadingState(),
                     error: (_, __) =>
                         const ErrorState(message: DeckText.loadError),
-                    data: (items) => _DeckGrid(
-                      decks: items,
-                      onCreate: () => _showDeckForm(context),
-                      onOpen: (deck) =>
-                          context.push(RouteConstants.deckPath(deck.id)),
-                      onEdit: (deck) => _showDeckForm(context, deck: deck),
-                      onDelete: (deck) =>
-                          _confirmDeleteDeck(context: context, deck: deck),
-                    ),
+                    data: (items) {
+                      _hasMoreDecks = items.length >= _visibleDeckLimit;
+                      return _DeckGrid(
+                        decks: items,
+                        scrollController: _scrollController,
+                        onCreate: () => _showDeckForm(context),
+                        onOpen: (deck) =>
+                            context.push(RouteConstants.deckPath(deck.id)),
+                        onEdit: (deck) => _showDeckForm(context, deck: deck),
+                        onDelete: (deck) =>
+                            _confirmDeleteDeck(context: context, deck: deck),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -95,6 +117,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _loadMoreDecksIfNeeded() {
+    if (!_hasMoreDecks || !_scrollController.hasClients) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (position.extentAfter > 360) {
+      return;
+    }
+
+    setState(() {
+      _visibleDeckLimit += AppConstants.kLocalPageSize;
+    });
   }
 
   Future<void> _showDeckForm(BuildContext context, {DeckModel? deck}) {
@@ -181,6 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 class _DeckGrid extends StatelessWidget {
   const _DeckGrid({
     required this.decks,
+    required this.scrollController,
     required this.onCreate,
     required this.onOpen,
     required this.onEdit,
@@ -188,6 +226,7 @@ class _DeckGrid extends StatelessWidget {
   });
 
   final List<DeckModel> decks;
+  final ScrollController scrollController;
   final VoidCallback onCreate;
   final ValueChanged<DeckModel> onOpen;
   final ValueChanged<DeckModel> onEdit;
@@ -206,6 +245,7 @@ class _DeckGrid extends StatelessWidget {
 
     final columns = Responsive.isMobile(context) ? 1 : 2;
     return GridView.builder(
+      controller: scrollController,
       itemCount: decks.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,

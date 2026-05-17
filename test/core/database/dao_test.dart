@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memora/core/constants/app_constants.dart';
 import 'package:memora/core/database/app_database.dart';
 
 void main() {
@@ -44,6 +45,48 @@ void main() {
     expect(pendingDecks, hasLength(1));
     expect(pendingDecks.single.deletedAt, now + 1);
     expect(pendingDecks.single.syncPending, isTrue);
+  });
+
+  test('decks dao watches a local page and counts visible decks', () async {
+    final now = DateTime(2026, 5, 2).millisecondsSinceEpoch;
+
+    for (var index = 0; index < 35; index += 1) {
+      await database.decksDao.upsertDeck(
+        DecksTableCompanion.insert(
+          id: 'deck-$index',
+          userId: 'user-1',
+          title: 'Deck $index',
+          createdAt: now + index,
+          updatedAt: now + index,
+        ),
+      );
+    }
+    await database.decksDao.upsertDeck(
+      DecksTableCompanion.insert(
+        id: 'other-user-deck',
+        userId: 'user-2',
+        title: 'Other user',
+        createdAt: now + 100,
+        updatedAt: now + 100,
+      ),
+    );
+    await database.decksDao.markDeckDeleted('deck-34', now + 200);
+
+    final page = await database.decksDao
+        .watchDecksPage(userId: 'user-1', limit: AppConstants.kLocalPageSize)
+        .first;
+
+    expect(page, hasLength(AppConstants.kLocalPageSize));
+    expect(page.first.id, 'deck-33');
+    expect(
+      page,
+      isNot(contains(predicate<LocalDeck>((deck) => deck.id == 'deck-34'))),
+    );
+    expect(
+      page,
+      isNot(contains(predicate<LocalDeck>((deck) => deck.userId == 'user-2'))),
+    );
+    expect(await database.decksDao.countDecks(userId: 'user-1'), 34);
   });
 
   test('cards dao updates progress and persists insight locally', () async {
@@ -107,6 +150,52 @@ void main() {
     expect(pendingCards, hasLength(1));
     expect(pendingCards.single.deletedAt, now + 1);
     expect(pendingCards.single.syncPending, isTrue);
+  });
+
+  test('cards dao watches a local page and counts visible cards', () async {
+    final now = DateTime(2026, 5, 2).millisecondsSinceEpoch;
+
+    for (var index = 0; index < 35; index += 1) {
+      await database.cardsDao.upsertCard(
+        CardsTableCompanion.insert(
+          id: 'card-$index',
+          deckId: 'deck-1',
+          front: 'Front $index',
+          back: 'Back $index',
+          dueDate: now,
+          createdAt: now + index,
+          updatedAt: now + index,
+        ),
+      );
+    }
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'other-deck-card',
+        deckId: 'deck-2',
+        front: 'Other',
+        back: 'Other back',
+        dueDate: now,
+        createdAt: now + 100,
+        updatedAt: now + 100,
+      ),
+    );
+    await database.cardsDao.markCardDeleted('card-0', now + 200);
+
+    final page = await database.cardsDao
+        .watchCardsPage(deckId: 'deck-1', limit: AppConstants.kLocalPageSize)
+        .first;
+
+    expect(page, hasLength(AppConstants.kLocalPageSize));
+    expect(page.first.id, 'card-1');
+    expect(
+      page,
+      isNot(contains(predicate<LocalCard>((card) => card.id == 'card-0'))),
+    );
+    expect(
+      page,
+      isNot(contains(predicate<LocalCard>((card) => card.deckId == 'deck-2'))),
+    );
+    expect(await database.cardsDao.countCardsForDeck('deck-1'), 34);
   });
 
   test('cards dao marks every card in a deck as deleted', () async {

@@ -23,6 +23,15 @@ final cardsStreamProvider = StreamProvider.family<List<CardModel>, String>((
   return ref.watch(cardRepositoryProvider).watchCards(deckId);
 });
 
+typedef CardsPageQuery = ({String deckId, int limit});
+
+final cardsPageProvider =
+    StreamProvider.family<List<CardModel>, CardsPageQuery>((ref, query) {
+      return ref
+          .watch(cardRepositoryProvider)
+          .watchCardsPage(query.deckId, limit: query.limit);
+    });
+
 class CardRepository {
   CardRepository({
     required AppDatabase database,
@@ -39,6 +48,17 @@ class CardRepository {
     return _database.cardsDao
         .watchCardsForDeck(deckId)
         .map((cards) => cards.map(CardModel.fromLocal).toList());
+  }
+
+  Stream<List<CardModel>> watchCardsPage(String deckId, {required int limit}) {
+    _runSyncSilently(() => syncCards(deckId));
+    return _database.cardsDao
+        .watchCardsPage(deckId: deckId, limit: limit)
+        .map((cards) => cards.map(CardModel.fromLocal).toList());
+  }
+
+  Future<int> countCards(String deckId) {
+    return _database.cardsDao.countCardsForDeck(deckId);
   }
 
   Future<void> syncCards(String deckId, {bool requireSync = false}) {
@@ -94,6 +114,21 @@ class CardRepository {
     await _database.cardsDao.markCardDeleted(
       card.id,
       DateTime.now().millisecondsSinceEpoch,
+    );
+    _runSyncSilently(() => syncCards(card.deckId));
+  }
+
+  Future<void> updateProgress({
+    required CardModel card,
+    required double easeFactor,
+    required int intervalDays,
+    required DateTime dueDate,
+  }) async {
+    await _database.cardsDao.updateProgress(
+      cardId: card.id,
+      easeFactor: easeFactor,
+      intervalDays: intervalDays,
+      dueDate: dueDate,
     );
     _runSyncSilently(() => syncCards(card.deckId));
   }

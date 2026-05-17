@@ -264,6 +264,9 @@ Widget _app({
       decksStreamProvider.overrideWith(
         (ref) => Stream<List<DeckModel>>.value([]),
       ),
+      decksPageProvider.overrideWith(
+        (ref, limit) => Stream<List<DeckModel>>.value([]),
+      ),
       appDatabaseProvider.overrideWith((ref) {
         final database = AppDatabase(NativeDatabase.memory());
         ref.onDispose(database.close);

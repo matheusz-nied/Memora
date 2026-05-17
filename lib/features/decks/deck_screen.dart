@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/connectivity_service.dart';
@@ -20,15 +21,40 @@ import 'deck_repository.dart';
 import 'deck_text.dart';
 import 'widgets/deck_form_modal.dart';
 
-class DeckScreen extends ConsumerWidget {
+class DeckScreen extends ConsumerStatefulWidget {
   const DeckScreen({super.key, required this.deckId});
 
   final String deckId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final deck = ref.watch(deckStreamProvider(deckId));
-    final cards = ref.watch(cardsStreamProvider(deckId));
+  ConsumerState<DeckScreen> createState() => _DeckScreenState();
+}
+
+class _DeckScreenState extends ConsumerState<DeckScreen> {
+  final _scrollController = ScrollController();
+  var _visibleCardLimit = AppConstants.kLocalPageSize;
+  var _hasMoreCards = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_loadMoreCardsIfNeeded);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_loadMoreCardsIfNeeded)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final deck = ref.watch(deckStreamProvider(widget.deckId));
+    final cards = ref.watch(
+      cardsPageProvider((deckId: widget.deckId, limit: _visibleCardLimit)),
+    );
     final isOnline = ref
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
@@ -37,8 +63,15 @@ class DeckScreen extends ConsumerWidget {
       appBar: AppBar(
         actions: [
           IconButton(
+            tooltip: DeckText.study,
+            onPressed: () =>
+                context.push(RouteConstants.studyPath(widget.deckId)),
+            icon: const Icon(Icons.play_arrow),
+          ),
+          IconButton(
             tooltip: DeckText.generateCards,
-            onPressed: () => context.push(RouteConstants.generatePath(deckId)),
+            onPressed: () =>
+                context.push(RouteConstants.generatePath(widget.deckId)),
             icon: const Icon(Icons.auto_awesome),
           ),
           deck.maybeWhen(
@@ -50,7 +83,7 @@ class DeckScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCardForm(context, ref),
+        onPressed: () => _showCardForm(context),
         child: const Icon(Icons.add),
       ),
       body: SafeArea(
@@ -78,16 +111,17 @@ class DeckScreen extends ConsumerWidget {
                     loading: () => const LoadingState(),
                     error: (_, __) =>
                         const ErrorState(message: CardText.loadError),
-                    data: (items) => _CardsList(
-                      cards: items,
-                      onCreate: () => _showCardForm(context, ref),
-                      onEdit: (card) => _showCardForm(context, ref, card: card),
-                      onDelete: (card) => _confirmDeleteCard(
-                        context: context,
-                        ref: ref,
-                        card: card,
-                      ),
-                    ),
+                    data: (items) {
+                      _hasMoreCards = items.length >= _visibleCardLimit;
+                      return _CardsList(
+                        cards: items,
+                        scrollController: _scrollController,
+                        onCreate: () => _showCardForm(context),
+                        onEdit: (card) => _showCardForm(context, card: card),
+                        onDelete: (card) =>
+                            _confirmDeleteCard(context: context, card: card),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -98,11 +132,7 @@ class DeckScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showCardForm(
-    BuildContext context,
-    WidgetRef ref, {
-    CardModel? card,
-  }) {
+  Future<void> _showCardForm(BuildContext context, {CardModel? card}) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -115,7 +145,7 @@ class DeckScreen extends ConsumerWidget {
             final repository = ref.read(cardRepositoryProvider);
             if (card == null) {
               return repository.createCard(
-                deckId: deckId,
+                deckId: widget.deckId,
                 front: front,
                 back: back,
               );
@@ -129,7 +159,6 @@ class DeckScreen extends ConsumerWidget {
 
   Future<void> _confirmDeleteCard({
     required BuildContext context,
-    required WidgetRef ref,
     required CardModel card,
   }) async {
     final confirmed = await showDialog<bool>(
@@ -152,6 +181,21 @@ class DeckScreen extends ConsumerWidget {
     if (confirmed ?? false) {
       await ref.read(cardRepositoryProvider).deleteCard(card);
     }
+  }
+
+  void _loadMoreCardsIfNeeded() {
+    if (!_hasMoreCards || !_scrollController.hasClients) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (position.extentAfter > 360) {
+      return;
+    }
+
+    setState(() {
+      _visibleCardLimit += AppConstants.kLocalPageSize;
+    });
   }
 }
 
@@ -181,12 +225,14 @@ class _DeckHeader extends StatelessWidget {
 class _CardsList extends StatelessWidget {
   const _CardsList({
     required this.cards,
+    required this.scrollController,
     required this.onCreate,
     required this.onEdit,
     required this.onDelete,
   });
 
   final List<CardModel> cards;
+  final ScrollController scrollController;
   final VoidCallback onCreate;
   final ValueChanged<CardModel> onEdit;
   final ValueChanged<CardModel> onDelete;
@@ -203,6 +249,7 @@ class _CardsList extends StatelessWidget {
     }
 
     return ListView.separated(
+      controller: scrollController,
       itemCount: cards.length,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppDimensions.lg),

@@ -20,6 +20,7 @@ import 'features/generate/import_content_screen.dart';
 import 'features/generate/review_cards_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_state.dart';
+import 'features/study/study_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authRepository = ref.read(authRepositoryProvider);
@@ -113,7 +114,10 @@ final _routes = [
   ),
   GoRoute(
     path: RouteConstants.kRouteStudy,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return StudyScreen(deckId: deckId);
+    },
   ),
   GoRoute(
     path: RouteConstants.kRouteGenerate,

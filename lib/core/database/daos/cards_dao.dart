@@ -18,6 +18,28 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
         .watch();
   }
 
+  Stream<List<LocalCard>> watchCardsPage({
+    required String deckId,
+    required int limit,
+  }) {
+    return (select(cardsTable)
+          ..where(
+            (table) => table.deckId.equals(deckId) & table.deletedAt.isNull(),
+          )
+          ..orderBy([(table) => OrderingTerm.asc(table.createdAt)])
+          ..limit(limit))
+        .watch();
+  }
+
+  Future<int> countCardsForDeck(String deckId) async {
+    final count = cardsTable.id.count();
+    final query = selectOnly(cardsTable)
+      ..addColumns([count])
+      ..where(cardsTable.deckId.equals(deckId) & cardsTable.deletedAt.isNull());
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
+  }
+
   Future<List<LocalCard>> getCardsForDeck(String deckId) {
     return (select(cardsTable)
           ..where(
