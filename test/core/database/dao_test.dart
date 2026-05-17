@@ -104,4 +104,43 @@ void main() {
     expect(pendingCards.single.deletedAt, now + 1);
     expect(pendingCards.single.syncPending, isTrue);
   });
+
+  test('cards dao marks every card in a deck as deleted', () async {
+    final now = DateTime(2026, 5, 2).millisecondsSinceEpoch;
+
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-1',
+        deckId: 'deck-1',
+        front: 'Front',
+        back: 'Back',
+        dueDate: now,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    await database.cardsDao.upsertCard(
+      CardsTableCompanion.insert(
+        id: 'card-2',
+        deckId: 'deck-2',
+        front: 'Other',
+        back: 'Other back',
+        dueDate: now,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    await database.cardsDao.markCardsForDeckDeleted('deck-1', now + 1);
+
+    expect(await database.cardsDao.getCardsForDeck('deck-1'), isEmpty);
+    expect(await database.cardsDao.getCardsForDeck('deck-2'), hasLength(1));
+
+    final pendingCards = await database.cardsDao.getPendingSyncCards(
+      deckId: 'deck-1',
+    );
+    expect(pendingCards, hasLength(1));
+    expect(pendingCards.single.id, 'card-1');
+    expect(pendingCards.single.deletedAt, now + 1);
+  });
 }

@@ -12,6 +12,8 @@ import 'features/auth/auth_repository.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/register_screen.dart';
+import 'features/decks/deck_screen.dart';
+import 'features/decks/home_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_state.dart';
 
@@ -92,11 +94,14 @@ final _routes = [
   ),
   GoRoute(
     path: RouteConstants.kRouteHome,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) => const HomeScreen(),
   ),
   GoRoute(
     path: RouteConstants.kRouteDeck,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return DeckScreen(deckId: deckId);
+    },
   ),
   GoRoute(
     path: RouteConstants.kRouteStudy,

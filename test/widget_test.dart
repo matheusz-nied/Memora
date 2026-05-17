@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,9 +21,12 @@ import 'package:memora/core/backend/models/backend_user.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
 import 'package:memora/core/backend/models/storage_upload_result.dart';
 import 'package:memora/core/constants/app_constants.dart';
-import 'package:memora/core/constants/route_constants.dart';
+import 'package:memora/core/database/app_database.dart';
 import 'package:memora/core/sync/app_sync_service.dart';
 import 'package:memora/features/auth/auth_text.dart';
+import 'package:memora/features/decks/deck_model.dart';
+import 'package:memora/features/decks/deck_repository.dart';
+import 'package:memora/features/decks/deck_text.dart';
 import 'package:memora/features/onboarding/onboarding_page_model.dart';
 import 'package:memora/features/onboarding/onboarding_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,7 +74,7 @@ void main() {
     await tester.pumpWidget(_app(preferences: preferences, backend: backend));
     await tester.pumpAndSettle();
 
-    expect(find.text(RouteConstants.kRouteHome), findsOneWidget);
+    expect(find.text(DeckText.title), findsOneWidget);
   });
 
   testWidgets('forgot password is available without session after onboarding', (
@@ -103,7 +107,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(backend.auth.signInCount, 1);
-    expect(find.text(RouteConstants.kRouteHome), findsOneWidget);
+    expect(find.text(DeckText.title), findsOneWidget);
   });
 
   testWidgets('register form sends display name and navigates to home', (
@@ -131,7 +135,7 @@ void main() {
 
     expect(backend.auth.signUpCount, 1);
     expect(backend.auth.lastDisplayName, 'Jane Doe');
-    expect(find.text(RouteConstants.kRouteHome), findsOneWidget);
+    expect(find.text(DeckText.title), findsOneWidget);
   });
 
   testWidgets('register without immediate session asks user to check email', (
@@ -189,6 +193,14 @@ Widget _app({
       sharedPreferencesProvider.overrideWithValue(preferences),
       backendClientProvider.overrideWithValue(backend ?? _FakeBackendClient()),
       appAutoSyncProvider.overrideWith((ref) {}),
+      decksStreamProvider.overrideWith(
+        (ref) => Stream<List<DeckModel>>.value([]),
+      ),
+      appDatabaseProvider.overrideWith((ref) {
+        final database = AppDatabase(NativeDatabase.memory());
+        ref.onDispose(database.close);
+        return database;
+      }),
     ],
     child: const MemoraApp(),
   );
@@ -292,19 +304,13 @@ BackendSession _sessionFor(String email, {String? displayName}) {
 
 class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
   @override
-  Future<void> deleteCard(String cardId) {
-    throw UnimplementedError();
-  }
+  Future<void> deleteCard(String cardId) async {}
 
   @override
-  Future<void> deleteDeck(String deckId) {
-    throw UnimplementedError();
-  }
+  Future<void> deleteDeck(String deckId) async {}
 
   @override
-  Future<List<BackendCard>> fetchCards(String deckId) {
-    throw UnimplementedError();
-  }
+  Future<List<BackendCard>> fetchCards(String deckId) async => [];
 
   @override
   Future<List<BackendChatMessage>> fetchChatMessages(String deckId) {
@@ -312,9 +318,7 @@ class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
   }
 
   @override
-  Future<List<BackendDeck>> fetchDecks() {
-    throw UnimplementedError();
-  }
+  Future<List<BackendDeck>> fetchDecks() async => [];
 
   @override
   Future<BackendChatMessage> insertChatMessage(BackendChatMessage message) {
@@ -342,14 +346,10 @@ class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
   }
 
   @override
-  Future<BackendCard> upsertCard(BackendCard card) {
-    throw UnimplementedError();
-  }
+  Future<BackendCard> upsertCard(BackendCard card) async => card;
 
   @override
-  Future<BackendDeck> upsertDeck(BackendDeck deck) {
-    throw UnimplementedError();
-  }
+  Future<BackendDeck> upsertDeck(BackendDeck deck) async => deck;
 }
 
 class _FakeStorageGateway implements StorageGateway {

@@ -115,6 +115,18 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
     );
   }
 
+  Future<void> markCardsForDeckDeleted(String deckId, int deletedAt) {
+    return (update(
+      cardsTable,
+    )..where((table) => table.deckId.equals(deckId))).write(
+      CardsTableCompanion(
+        syncPending: const Value(true),
+        deletedAt: Value(deletedAt),
+        updatedAt: Value(deletedAt),
+      ),
+    );
+  }
+
   Future<void> deleteCardPermanently(String id) {
     return (delete(cardsTable)..where((table) => table.id.equals(id))).go();
   }
