@@ -10,7 +10,6 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/offline_banner.dart';
-import '../auth/auth_repository.dart';
 import 'deck_model.dart';
 import 'deck_repository.dart';
 import 'deck_text.dart';
@@ -32,12 +31,7 @@ class HomeScreen extends ConsumerWidget {
         title: const Text(DeckText.subtitle),
         actions: [
           IconButton(
-            tooltip: DeckText.newDeck,
-            onPressed: () => _showDeckForm(context, ref),
-            icon: const Icon(Icons.add),
-          ),
-          IconButton(
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+            onPressed: () => context.push(RouteConstants.kRouteProfile),
             icon: const Icon(Icons.account_circle_outlined),
           ),
         ],

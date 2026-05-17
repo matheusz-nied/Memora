@@ -6,6 +6,7 @@ class RouteConstants {
   static const String kRouteRegister = '/register';
   static const String kRouteForgotPass = '/forgot-password';
   static const String kRouteHome = '/home';
+  static const String kRouteProfile = '/profile';
   static const String kRouteDeck = '/deck/:deckId';
   static const String kRouteStudy = '/deck/:deckId/study';
   static const String kRouteGenerate = '/deck/:deckId/generate';

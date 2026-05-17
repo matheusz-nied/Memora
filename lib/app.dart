@@ -11,6 +11,7 @@ import 'core/utils/responsive.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/profile_screen.dart';
 import 'features/auth/register_screen.dart';
 import 'features/decks/deck_screen.dart';
 import 'features/decks/home_screen.dart';
@@ -91,6 +92,10 @@ final _routes = [
   GoRoute(
     path: RouteConstants.kRouteForgotPass,
     builder: (context, state) => const ForgotPasswordScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteProfile,
+    builder: (context, state) => const ProfileScreen(),
   ),
   GoRoute(
     path: RouteConstants.kRouteHome,

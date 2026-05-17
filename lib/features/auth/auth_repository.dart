@@ -11,7 +11,15 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 final authStateProvider = StreamProvider<BackendSession?>((ref) {
   final auth = ref.watch(authRepositoryProvider);
-  return auth.authStateChanges;
+  return Stream<BackendSession?>.multi((controller) {
+    controller.add(auth.currentSession);
+    final subscription = auth.authStateChanges.listen(
+      controller.add,
+      onError: controller.addError,
+      onDone: controller.close,
+    );
+    controller.onCancel = subscription.cancel;
+  });
 });
 
 class AuthRepository {

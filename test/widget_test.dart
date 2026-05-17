@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:memora/app.dart';
 import 'package:memora/core/backend/backend_client.dart';
 import 'package:memora/core/backend/backend_provider.dart';
@@ -21,11 +22,14 @@ import 'package:memora/core/backend/models/backend_user.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
 import 'package:memora/core/backend/models/storage_upload_result.dart';
 import 'package:memora/core/constants/app_constants.dart';
+import 'package:memora/core/constants/route_constants.dart';
 import 'package:memora/core/database/app_database.dart';
 import 'package:memora/core/sync/app_sync_service.dart';
 import 'package:memora/features/auth/auth_text.dart';
+import 'package:memora/features/auth/profile_text.dart';
 import 'package:memora/features/decks/deck_model.dart';
 import 'package:memora/features/decks/deck_repository.dart';
+import 'package:memora/features/decks/home_screen.dart';
 import 'package:memora/features/decks/deck_text.dart';
 import 'package:memora/features/onboarding/onboarding_page_model.dart';
 import 'package:memora/features/onboarding/onboarding_state.dart';
@@ -75,6 +79,70 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(DeckText.title), findsOneWidget);
+  });
+
+  testWidgets('authenticated user opening login is redirected to home', (
+    tester,
+  ) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+    final backend = _FakeBackendClient(initialSession: _session);
+
+    await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+    await tester.pumpAndSettle();
+
+    tester.element(find.byType(HomeScreen)).go(RouteConstants.kRouteLogin);
+    await tester.pumpAndSettle();
+
+    expect(find.text(DeckText.title), findsOneWidget);
+    expect(find.text(AuthText.loginTitle), findsNothing);
+  });
+
+  testWidgets('unauthenticated user opening profile redirects to login', (
+    tester,
+  ) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+
+    await tester.pumpWidget(_app(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    tester
+        .element(find.text(AuthText.loginTitle))
+        .go(RouteConstants.kRouteProfile);
+    await tester.pumpAndSettle();
+
+    expect(find.text(AuthText.loginTitle), findsOneWidget);
+    expect(find.text(ProfileText.title), findsNothing);
+  });
+
+  testWidgets('profile icon opens profile without signing out', (tester) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+    final backend = _FakeBackendClient(initialSession: _session);
+
+    await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.account_circle_outlined));
+    await tester.pumpAndSettle();
+
+    expect(backend.auth.signOutCount, 0);
+    expect(find.text(ProfileText.title), findsOneWidget);
+    expect(find.text('user@example.com'), findsWidgets);
+  });
+
+  testWidgets('profile sign out returns to login', (tester) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+    final backend = _FakeBackendClient(initialSession: _session);
+
+    await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.account_circle_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ProfileText.signOut));
+    await tester.pumpAndSettle();
+
+    expect(backend.auth.signOutCount, 1);
+    expect(find.text(AuthText.loginTitle), findsOneWidget);
   });
 
   testWidgets('forgot password is available without session after onboarding', (
@@ -250,6 +318,7 @@ class _FakeAuthGateway implements AuthGateway {
   BackendSession? _session;
   int signInCount = 0;
   int signUpCount = 0;
+  int signOutCount = 0;
   String? lastDisplayName;
 
   @override
@@ -290,6 +359,7 @@ class _FakeAuthGateway implements AuthGateway {
 
   @override
   Future<void> signOut() async {
+    signOutCount += 1;
     _session = null;
     _controller.add(null);
   }
