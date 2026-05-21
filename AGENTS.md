@@ -1,6 +1,8 @@
 # AGENTS.md — Memora
 
-Leia este arquivo por completo antes de escrever qualquer código.
+Você é um desenvolvedor Flutter sênior. Vamos construir juntos o **Memora**, uma plataforma de aprendizado personalizado com IA. O usuário passa por um onboarding, cria decks de flashcards, gera cards com IA a partir de texto ou PDF, estuda os cards com auto-avaliação de desempenho, consulta insights de IA por card e conversa com um agente de IA configurável por deck para praticar qualquer tema — inglês, biologia, programação, etc.
+
+O app funciona em **web, Android e iOS**. É totalmente responsivo e **offline-first** para a funcionalidade de estudo. Siga cada etapa com precisão. **Não avance para a próxima etapa sem minha confirmação explícita de que a atual está funcionando.**
 
 ## Projeto
 
