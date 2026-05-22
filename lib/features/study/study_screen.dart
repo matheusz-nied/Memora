@@ -302,17 +302,19 @@ class _StudyContent extends StatelessWidget {
                             color: isActive || isPast
                                 ? AppColors.primary
                                 : (isDark
-                                    ? const Color(0xFF324467)
-                                    : AppColors.borderStrong),
-                            borderRadius:
-                                BorderRadius.circular(AppDimensions.radiusFull),
+                                      ? const Color(0xFF324467)
+                                      : AppColors.borderStrong),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusFull,
+                            ),
                             boxShadow: isActive
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.primary
-                                          .withValues(alpha: 0.6),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       blurRadius: 8,
-                                    )
+                                    ),
                                   ]
                                 : null,
                           ),
@@ -325,8 +327,9 @@ class _StudyContent extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: progress,
                         minHeight: 6,
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusFull),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusFull,
+                        ),
                         backgroundColor: isDark
                             ? const Color(0xFF324467)
                             : AppColors.borderStrong,
@@ -341,20 +344,22 @@ class _StudyContent extends StatelessWidget {
                       Icon(
                         Icons.school,
                         size: 14,
-                        color: (isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimary)
-                            .withValues(alpha: 0.6),
+                        color:
+                            (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimary)
+                                .withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: AppDimensions.xs),
                       Flexible(
                         child: Text(
                           'SESSÃO: ${deck.title}'.toUpperCase(),
                           style: AppTypography.labelSmall.copyWith(
-                            color: (isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimary)
-                                .withValues(alpha: 0.6),
+                            color:
+                                (isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimary)
+                                    .withValues(alpha: 0.6),
                             letterSpacing: 1.5,
                           ),
                           maxLines: 1,
@@ -371,8 +376,9 @@ class _StudyContent extends StatelessWidget {
                 top: 0,
                 child: IconButton(
                   icon: const Icon(Icons.close),
-                  color:
-                      isDark ? AppColors.textSecDark : AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.textSecDark
+                      : AppColors.textSecondary,
                   onPressed: onBackToDeck,
                 ),
               ),
@@ -423,8 +429,9 @@ class _StudyContent extends StatelessWidget {
                         elevation: 8,
                         shadowColor: AppColors.primary.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusXl),
+                          borderRadius: BorderRadius.circular(
+                            AppDimensions.radiusXl,
+                          ),
                         ),
                       ),
                       child: Row(

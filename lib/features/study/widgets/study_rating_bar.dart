@@ -18,34 +18,42 @@ class StudyRatingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppDimensions.sm,
-      runSpacing: AppDimensions.sm,
-      alignment: WrapAlignment.center,
+    return Row(
       children: [
-        _RatingButton(
-          label: StudyText.again,
-          color: AppColors.error,
-          enabled: enabled,
-          onPressed: () => onRating(CardRating.again),
+        Expanded(
+          child: _RatingButton(
+            label: StudyText.again,
+            color: AppColors.error,
+            enabled: enabled,
+            onPressed: () => onRating(CardRating.again),
+          ),
         ),
-        _RatingButton(
-          label: StudyText.hard,
-          color: AppColors.warning,
-          enabled: enabled,
-          onPressed: () => onRating(CardRating.hard),
+        const SizedBox(width: AppDimensions.sm),
+        Expanded(
+          child: _RatingButton(
+            label: StudyText.hard,
+            color: AppColors.warning,
+            enabled: enabled,
+            onPressed: () => onRating(CardRating.hard),
+          ),
         ),
-        _RatingButton(
-          label: StudyText.good,
-          color: AppColors.info,
-          enabled: enabled,
-          onPressed: () => onRating(CardRating.good),
+        const SizedBox(width: AppDimensions.sm),
+        Expanded(
+          child: _RatingButton(
+            label: StudyText.good,
+            color: AppColors.info,
+            enabled: enabled,
+            onPressed: () => onRating(CardRating.good),
+          ),
         ),
-        _RatingButton(
-          label: StudyText.easy,
-          color: AppColors.success,
-          enabled: enabled,
-          onPressed: () => onRating(CardRating.easy),
+        const SizedBox(width: AppDimensions.sm),
+        Expanded(
+          child: _RatingButton(
+            label: StudyText.easy,
+            color: AppColors.success,
+            enabled: enabled,
+            onPressed: () => onRating(CardRating.easy),
+          ),
         ),
       ],
     );
@@ -68,7 +76,7 @@ class _RatingButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: 56,
       child: OutlinedButton(
         onPressed: enabled ? onPressed : null,
         style: OutlinedButton.styleFrom(
@@ -79,11 +87,14 @@ class _RatingButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xs),
         ),
-        child: Text(
-          label,
-          style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.bold),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
