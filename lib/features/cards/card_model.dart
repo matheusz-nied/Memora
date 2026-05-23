@@ -42,4 +42,27 @@ class CardModel {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(card.updatedAt),
     );
   }
+
+  CardModel copyWith({
+    double? easeFactor,
+    int? intervalDays,
+    DateTime? dueDate,
+    bool? syncPending,
+    String? insight,
+    DateTime? updatedAt,
+  }) {
+    return CardModel(
+      id: id,
+      deckId: deckId,
+      front: front,
+      back: back,
+      easeFactor: easeFactor ?? this.easeFactor,
+      intervalDays: intervalDays ?? this.intervalDays,
+      dueDate: dueDate ?? this.dueDate,
+      syncPending: syncPending ?? this.syncPending,
+      insight: insight ?? this.insight,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

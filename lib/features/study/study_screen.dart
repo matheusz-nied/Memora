@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
@@ -21,6 +22,7 @@ import '../decks/deck_repository.dart';
 import 'card_rating_model.dart';
 import 'study_session_model.dart';
 import 'study_text.dart';
+import 'widgets/insight_widget.dart';
 import 'widgets/study_flashcard.dart';
 import 'widgets/study_rating_bar.dart';
 import 'widgets/study_summary.dart';
@@ -90,6 +92,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                   },
                   onSpeak: _speak,
                   onRating: _rateCurrentCard,
+                  onInsightGenerated: _updateCurrentCardInsight,
+                  onViewInsight: (cardId) => context.push(
+                    RouteConstants.cardInsightPath(deckValue.id, cardId),
+                  ),
                   onRestart: () => _restartSession(items, isOnline: isOnline),
                   onBackToDeck: () => context.pop(),
                 ),
@@ -112,6 +118,11 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     if (_sessionCards == null ||
         (canReplaceSession && sessionIds != currentIds)) {
       _sessionCards = _orderedCards(cards, isOnline: isOnline);
+    } else {
+      final latestById = {for (final card in cards) card.id: card};
+      _sessionCards = _sessionCards
+          ?.map((card) => latestById[card.id] ?? card)
+          .toList();
     }
 
     return _sessionCards ?? const [];
@@ -189,6 +200,28 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     }
   }
 
+  void _updateCurrentCardInsight(String insight) {
+    final cards = _sessionCards;
+    if (cards == null || _currentIndex >= cards.length) {
+      return;
+    }
+
+    setState(() {
+      final currentCard = cards[_currentIndex];
+      _sessionCards = [
+        for (final card in cards)
+          if (card.id == currentCard.id)
+            card.copyWith(
+              insight: insight,
+              syncPending: true,
+              updatedAt: DateTime.now(),
+            )
+          else
+            card,
+      ];
+    });
+  }
+
   void _restartSession(List<CardModel> cards, {required bool isOnline}) {
     setState(() {
       _sessionCards = _orderedCards(cards, isOnline: isOnline);
@@ -224,6 +257,8 @@ class _StudyContent extends StatelessWidget {
     required this.onToggleCard,
     required this.onSpeak,
     required this.onRating,
+    required this.onInsightGenerated,
+    required this.onViewInsight,
     required this.onRestart,
     required this.onBackToDeck,
   });
@@ -239,6 +274,8 @@ class _StudyContent extends StatelessWidget {
   final VoidCallback onToggleCard;
   final void Function(String text, DeckModel deck) onSpeak;
   final ValueChanged<CardRating> onRating;
+  final ValueChanged<String> onInsightGenerated;
+  final ValueChanged<String> onViewInsight;
   final VoidCallback onRestart;
   final VoidCallback onBackToDeck;
 
@@ -389,17 +426,45 @@ class _StudyContent extends StatelessWidget {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xl),
-            child: Center(
+            child: Align(
+              alignment: const Alignment(0, 0.45),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: StudyFlashcard(
-                  front: currentCard.front,
-                  back: currentCard.back,
-                  showBack: showBack,
-                  onToggle: onToggleCard,
-                  onSpeak: () => onSpeak(
-                    showBack ? currentCard.back : currentCard.front,
-                    deck,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      StudyFlashcard(
+                        front: currentCard.front,
+                        back: currentCard.back,
+                        showBack: showBack,
+                        onToggle: onToggleCard,
+                        onSpeak: () => onSpeak(
+                          showBack ? currentCard.back : currentCard.front,
+                          deck,
+                        ),
+                      ),
+                      Opacity(
+                        opacity: showBack ? 1.0 : 0.0,
+                        child: IgnorePointer(
+                          ignoring: !showBack,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: AppDimensions.md),
+                              InsightWidget(
+                                deckId: deck.id,
+                                card: currentCard,
+                                isOnline: isOnline,
+                                onInsightGenerated: onInsightGenerated,
+                                onViewInsight: () =>
+                                    onViewInsight(currentCard.id),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -410,9 +475,9 @@ class _StudyContent extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppDimensions.xl,
-            AppDimensions.lg,
+            AppDimensions.sm,
             AppDimensions.xl,
-            AppDimensions.xxxl,
+            AppDimensions.xl,
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),

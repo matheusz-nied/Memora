@@ -18,6 +18,7 @@ class SupabaseStorageGateway implements StorageGateway {
     required Uint8List bytes,
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
+    // ignore: deprecated_member_use
     final safeFileName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
     final path = '$userId/$timestamp-$safeFileName';
 

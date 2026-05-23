@@ -82,7 +82,9 @@ class _RatingButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(
-            color: enabled ? color.withValues(alpha: 0.5) : AppColors.borderStrong,
+            color: enabled
+                ? color.withValues(alpha: 0.5)
+                : AppColors.borderStrong,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -93,7 +95,9 @@ class _RatingButton extends StatelessWidget {
           fit: BoxFit.scaleDown,
           child: Text(
             label,
-            style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.bold),
+            style: AppTypography.labelMedium.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

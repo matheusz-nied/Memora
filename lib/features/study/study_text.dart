@@ -29,4 +29,21 @@ class StudyText {
   static const String summaryReview = 'Revisar';
   static const String nextCard = 'Próximo card';
   static const String finish = 'Finalizar';
+  static const String insightTitle = 'Insight da IA';
+  static const String insightMessage =
+      'Gere uma explicação aprofundada para este card quando quiser revisar com mais contexto.';
+  static const String generateInsight = 'Gerar insight';
+  static const String viewInsight = 'Ver explicação';
+  static const String insightOffline =
+      'Requer conexão com a internet para gerar um novo insight.';
+  static const String insightOfflineTooltip = 'Requer conexão com a internet';
+  static const String insightEmpty = 'A IA retornou um insight vazio.';
+  static const String insightError =
+      'Não foi possível gerar o insight agora. Tente novamente.';
+  static const String insightScreenTitle = 'Explicação';
+  static const String insightEmptyTitle = 'Insight ainda não gerado';
+  static const String insightEmptyMessage =
+      'Volte para o estudo e gere uma explicação para este card.';
+  static const String insightQuestion = 'Pergunta';
+  static const String insightAnswer = 'Resposta';
 }

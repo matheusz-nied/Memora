@@ -31,7 +31,7 @@ class StudyFlashcard extends StatelessWidget {
     final badgeBg = AppColors.primary.withValues(alpha: 0.1);
     final badgeBorder = AppColors.primary.withValues(alpha: 0.2);
     final badgeTextColor = AppColors.primary;
-    
+
     final cardBg = isDark ? AppColors.surfaceDark : AppColors.surface;
     final content = showBack ? back : front;
     final contentStyle = isQuestion
@@ -57,8 +57,8 @@ class StudyFlashcard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppDimensions.radius3Xl),
             boxShadow: [
               BoxShadow(
-                color: isDark 
-                    ? Colors.black.withValues(alpha: 0.5) 
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.5)
                     : Colors.black.withValues(alpha: 0.1),
                 blurRadius: isDark ? 50 : 40,
                 offset: Offset(0, isDark ? 20 : 20),
@@ -66,8 +66,8 @@ class StudyFlashcard extends StatelessWidget {
               ),
             ],
             border: Border.all(
-              color: isDark 
-                  ? Colors.white.withValues(alpha: 0.05) 
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.05)
                   : AppColors.border,
             ),
           ),
@@ -82,8 +82,8 @@ class StudyFlashcard extends StatelessWidget {
                       child: Icon(
                         Icons.school,
                         size: 200,
-                        color: isDark 
-                            ? Colors.white.withValues(alpha: 0.03) 
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.03)
                             : AppColors.textSecondary.withValues(alpha: 0.05),
                       ),
                     ),
@@ -106,7 +106,9 @@ class StudyFlashcard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: badgeBg,
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusFull,
+                            ),
                             border: Border.all(color: badgeBorder),
                           ),
                           child: Row(
@@ -140,7 +142,9 @@ class StudyFlashcard extends StatelessWidget {
                             onPressed: onSpeak,
                             icon: const Icon(Icons.volume_up, size: 24),
                             style: IconButton.styleFrom(
-                              foregroundColor: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+                              foregroundColor: isDark
+                                  ? AppColors.textTertDark
+                                  : AppColors.textTertiary,
                             ),
                           ),
                         ),
@@ -168,13 +172,17 @@ class StudyFlashcard extends StatelessWidget {
                             Icon(
                               Icons.touch_app,
                               size: 18,
-                              color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+                              color: isDark
+                                  ? AppColors.textTertDark
+                                  : AppColors.textTertiary,
                             ),
                             const SizedBox(width: AppDimensions.xs),
                             Text(
                               StudyText.tapToReveal.toUpperCase(),
                               style: AppTypography.labelSmall.copyWith(
-                                color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+                                color: isDark
+                                    ? AppColors.textTertDark
+                                    : AppColors.textTertiary,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
                               ),

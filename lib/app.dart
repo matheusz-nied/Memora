@@ -20,6 +20,7 @@ import 'features/generate/import_content_screen.dart';
 import 'features/generate/review_cards_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_state.dart';
+import 'features/study/insight_screen.dart';
 import 'features/study/study_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -117,6 +118,14 @@ final _routes = [
     builder: (context, state) {
       final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
       return StudyScreen(deckId: deckId);
+    },
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteCardInsight,
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      final cardId = state.pathParameters[RouteConstants.cardIdParam]!;
+      return InsightScreen(deckId: deckId, cardId: cardId);
     },
   ),
   GoRoute(

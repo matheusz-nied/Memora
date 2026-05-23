@@ -55,6 +55,12 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
         .getSingleOrNull();
   }
 
+  Stream<LocalCard?> watchCardById(String id) {
+    return (select(cardsTable)
+          ..where((table) => table.id.equals(id) & table.deletedAt.isNull()))
+        .watchSingleOrNull();
+  }
+
   Future<List<LocalCard>> getPendingSyncCards({String? deckId}) {
     final query = select(cardsTable)
       ..where((table) => table.syncPending.equals(true));

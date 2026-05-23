@@ -27,11 +27,7 @@ class StudySummary extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.emoji_events,
-              size: 64,
-              color: AppColors.primary,
-            ),
+            const Icon(Icons.emoji_events, size: 64, color: AppColors.primary),
             const SizedBox(height: AppDimensions.xxl),
             Text(
               StudyText.finishTitle,

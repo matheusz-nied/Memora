@@ -23,6 +23,13 @@ final cardsStreamProvider = StreamProvider.family<List<CardModel>, String>((
   return ref.watch(cardRepositoryProvider).watchCards(deckId);
 });
 
+final cardStreamProvider = StreamProvider.family<CardModel?, String>((
+  ref,
+  cardId,
+) {
+  return ref.watch(cardRepositoryProvider).watchCard(cardId);
+});
+
 typedef CardsPageQuery = ({String deckId, int limit});
 
 final cardsPageProvider =
@@ -55,6 +62,12 @@ class CardRepository {
     return _database.cardsDao
         .watchCardsPage(deckId: deckId, limit: limit)
         .map((cards) => cards.map(CardModel.fromLocal).toList());
+  }
+
+  Stream<CardModel?> watchCard(String cardId) {
+    return _database.cardsDao
+        .watchCardById(cardId)
+        .map((card) => card == null ? null : CardModel.fromLocal(card));
   }
 
   Future<int> countCards(String deckId) {
@@ -130,6 +143,14 @@ class CardRepository {
       intervalDays: intervalDays,
       dueDate: dueDate,
     );
+    _runSyncSilently(() => syncCards(card.deckId));
+  }
+
+  Future<void> updateInsight({
+    required CardModel card,
+    required String insight,
+  }) async {
+    await _database.cardsDao.updateInsight(cardId: card.id, insight: insight);
     _runSyncSilently(() => syncCards(card.deckId));
   }
 

@@ -44,7 +44,7 @@ Implementar fluxo inicial, autenticação e regras de navegação seguindo as se
 
 Checkpoint: validar primeiro acesso, flag de onboarding, login, cadastro, recuperação de senha, persistência de sessão e redirects.
 
-### Etapa 5 — Decks e cards
+### Concluído: Etapa 5 — Decks e cards
 
 Implementar listagem, criação, edição, exclusão, cache local e sync de decks/cards seguindo as seções:
 - [Decks](#decks)
@@ -53,7 +53,7 @@ Implementar listagem, criação, edição, exclusão, cache local e sync de deck
 
 Checkpoint: validar streams Drift, sync via backend remoto quando online, delete em cascade e responsividade da grid.
 
-### Etapa 6 — Geração de cards com IA
+### Concluído: Etapa 6 — Geração de cards com IA
 
 Implementar importação de texto/PDF, revisão de cards e geração via `AiGateway` seguindo as seções:
 - [Geração de Cards](#geração-de-cards)
@@ -61,7 +61,7 @@ Implementar importação de texto/PDF, revisão de cards e geração via `AiGate
 
 Checkpoint: validar geração online, erros específicos de PDF, revisão antes de salvar e bloqueio adequado quando offline.
 
-### Etapa 7 — Estudo offline-first
+### Concluído: Etapa 7 — Estudo offline-first
 
 Implementar modo estudo, flip, TTS, avaliação, progresso local e sync em background seguindo as seções:
 - [Estudo (offline-first)](#estudo-offline-first)
