@@ -24,72 +24,136 @@ class ChatInputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Colors matching theme
+    const slate400 = Color(0xFF94A3B8);
+    const slate600 = Color(0xFF475569);
+
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: AppDimensions.sm,
-      ),
+      padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.backgroundDark : AppColors.background,
+        color: isDark
+            ? const Color(0xFF101622).withOpacity(0.95)
+            : AppColors.background.withOpacity(0.95),
         border: Border(
           top: BorderSide(
-            color: isDark ? AppColors.borderDark : AppColors.border,
+            color: isDark
+                ? Colors.white.withOpacity(0.06)
+                : Colors.black.withOpacity(0.06),
           ),
         ),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                enabled: enabled && !isSending,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.newline,
-                style: AppTypography.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: AgentText.inputPlaceholder,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDimensions.radius2Xl,
-                    ),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.borderDark : AppColors.border,
-                    ),
+            // Floating Context RAG Capsule
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: AppDimensions.md),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF1E2638)
+                      : AppColors.primary.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.08)
+                        : AppColors.primary.withOpacity(0.12),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDimensions.radius2Xl,
-                    ),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.borderDark : AppColors.border,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDimensions.radius2Xl,
-                    ),
-                    borderSide: const BorderSide(
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome,
                       color: AppColors.primary,
-                      width: 1.5,
+                      size: 11,
                     ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.lg,
-                    vertical: AppDimensions.md,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? AppColors.surfaceDark : AppColors.surface,
+                    const SizedBox(width: 6),
+                    Text(
+                      'TUTOR ATIVO • Consultando cards do deck',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: isDark ? const Color(0xFF94A3B8) : AppColors.primary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: AppDimensions.sm),
-            _SendButton(
-              onPressed: enabled && !isSending ? onSend : null,
-              isSending: isSending,
+
+            // Text input line
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    enabled: enabled && !isSending,
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.newline,
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      fontSize: 16,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: AgentText.inputPlaceholder,
+                      hintStyle: AppTypography.bodyLarge.copyWith(
+                        color: isDark ? slate600 : slate400,
+                      ),
+                      suffixIcon: Icon(
+                        Icons.mic_none_outlined,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.25)
+                            : Colors.black.withOpacity(0.25),
+                        size: 20,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.08),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.08),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.lg,
+                        vertical: 12,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0xFF1C2333)
+                          : AppColors.primary.withOpacity(0.01),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.sm),
+                _SendButton(
+                  onPressed: enabled && !isSending ? onSend : null,
+                  isSending: isSending,
+                ),
+              ],
             ),
           ],
         ),
@@ -106,11 +170,26 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: AppDimensions.huge,
-      height: AppDimensions.huge,
+    final active = onPressed != null;
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? AppColors.primary : const Color(0xFF334155).withOpacity(0.2),
+        boxShadow: active
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : [],
+      ),
       child: Material(
-        color: onPressed != null ? AppColors.primary : AppColors.textTertiary,
+        color: Colors.transparent,
         shape: const CircleBorder(),
         child: InkWell(
           onTap: onPressed,
@@ -118,7 +197,7 @@ class _SendButton extends StatelessWidget {
           child: Center(
             child: isSending
                 ? const SizedBox.square(
-                    dimension: AppDimensions.xl,
+                    dimension: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: Colors.white,
@@ -127,7 +206,7 @@ class _SendButton extends StatelessWidget {
                 : const Icon(
                     Icons.arrow_upward,
                     color: Colors.white,
-                    size: AppDimensions.xxl,
+                    size: 20,
                   ),
           ),
         ),

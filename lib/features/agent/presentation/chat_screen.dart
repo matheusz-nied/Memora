@@ -222,7 +222,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final history = await repository.fetchChatHistory(widget.deckId);
       if (mounted) {
         setState(() {
-          _messages = history.map(ChatMessageUi.fromBackend).toList();
+          _messages = history
+              .map(ChatMessageUi.fromBackend)
+              .toList()
+              .reversed
+              .toList();
           _isLoadingHistory = false;
         });
         _scrollToBottom();
