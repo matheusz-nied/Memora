@@ -63,8 +63,8 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
       floatingActionButton: FloatingActionButton(
         onPressed: widget.onCreateDeck,
         backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.surface,
-        elevation: 8,
+        foregroundColor: Colors.white,
+        elevation: 6,
         child: const Icon(Icons.add, size: 28),
       ),
       body: Padding(
@@ -75,6 +75,7 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Styled Premium Search Bar
             _DeckSearchField(
               isDark: widget.isDark,
               controller: _searchController,
@@ -82,6 +83,8 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
               onClear: _clearSearch,
             ),
             const SizedBox(height: AppDimensions.xl),
+
+            // Dynamic grid or list depending on viewport width (Rule 4)
             Expanded(
               child: decksAsync.when(
                 loading: () => const LoadingState(),
@@ -89,7 +92,7 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
                 data: _buildDeckList,
               ),
             ),
-            const SizedBox(height: 80),
+            const SizedBox(height: 80), // Spacer for navigation bar
           ],
         ),
       ),
@@ -103,12 +106,15 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
     if (filteredDecks.isEmpty) {
       if (_searchQuery.isNotEmpty) {
         return Center(
-          child: Text(
-            DeckText.noDecksFound,
-            style: AppTypography.bodyMedium.copyWith(
-              color: widget.isDark
-                  ? AppColors.textSecDark
-                  : AppColors.textSecondary,
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.xl),
+            child: Text(
+              DeckText.noDecksFound,
+              style: AppTypography.bodyMedium.copyWith(
+                color: widget.isDark
+                    ? AppColors.textSecDark
+                    : AppColors.textSecondary,
+              ),
             ),
           ),
         );
@@ -122,8 +128,36 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
       );
     }
 
+    final width = MediaQuery.of(context).size.width;
+    final isTabletOrDesktop = width >= 600;
+
+    // Conforming to Rule 4 - Responsividade obrigatória (grid com 2 colunas se largura >= 600)
+    if (isTabletOrDesktop) {
+      return GridView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: AppDimensions.lg,
+          mainAxisSpacing: AppDimensions.sm,
+          childAspectRatio: 2.0,
+        ),
+        itemCount: filteredDecks.length,
+        itemBuilder: (context, index) {
+          final deck = filteredDecks[index];
+          return LibraryDeckCard(
+            deck: deck,
+            isDark: widget.isDark,
+            onEdit: () => widget.onEditDeck(deck),
+            onDelete: () => widget.onDeleteDeck(deck),
+          );
+        },
+      );
+    }
+
     return ListView.builder(
       controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: filteredDecks.length,
       itemBuilder: (context, index) {
         final deck = filteredDecks[index];
@@ -184,12 +218,12 @@ class _DeckSearchField extends StatelessWidget {
     return Container(
       height: AppDimensions.minTouchTarget,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
           color: isDark
-              ? AppColors.surface.withValues(alpha: 0.08)
-              : AppColors.textPrimary.withValues(alpha: 0.08),
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.08),
         ),
       ),
       child: TextField(
@@ -208,7 +242,10 @@ class _DeckSearchField extends StatelessWidget {
             color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
           ),
           suffixIcon: hasQuery
-              ? IconButton(icon: const Icon(Icons.clear), onPressed: onClear)
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: onClear,
+                )
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),

@@ -60,4 +60,10 @@ class DeckText {
   static const String totalCards = 'cards no total';
   static const String searchDecks = 'Pesquisar decks...';
   static const String noDecksFound = 'Nenhum deck encontrado.';
+  static const String searchCards = 'Pesquisar flashcards...';
+  static const String studyNow = 'Estudar Agora';
+  static const String chatTutor = 'Tutor IA';
+  static const String importAi = 'Gerar com IA';
+  static const String deckSettings = 'Configurar';
+  static const String yourCards = 'Seus Flashcards';
 }
