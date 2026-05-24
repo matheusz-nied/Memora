@@ -843,12 +843,13 @@ class _DeckSettingsMenu extends ConsumerWidget {
               builder:
                   (context) => DeckFormModal(
                     deck: deck,
-                    onSubmit: (title, description) {
-                      return ref.read(deckRepositoryProvider).updateDeck(
+                    onSubmit: (title, description) async {
+                      await ref.read(deckRepositoryProvider).updateDeck(
                         deck: deck,
                         title: title,
                         description: description,
                       );
+                      return null;
                     },
                   ),
             );

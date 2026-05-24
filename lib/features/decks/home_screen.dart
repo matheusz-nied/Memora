@@ -93,19 +93,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       useSafeArea: true,
       builder: (context) => DeckFormModal(
         deck: deck,
-        onSubmit: (title, description) {
+        onSubmit: (title, description) async {
           final repository = ref.read(deckRepositoryProvider);
           if (deck == null) {
-            return repository.createDeck(
+            return await repository.createDeck(
               title: title,
               description: description,
             );
           }
-          return repository.updateDeck(
+          await repository.updateDeck(
             deck: deck,
             title: title,
             description: description,
           );
+          return null;
         },
       ),
     );

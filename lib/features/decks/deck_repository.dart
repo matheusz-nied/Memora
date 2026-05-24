@@ -94,16 +94,17 @@ class DeckRepository {
     return _syncService.syncDecks(requireSync: requireSync);
   }
 
-  Future<void> createDeck({required String title, String? description}) async {
+  Future<String> createDeck({required String title, String? description}) async {
     final session = _authRepository.currentSession;
     if (session == null) {
       throw StateError('Sessão expirada. Entre novamente.');
     }
 
+    final id = _uuid.v4();
     final now = DateTime.now().millisecondsSinceEpoch;
     await _database.decksDao.upsertDeck(
       DecksTableCompanion.insert(
-        id: _uuid.v4(),
+        id: id,
         userId: session.user.id,
         title: title.trim(),
         description: Value(_nullableTrim(description)),
@@ -113,6 +114,7 @@ class DeckRepository {
       ),
     );
     _runSyncSilently(syncDecks);
+    return id;
   }
 
   Future<void> updateDeck({
