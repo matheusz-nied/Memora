@@ -28,11 +28,7 @@ enum AgentTemplate {
     displayName: 'Professor de Ciências',
     defaultPrompt: _kSciencePrompt,
   ),
-  exam(
-    id: 'exam',
-    displayName: 'Modo Exame',
-    defaultPrompt: _kExamPrompt,
-  ),
+  exam(id: 'exam', displayName: 'Modo Exame', defaultPrompt: _kExamPrompt),
   custom(
     id: 'custom',
     displayName: 'Personalizado',
@@ -58,18 +54,10 @@ enum AgentTemplate {
 }
 
 /// Available language options for the agent.
-const List<String> kAgentLanguages = [
-  'português',
-  'inglês',
-  'espanhol',
-];
+const List<String> kAgentLanguages = ['português', 'inglês', 'espanhol'];
 
 /// Available level options for the agent.
-const List<String> kAgentLevels = [
-  'iniciante',
-  'intermediário',
-  'avançado',
-];
+const List<String> kAgentLevels = ['iniciante', 'intermediário', 'avançado'];
 
 /// Interpolates template variables in [prompt].
 ///

@@ -82,16 +82,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Text(
               AgentText.deckLabel.toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
             ),
             Text(
               deckTitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -104,9 +104,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 case _ChatAction.newConversation:
                   _startNewConversation();
                 case _ChatAction.agentConfig:
-                  context.push(
-                    RouteConstants.agentConfigPath(widget.deckId),
-                  );
+                  context.push(RouteConstants.agentConfigPath(widget.deckId));
               }
             },
             itemBuilder: (context) => const [
@@ -142,9 +140,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             // Message limit warning
             if (_isAtLimit)
-              _MessageLimitBanner(
-                onNewConversation: _startNewConversation,
-              ),
+              _MessageLimitBanner(onNewConversation: _startNewConversation),
 
             // Send error
             if (_sendError != null)
@@ -155,10 +151,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 child: Text(
                   _sendError!,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.error),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.error),
                 ),
               ),
 
@@ -181,10 +176,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     if (_hasHistoryError) {
-      return ErrorState(
-        message: AgentText.historyError,
-        onRetry: _loadHistory,
-      );
+      return ErrorState(message: AgentText.historyError, onRetry: _loadHistory);
     }
 
     if (_messages.isEmpty && !_isSending) {
@@ -213,10 +205,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final message = _messages[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: AppDimensions.md),
-          child: ChatMessageBubble(
-            message: message,
-            agentName: agentName,
-          ),
+          child: ChatMessageBubble(message: message, agentName: agentName),
         );
       },
     );
@@ -280,9 +269,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       // Prepare message history for AI
       final aiMessages = _messages
-          .map(
-            (m) => AiChatMessage(role: m.role, content: m.content),
-          )
+          .map((m) => AiChatMessage(role: m.role, content: m.content))
           .toList();
 
       // Send to AI
@@ -372,7 +359,9 @@ class _MessageLimitBanner extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.infoBg,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.primary.withValues(alpha: 0.2),
+          color: isDark
+              ? AppColors.borderDark
+              : AppColors.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -389,9 +378,9 @@ class _MessageLimitBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   AgentText.messageLimitTitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],

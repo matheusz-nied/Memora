@@ -53,26 +53,25 @@ class ChatInputBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: AgentText.inputPlaceholder,
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radius2Xl),
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.radius2Xl,
+                    ),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.borderDark
-                          : AppColors.border,
+                      color: isDark ? AppColors.borderDark : AppColors.border,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radius2Xl),
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.radius2Xl,
+                    ),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.borderDark
-                          : AppColors.border,
+                      color: isDark ? AppColors.borderDark : AppColors.border,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radius2Xl),
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.radius2Xl,
+                    ),
                     borderSide: const BorderSide(
                       color: AppColors.primary,
                       width: 1.5,

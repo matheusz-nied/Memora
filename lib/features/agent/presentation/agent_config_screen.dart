@@ -209,7 +209,9 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
     setState(() => _isSaving = true);
 
     try {
-      await ref.read(agentRepositoryProvider).updateAgentConfig(
+      await ref
+          .read(agentRepositoryProvider)
+          .updateAgentConfig(
             deck: deck,
             agentName: _nameController.text,
             agentTemplate: _selectedTemplate.id,
@@ -221,16 +223,16 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
           );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AgentText.saveSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(AgentText.saveSuccess)));
         Navigator.of(context).maybePop();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AgentText.saveError)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(AgentText.saveError)));
       }
     } finally {
       if (mounted) {

@@ -9,11 +9,7 @@ import '../chat_message_ui.dart';
 /// User messages are displayed on the right with primary color.
 /// Assistant messages are displayed on the left with surface color.
 class ChatMessageBubble extends StatelessWidget {
-  const ChatMessageBubble({
-    super.key,
-    required this.message,
-    this.agentName,
-  });
+  const ChatMessageBubble({super.key, required this.message, this.agentName});
 
   final ChatMessageUi message;
   final String? agentName;
@@ -102,7 +98,9 @@ class _AssistantBubble extends StatelessWidget {
                 agentName,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
+                  color: isDark
+                      ? AppColors.textSecDark
+                      : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: AppDimensions.xs),
@@ -123,10 +121,7 @@ class _AssistantBubble extends StatelessWidget {
                     color: isDark ? AppColors.borderDark : AppColors.border,
                   ),
                 ),
-                child: Text(
-                  message.content,
-                  style: theme.textTheme.bodyLarge,
-                ),
+                child: Text(message.content, style: theme.textTheme.bodyLarge),
               ),
             ],
           ),

@@ -26,10 +26,10 @@ class AgentRepository {
     required dynamic backendClient,
     required AppSyncService syncService,
     required AuthRepository authRepository,
-  })  : _database = database,
-        _backendClient = backendClient,
-        _syncService = syncService,
-        _authRepository = authRepository;
+  }) : _database = database,
+       _backendClient = backendClient,
+       _syncService = syncService,
+       _authRepository = authRepository;
 
   final AppDatabase _database;
   final dynamic _backendClient;
@@ -108,7 +108,10 @@ class AgentRepository {
   }
 
   void _runSyncSilently(Future<void> Function() sync) {
-    Future<void>.value(sync()).catchError((Object error, StackTrace stackTrace) {
+    Future<void>.value(sync()).catchError((
+      Object error,
+      StackTrace stackTrace,
+    ) {
       debugPrint('Agent sync failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     });
