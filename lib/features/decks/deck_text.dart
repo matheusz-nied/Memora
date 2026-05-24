@@ -17,6 +17,8 @@ class DeckText {
   static const String delete = 'Excluir';
   static const String edit = 'Editar';
   static const String study = 'Estudar';
+  static const String chat = 'Chat';
+  static const String agentConfig = 'Configurar agente';
   static const String addCard = 'Adicionar card';
   static const String generateCards = 'Gerar com IA';
   static const String emptyTitle = 'Nenhum deck ainda';

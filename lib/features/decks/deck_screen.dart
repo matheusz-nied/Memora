@@ -69,6 +69,12 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
             icon: const Icon(Icons.play_arrow),
           ),
           IconButton(
+            tooltip: DeckText.chat,
+            onPressed: () =>
+                context.push(RouteConstants.chatPath(widget.deckId)),
+            icon: const Icon(Icons.chat_outlined),
+          ),
+          IconButton(
             tooltip: DeckText.generateCards,
             onPressed: () =>
                 context.push(RouteConstants.generatePath(widget.deckId)),
@@ -294,6 +300,8 @@ class _DeckMenu extends ConsumerWidget {
                 },
               ),
             );
+          case _DeckAction.agentConfig:
+            context.push(RouteConstants.agentConfigPath(deck.id));
           case _DeckAction.delete:
             final confirmed = await showDialog<bool>(
               context: context,
@@ -322,10 +330,14 @@ class _DeckMenu extends ConsumerWidget {
       },
       itemBuilder: (context) => const [
         PopupMenuItem(value: _DeckAction.edit, child: Text(DeckText.edit)),
+        PopupMenuItem(
+          value: _DeckAction.agentConfig,
+          child: Text(DeckText.agentConfig),
+        ),
         PopupMenuItem(value: _DeckAction.delete, child: Text(DeckText.delete)),
       ],
     );
   }
 }
 
-enum _DeckAction { edit, delete }
+enum _DeckAction { edit, agentConfig, delete }

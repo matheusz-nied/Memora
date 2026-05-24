@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/constants/route_constants.dart';
 import 'core/sync/app_sync_service.dart';
-import 'core/theme/app_dimensions.dart';
 import 'core/theme/app_theme.dart';
-import 'core/utils/responsive.dart';
+import 'features/agent/presentation/agent_config_screen.dart';
+import 'features/agent/presentation/chat_screen.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
@@ -146,11 +146,17 @@ final _routes = [
   ),
   GoRoute(
     path: RouteConstants.kRouteChat,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return ChatScreen(deckId: deckId);
+    },
   ),
   GoRoute(
     path: RouteConstants.kRouteAgentConfig,
-    builder: (context, state) => const _RoutePlaceholder(),
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return AgentConfigScreen(deckId: deckId);
+    },
   ),
 ];
 
@@ -198,33 +204,3 @@ class MemoraApp extends ConsumerWidget {
   }
 }
 
-class _RoutePlaceholder extends StatelessWidget {
-  const _RoutePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final route = GoRouterState.of(context).matchedLocation;
-
-    return Scaffold(
-      body: SafeArea(
-        child: Responsive.constrainedContent(
-          child: Padding(
-            padding: Responsive.contentPadding(context),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppConstants.appName,
-                  style: Theme.of(context).textTheme.displayLarge,
-                ),
-                const SizedBox(height: AppDimensions.md),
-                Text(route, style: Theme.of(context).textTheme.bodyLarge),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

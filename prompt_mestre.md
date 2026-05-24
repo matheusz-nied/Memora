@@ -70,7 +70,7 @@ Implementar modo estudo, flip, TTS, avaliação, progresso local e sync em backg
 
 Checkpoint: validar estudo funcionando offline, cálculo dos 4 botões, persistência local imediata e sync posterior.
 
-### Etapa 8 — Insights de IA inline
+### Concluido: Etapa 8 — Insights de IA inline
 
 Implementar insight persistente por card e geração via `AiGateway` seguindo as seções:
 - [Insights de IA (inline, persistentes)](#insights-de-ia-inline-persistentes)
@@ -78,7 +78,7 @@ Implementar insight persistente por card e geração via `AiGateway` seguindo as
 
 Checkpoint: validar que insight já salvo aparece offline, insight novo exige conexão, salva em Drift + backend remoto e nunca é gerado novamente para o mesmo card.
 
-### Etapa 9 — Chat e agente configurável
+### Concluido: Etapa 9 — Chat e agente configurável
 
 Implementar templates, configuração do agente, chat online e envio via `AiGateway` seguindo as seções:
 - [Templates de Agente](#templates-de-agente)
