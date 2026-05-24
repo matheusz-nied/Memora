@@ -149,7 +149,12 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
   }
 
   Future<void> _speak(String text, DeckModel deck) async {
-    await _tts.setLanguage(_ttsLanguage(deck.agentLanguage));
+    final lang = _ttsLanguage(deck.agentLanguage, text, deck.title);
+    try {
+      await _tts.setLanguage(lang);
+    } catch (_) {
+      await _tts.setLanguage('en-US');
+    }
     await _tts.setSpeechRate(0.48);
     await _tts.speak(text);
   }
@@ -232,14 +237,54 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     });
   }
 
-  String _ttsLanguage(String language) {
+  String _ttsLanguage(String language, String text, String deckTitle) {
     final normalized = language.toLowerCase();
+    final normalizedTitle = deckTitle.toLowerCase();
+    final normalizedText = text.toLowerCase().trim();
+
     if (normalized.contains('ingl') || normalized.contains('english')) {
       return 'en-US';
     }
     if (normalized.contains('espan') || normalized.contains('spanish')) {
       return 'es-ES';
     }
+
+    // Heuristics: Check deck title for hints
+    if (normalizedTitle.contains('ingl') ||
+        normalizedTitle.contains('english') ||
+        normalizedTitle.contains('vocab') ||
+        normalizedTitle.contains('english study')) {
+      return 'en-US';
+    }
+    if (normalizedTitle.contains('espan') ||
+        normalizedTitle.contains('spanish')) {
+      return 'es-ES';
+    }
+
+    // Heuristics: Check for common English words in card text
+    final englishStopwords = {
+      'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
+      'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
+      'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
+      'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
+      'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me'
+    };
+
+    final words = normalizedText
+        .replaceAll(RegExp(r'[^a-z\s]'), '')
+        .split(RegExp(r'\s+'));
+
+    int englishCount = 0;
+    for (final word in words) {
+      if (englishStopwords.contains(word)) {
+        englishCount++;
+      }
+    }
+
+    if (englishCount >= 1) {
+      return 'en-US';
+    }
+
     return 'pt-BR';
   }
 }
