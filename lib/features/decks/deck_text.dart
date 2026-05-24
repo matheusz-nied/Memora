@@ -39,4 +39,25 @@ class DeckText {
   static const String deckNotFound = 'Deck não encontrado.';
   static const String syncErrorFallback =
       'Não foi possível sincronizar. Verifique os logs.';
+
+  static const String dashboard = 'Dashboard';
+  static const String decks = 'Decks';
+  static const String profile = 'Perfil';
+  static const String goodMorning = 'Bom dia';
+  static const String goodAfternoon = 'Boa tarde';
+  static const String goodEvening = 'Boa noite';
+  static const String cardsDue = 'Cards para revisar';
+  static const String progress = 'Progresso';
+  static const String remaining = 'Restantes';
+  static const String startReview = 'Começar Revisão';
+  static const String recentDecks = 'Decks Recentes';
+  static const String seeAll = 'Ver todos';
+  static const String createAiDeck = 'Criar Deck com IA';
+  static const String aiDeckCaption =
+      'Use IA para gerar flashcards de suas notas ou PDFs';
+  static const String reviewComplete = 'Revisão concluída';
+  static const String dueToday = 'para hoje';
+  static const String totalCards = 'cards no total';
+  static const String searchDecks = 'Pesquisar decks...';
+  static const String noDecksFound = 'Nenhum deck encontrado.';
 }

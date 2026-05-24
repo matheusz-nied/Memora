@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
-import '../../core/theme/app_dimensions.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/utils/connectivity_service.dart';
-import '../../core/utils/responsive.dart';
-import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/error_state.dart';
-import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/offline_banner.dart';
+import '../auth/auth_repository.dart';
+import '../auth/profile_text.dart';
 import 'deck_model.dart';
 import 'deck_repository.dart';
 import 'deck_text.dart';
-import 'widgets/deck_card.dart';
 import 'widgets/deck_form_modal.dart';
+import 'widgets/home/dashboard_tab.dart';
+import 'widgets/home/decks_library_tab.dart';
+import 'widgets/home/home_bottom_nav.dart';
+import 'widgets/home/profile_tab.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -25,113 +25,65 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _scrollController = ScrollController();
+  static const _dashboardTab = 0;
+  static const _decksTab = 1;
+  static const _profileTab = 2;
+
+  var _currentTabIndex = _dashboardTab;
   var _isSyncing = false;
-  var _visibleDeckLimit = AppConstants.kLocalPageSize;
-  var _hasMoreDecks = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_loadMoreDecksIfNeeded);
-  }
-
-  @override
-  void dispose() {
-    _scrollController
-      ..removeListener(_loadMoreDecksIfNeeded)
-      ..dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final decks = ref.watch(decksPageProvider(_visibleDeckLimit));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isOnline = ref
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(DeckText.subtitle),
-        actions: [
-          IconButton(
-            tooltip: DeckText.syncNow,
-            onPressed: _isSyncing ? null : _syncNow,
-            icon: _isSyncing
-                ? const SizedBox.square(
-                    dimension: AppDimensions.xl,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.sync),
-          ),
-          IconButton(
-            onPressed: () => context.push(RouteConstants.kRouteProfile),
-            icon: const Icon(Icons.account_circle_outlined),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showDeckForm(context),
-        child: const Icon(Icons.add),
-      ),
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
       body: SafeArea(
-        child: Responsive.constrainedContent(
-          child: Padding(
-            padding: Responsive.contentPadding(context),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!isOnline) ...[
-                  const OfflineBanner(message: DeckText.offline),
-                  const SizedBox(height: AppDimensions.lg),
-                ],
-                Text(
-                  DeckText.title,
-                  style: Theme.of(context).textTheme.headlineLarge,
-                ),
-                const SizedBox(height: AppDimensions.xl),
-                Expanded(
-                  child: decks.when(
-                    loading: () => const LoadingState(),
-                    error: (_, __) =>
-                        const ErrorState(message: DeckText.loadError),
-                    data: (items) {
-                      _hasMoreDecks = items.length >= _visibleDeckLimit;
-                      return _DeckGrid(
-                        decks: items,
-                        scrollController: _scrollController,
-                        onCreate: () => _showDeckForm(context),
-                        onOpen: (deck) =>
-                            context.push(RouteConstants.deckPath(deck.id)),
-                        onEdit: (deck) => _showDeckForm(context, deck: deck),
-                        onDelete: (deck) =>
-                            _confirmDeleteDeck(context: context, deck: deck),
-                      );
-                    },
+        child: Column(
+          children: [
+            if (!isOnline) const OfflineBanner(message: DeckText.offline),
+            Expanded(
+              child: IndexedStack(
+                index: _currentTabIndex,
+                children: [
+                  DashboardTab(
+                    isDark: isDark,
+                    onRefresh: _syncNow,
+                    onCreateDeck: () => _showDeckForm(context),
+                    onOpenDecksTab: () => _setTab(_decksTab),
+                    onOpenProfileTab: () => _setTab(_profileTab),
                   ),
-                ),
-              ],
+                  DecksLibraryTab(
+                    isDark: isDark,
+                    onCreateDeck: () => _showDeckForm(context),
+                    onEditDeck: (deck) => _showDeckForm(context, deck: deck),
+                    onDeleteDeck: (deck) =>
+                        _confirmDeleteDeck(context: context, deck: deck),
+                  ),
+                  ProfileTab(
+                    isDark: isDark,
+                    isSigningOut: _isSyncing,
+                    onSignOut: _signOut,
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
+      ),
+      bottomNavigationBar: HomeBottomNav(
+        currentIndex: _currentTabIndex,
+        isDark: isDark,
+        onChanged: _setTab,
       ),
     );
   }
 
-  void _loadMoreDecksIfNeeded() {
-    if (!_hasMoreDecks || !_scrollController.hasClients) {
-      return;
-    }
-
-    final position = _scrollController.position;
-    if (position.extentAfter > 360) {
-      return;
-    }
-
-    setState(() {
-      _visibleDeckLimit += AppConstants.kLocalPageSize;
-    });
+  void _setTab(int index) {
+    setState(() => _currentTabIndex = index);
   }
 
   Future<void> _showDeckForm(BuildContext context, {DeckModel? deck}) {
@@ -180,6 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+
     if (confirmed ?? false) {
       await ref.read(deckRepositoryProvider).deleteDeck(deck.id);
     }
@@ -203,6 +156,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<void> _signOut() async {
+    setState(() => _isSyncing = true);
+
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+      if (mounted) {
+        context.go(RouteConstants.kRouteLogin);
+      }
+    } catch (_) {
+      if (mounted) {
+        _showSnackBar(ProfileText.signOutError);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -212,56 +184,5 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _readableSyncError(Object error) {
     final message = error.toString().replaceFirst('Bad state: ', '').trim();
     return message.isEmpty ? DeckText.syncErrorFallback : message;
-  }
-}
-
-class _DeckGrid extends StatelessWidget {
-  const _DeckGrid({
-    required this.decks,
-    required this.scrollController,
-    required this.onCreate,
-    required this.onOpen,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final List<DeckModel> decks;
-  final ScrollController scrollController;
-  final VoidCallback onCreate;
-  final ValueChanged<DeckModel> onOpen;
-  final ValueChanged<DeckModel> onEdit;
-  final ValueChanged<DeckModel> onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    if (decks.isEmpty) {
-      return EmptyState(
-        title: DeckText.emptyTitle,
-        message: DeckText.emptyMessage,
-        actionLabel: DeckText.newDeck,
-        onAction: onCreate,
-      );
-    }
-
-    final columns = Responsive.isMobile(context) ? 1 : 2;
-    return GridView.builder(
-      controller: scrollController,
-      itemCount: decks.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        mainAxisSpacing: AppDimensions.lg,
-        crossAxisSpacing: AppDimensions.lg,
-        childAspectRatio: columns == 1 ? 2.05 : 1.08,
-      ),
-      itemBuilder: (context, index) {
-        final deck = decks[index];
-        return DeckCard(
-          deck: deck,
-          onTap: () => onOpen(deck),
-          onEdit: () => onEdit(deck),
-          onDelete: () => onDelete(deck),
-        );
-      },
-    );
   }
 }
