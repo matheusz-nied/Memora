@@ -5,6 +5,7 @@ import '../contracts/remote_database_gateway.dart';
 import '../models/backend_card.dart';
 import '../models/backend_chat_message.dart';
 import '../models/backend_deck.dart';
+import '../models/backend_exception.dart';
 import '../models/backend_review.dart';
 
 class SupabaseRemoteDatabaseGateway implements RemoteDatabaseGateway {
@@ -25,14 +26,62 @@ class SupabaseRemoteDatabaseGateway implements RemoteDatabaseGateway {
         .upsert(reviews.map(_reviewToRow).toList());
   }
 
+  /// O PostgREST corta a resposta no `max-rows` do projeto (1000 por padrão)
+  /// sem sinalizar truncamento. Como o sync infere "apagado remotamente" pela
+  /// ausência da linha na resposta, uma leitura truncada apagaria os dados
+  /// locais excedentes de forma permanente. Por isso toda leitura de coleção
+  /// pagina até a última página.
+  static const int _pageSize = 1000;
+
   @override
   Future<List<BackendDeck>> fetchDecks() async {
-    final rows = await _client
-        .from(BackendConstants.kTableDecks)
-        .select()
-        .order(_Columns.updatedAt);
+    final rows = await _fetchAllRows(
+      table: BackendConstants.kTableDecks,
+      orderColumn: _Columns.updatedAt,
+    );
 
     return rows.map(_deckFromRow).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAllRows({
+    required String table,
+    required String orderColumn,
+    String? filterColumn,
+    String? filterValue,
+  }) async {
+    final rows = <Map<String, dynamic>>[];
+    int? total;
+
+    while (true) {
+      final base = _client.from(table).select();
+      final filtered = filterColumn == null
+          ? base
+          : base.eq(filterColumn, filterValue!);
+
+      // A contagem exata vem junto: não dá para confiar no tamanho da página
+      // como sinal de fim, porque o `max-rows` do servidor pode ser menor que
+      // [_pageSize] e cortaria a resposta silenciosamente.
+      final response = await filtered
+          .order(orderColumn)
+          .range(rows.length, rows.length + _pageSize - 1)
+          .count(CountOption.exact);
+
+      total ??= response.count;
+      rows.addAll(response.data);
+
+      if (rows.length >= total) {
+        return rows;
+      }
+
+      if (response.data.isEmpty) {
+        // Sem progresso e ainda faltam linhas: preferimos falhar a devolver
+        // uma coleção parcial, porque quem chama trata ausência como deleção.
+        throw BackendException(
+          'Sincronização incompleta de "$table": '
+          '${rows.length} de $total registros.',
+        );
+      }
+    }
   }
 
   @override
@@ -56,11 +105,12 @@ class SupabaseRemoteDatabaseGateway implements RemoteDatabaseGateway {
 
   @override
   Future<List<BackendCard>> fetchCards(String deckId) async {
-    final rows = await _client
-        .from(BackendConstants.kTableCards)
-        .select()
-        .eq(_Columns.deckId, deckId)
-        .order(_Columns.dueDate);
+    final rows = await _fetchAllRows(
+      table: BackendConstants.kTableCards,
+      orderColumn: _Columns.dueDate,
+      filterColumn: _Columns.deckId,
+      filterValue: deckId,
+    );
 
     return rows.map(_cardFromRow).toList();
   }
