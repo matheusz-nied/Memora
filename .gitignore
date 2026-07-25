@@ -67,3 +67,5 @@ app.*.map.json
 # FVM Version Cache
 .fvm/
 */*.temp
+# Dumps locais do banco (ver tool/backup/)
+/backups/
