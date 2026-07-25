@@ -28,11 +28,22 @@ const allowedQuantities = [5, 10, 15];
 const maxFrontLength = 300;
 const maxBackLength = 600;
 
+/// Origem permitida no CORS. Defina ALLOWED_ORIGIN com o domínio do app web
+/// em produção; `*` só é aceitável em desenvolvimento.
 export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Vary": "Origin",
+};
+
+/// Teto de tokens por operação. Sem isto a resposta da DeepSeek é ilimitada e
+/// o custo de uma única chamada não tem teto.
+export const maxTokens = {
+  generateCards: 4000,
+  chat: 1500,
+  insight: 1200,
 };
 
 export function jsonResponse(body: unknown, status = 200): Response {
@@ -177,6 +188,7 @@ export async function generateCardsWithDeepSeek(params: {
     body: JSON.stringify({
       model: "deepseek-chat",
       temperature: 0.3,
+      max_tokens: maxTokens.generateCards,
       response_format: { type: "json_object" },
       messages: [
         {

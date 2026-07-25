@@ -9,6 +9,7 @@ import {
   validateGenerateInput,
   validateText,
 } from "../_shared/generate_cards.ts";
+import { withQuota } from "../_shared/quota.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -41,12 +42,13 @@ Deno.serve(async (req) => {
       return deck;
     }
 
-    const cards = await generateCardsWithDeepSeek({
-      apiKey: requireEnv("DEEPSEEK_API_KEY"),
-      text: String(body.text).trim(),
-      quantity: body.quantity,
-      deck,
-    });
+    const cards = await withQuota(auth.user.id, "generate_cards", () =>
+      generateCardsWithDeepSeek({
+        apiKey: requireEnv("DEEPSEEK_API_KEY"),
+        text: String(body.text).trim(),
+        quantity: body.quantity,
+        deck,
+      }));
 
     return jsonResponse({ cards });
   } catch (error) {

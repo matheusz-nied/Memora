@@ -6,6 +6,7 @@ import 'contracts/auth_gateway.dart';
 import 'contracts/remote_database_gateway.dart';
 import 'contracts/storage_gateway.dart';
 import 'models/ai_chat_message.dart';
+import 'models/ai_quota_status.dart';
 import 'models/backend_card.dart';
 import 'models/backend_chat_message.dart';
 import 'models/backend_deck.dart';
@@ -144,6 +145,11 @@ class DisabledStorageGateway implements StorageGateway {
 
 class DisabledAiGateway implements AiGateway {
   const DisabledAiGateway();
+
+  @override
+  Future<AiQuotaStatus> fetchQuotaStatus() {
+    throw _notConfigured();
+  }
 
   @override
   Future<String> chat({

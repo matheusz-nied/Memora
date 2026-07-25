@@ -4,9 +4,11 @@ import {
   errorResponse,
   fetchDeckContext,
   jsonResponse,
+  maxTokens,
   optionsResponse,
   requireEnv,
 } from "../_shared/generate_cards.ts";
+import { withQuota } from "../_shared/quota.ts";
 
 type CardInsightInput = {
   deckId?: unknown;
@@ -40,12 +42,13 @@ Deno.serve(async (req) => {
       return deck;
     }
 
-    const insight = await generateInsightWithDeepSeek({
-      apiKey: requireEnv("DEEPSEEK_API_KEY"),
-      front: String(body.front).trim(),
-      back: String(body.back).trim(),
-      deck,
-    });
+    const insight = await withQuota(auth.user.id, "insight", () =>
+      generateInsightWithDeepSeek({
+        apiKey: requireEnv("DEEPSEEK_API_KEY"),
+        front: String(body.front).trim(),
+        back: String(body.back).trim(),
+        deck,
+      }));
 
     return jsonResponse({ insight });
   } catch (error) {
@@ -97,6 +100,7 @@ async function generateInsightWithDeepSeek(params: {
     body: JSON.stringify({
       model: "deepseek-chat",
       temperature: 0.35,
+      max_tokens: maxTokens.insight,
       messages: [
         {
           role: "system",

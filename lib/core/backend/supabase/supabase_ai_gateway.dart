@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../contracts/ai_gateway.dart';
 import '../models/ai_chat_message.dart';
+import '../models/ai_quota_status.dart';
 import '../models/backend_exception.dart';
 import '../models/generated_card.dart';
 
@@ -12,8 +13,33 @@ class SupabaseAiGateway implements AiGateway {
   static const String _generateCardsFromPdfFunction = 'generate-cards-from-pdf';
   static const String _chatFunction = 'chat';
   static const String _cardInsightFunction = 'card-insight';
+  static const String _quotaStatusRpc = 'ai_quota_status';
 
   final SupabaseClient _client;
+
+  @override
+  Future<AiQuotaStatus> fetchQuotaStatus() async {
+    final Object? data;
+    try {
+      data = await _client.rpc<Object?>(_quotaStatusRpc);
+    } on PostgrestException catch (error) {
+      throw BackendException(error.message, code: error.code);
+    }
+
+    final row = data is List ? data.firstOrNull : data;
+    if (row is! Map) {
+      throw const BackendException('Resposta de quota inválida.');
+    }
+
+    return AiQuotaStatus(
+      used: (row['used'] as num?)?.toInt() ?? 0,
+      quota: (row['quota'] as num?)?.toInt() ?? 0,
+      tier: row['tier'] as String? ?? 'free',
+      periodEnd:
+          DateTime.tryParse(row['period_end'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
 
   @override
   Future<List<GeneratedCard>> generateCards({
@@ -109,15 +135,45 @@ class SupabaseAiGateway implements AiGateway {
     String functionName,
     Map<String, dynamic> body,
   ) async {
-    final response = await _client.functions.invoke(functionName, body: body);
+    final FunctionResponse response;
+    try {
+      response = await _client.functions.invoke(functionName, body: body);
+    } on FunctionException catch (error) {
+      // As Edge Functions respondem erro com status >= 400, e nesse caso o
+      // functions_client lança em vez de devolver o corpo. Sem este catch a
+      // mensagem em português da function era descartada e a UI mostrava o
+      // toString() cru da FunctionException.
+      throw _exceptionFromDetails(error.details);
+    }
+
     final data = response.data;
     if (data is! Map) {
       throw const BackendException('Invalid function response.');
     }
     if (data['error'] != null) {
-      throw BackendException(data['error'].toString());
+      throw _exceptionFromDetails(data);
     }
 
     return Map<String, dynamic>.from(data);
+  }
+
+  BackendException _exceptionFromDetails(Object? details) {
+    if (details is Map) {
+      final message = details['error'];
+      if (message != null) {
+        return BackendException(
+          message.toString(),
+          code: details['code'] as String?,
+        );
+      }
+    }
+
+    if (details is String && details.trim().isNotEmpty) {
+      return BackendException(details.trim());
+    }
+
+    return const BackendException(
+      'Não foi possível concluir a operação de IA agora.',
+    );
   }
 }

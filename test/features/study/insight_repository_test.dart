@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memora/core/backend/models/ai_quota_status.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
 import 'package:memora/core/backend/contracts/remote_database_gateway.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
@@ -135,6 +136,16 @@ CardModel _card({String? insight}) {
 }
 
 class _FakeAiGateway implements AiGateway {
+  @override
+  Future<AiQuotaStatus> fetchQuotaStatus() async {
+    return AiQuotaStatus(
+      used: 0,
+      quota: 30,
+      tier: 'free',
+      periodEnd: DateTime(2026, 8),
+    );
+  }
+
   _FakeAiGateway({this.insight = 'Generated insight.'});
 
   final String insight;

@@ -11,6 +11,7 @@ import {
   validateGenerateInput,
   validateText,
 } from "../_shared/generate_cards.ts";
+import { withQuota } from "../_shared/quota.ts";
 
 const maxPdfSizeBytes = 5 * 1024 * 1024;
 const maxPdfPages = 10;
@@ -79,12 +80,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const cards = await generateCardsWithDeepSeek({
-      apiKey: requireEnv("DEEPSEEK_API_KEY"),
-      text,
-      quantity: body.quantity,
-      deck,
-    });
+    const cards = await withQuota(auth.user.id, "generate_pdf", () =>
+      generateCardsWithDeepSeek({
+        apiKey: requireEnv("DEEPSEEK_API_KEY"),
+        text,
+        quantity: body.quantity,
+        deck,
+      }));
 
     return jsonResponse({ cards });
   } catch (error) {

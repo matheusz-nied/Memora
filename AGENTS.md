@@ -116,6 +116,10 @@ As Edge Functions são a implementação inicial do `AiGateway` no adaptador Sup
 
 **chat:** entrada `{deckId, messages, userMessage}` | busca deck + últimos 20 cards → substitui `{name}`, `{deck_title}`, `{deck_context}`, `{language}`, `{level}` no agent_prompt → chama IA → retorna `{reply}`
 
+**Quota de IA (obrigatória em toda função que chama a DeepSeek):** as 4 funções reservam crédito via `withQuota(userId, operation, run)` de `_shared/quota.ts` imediatamente antes da chamada paga. A reserva é atômica no Postgres (`consume_ai_quota`, com advisory lock por usuário) e é estornada se a IA falhar. Custos: `chat` e `insight` = 1, `generate_cards` = 2, `generate_pdf` = 3. Tetos por tier em `ai_quota_limit` (free: 30/mês) e por minuto em `ai_rate_limit`. `consume_ai_quota`/`refund_ai_quota` só podem ser executadas pelo `service_role` — se o cliente pudesse chamar o estorno, bastaria consumir, usar a IA e estornar. O app lê o consumo por `ai_quota_status()` (somente leitura, `authenticated`).
+
+**Nunca chamar a DeepSeek sem `max_tokens`** e sem teto no tamanho da entrada. O histórico de chat é limitado no servidor (`boundedHistory`), não só no cliente.
+
 **card-insight:** entrada `{front, back, deckId}` | busca configurações do agente do deck → gera explicação aprofundada sobre o card → retorna `{insight}`. Requer conectividade. O insight retornado é salvo imediatamente na coluna `insight` da tabela `cards` (Drift local + sync remoto via `RemoteDatabaseGateway`) para nunca ser gerado novamente.
 
 ## Rotas

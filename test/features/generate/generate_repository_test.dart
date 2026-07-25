@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memora/core/backend/models/ai_quota_status.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
 import 'package:memora/core/backend/contracts/auth_gateway.dart';
 import 'package:memora/core/backend/contracts/storage_gateway.dart';
@@ -171,6 +172,16 @@ class _FakeStorageGateway implements StorageGateway {
 }
 
 class _FakeAiGateway implements AiGateway {
+  @override
+  Future<AiQuotaStatus> fetchQuotaStatus() async {
+    return AiQuotaStatus(
+      used: 0,
+      quota: 30,
+      tier: 'free',
+      periodEnd: DateTime(2026, 8),
+    );
+  }
+
   String? lastText;
   String? lastDeckId;
   String? lastPdfPath;

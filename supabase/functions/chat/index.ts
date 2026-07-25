@@ -3,9 +3,22 @@ import {
   authenticatedSupabase,
   errorResponse,
   jsonResponse,
+  maxTokens,
   optionsResponse,
   requireEnv,
 } from "../_shared/generate_cards.ts";
+import { withQuota } from "../_shared/quota.ts";
+
+/// Espelha AppConstants.kMaxChatMessages. O cliente já limita, mas o servidor
+/// não pode confiar nisso: sem teto aqui, uma requisição com centenas de
+/// mensagens vira uma chamada de milhões de tokens à DeepSeek.
+const maxHistoryMessages = 40;
+
+/// Teto adicional de caracteres do histórico, cortando as mensagens mais
+/// antigas. Protege contra 40 mensagens no tamanho máximo.
+const maxHistoryChars = 24000;
+
+const maxMessageChars = 4000;
 
 type ChatInput = {
   deckId?: unknown;
@@ -176,20 +189,17 @@ Deno.serve(async (req) => {
     // 4. Build messages array for DeepSeek
     const aiMessages = [
       { role: "system", content: systemPrompt },
-      ...messages
-        .filter(
-          (m) =>
-            (m.role === "user" || m.role === "assistant") &&
-            typeof m.content === "string" &&
-            m.content.trim().length > 0,
-        )
-        .map((m) => ({ role: m.role, content: m.content })),
+      ...boundedHistory(messages),
       { role: "user", content: userMessage },
     ];
 
-    // 5. Call DeepSeek
+    // 5. Call DeepSeek, reservando a quota logo antes da chamada paga.
     const apiKey = requireEnv("DEEPSEEK_API_KEY");
-    const reply = await callDeepSeek(apiKey, aiMessages);
+    const reply = await withQuota(
+      auth.user.id,
+      "chat",
+      () => callDeepSeek(apiKey, aiMessages),
+    );
 
     return jsonResponse({ reply });
   } catch (error) {
@@ -209,15 +219,53 @@ function validateInput(input: ChatInput): string | null {
     return "Mensagem obrigatória.";
   }
 
-  if (input.userMessage.trim().length > 4000) {
-    return "A mensagem deve ter no máximo 4000 caracteres.";
+  if (input.userMessage.trim().length > maxMessageChars) {
+    return `A mensagem deve ter no máximo ${maxMessageChars} caracteres.`;
   }
 
   if (input.messages !== undefined && !Array.isArray(input.messages)) {
     return "Histórico de mensagens inválido.";
   }
 
+  // boundedHistory já corta para os últimos maxHistoryMessages; isto só evita
+  // percorrer um array absurdo antes disso.
+  if (Array.isArray(input.messages) && input.messages.length > 500) {
+    return "Histórico de mensagens grande demais.";
+  }
+
   return null;
+}
+
+/// Mantém apenas as mensagens válidas mais recentes, dentro do teto de
+/// quantidade e de caracteres. Descarta as mais antigas primeiro.
+function boundedHistory(
+  messages: ChatMessageInput[],
+): { role: string; content: string }[] {
+  const valid = messages
+    .filter(
+      (m) =>
+        (m.role === "user" || m.role === "assistant") &&
+        typeof m.content === "string" &&
+        m.content.trim().length > 0,
+    )
+    .map((m) => ({
+      role: m.role,
+      content: m.content.slice(0, maxMessageChars),
+    }));
+
+  const recent = valid.slice(-maxHistoryMessages);
+
+  let budget = maxHistoryChars;
+  const kept: { role: string; content: string }[] = [];
+  for (let i = recent.length - 1; i >= 0; i--) {
+    budget -= recent[i].content.length;
+    if (budget < 0) {
+      break;
+    }
+    kept.unshift(recent[i]);
+  }
+
+  return kept;
 }
 
 function buildSystemPrompt(deck: DeckAgent, cards: CardSummary[]): string {
@@ -257,6 +305,7 @@ async function callDeepSeek(
     body: JSON.stringify({
       model: "deepseek-chat",
       temperature: 0.4,
+      max_tokens: maxTokens.chat,
       messages,
     }),
   });

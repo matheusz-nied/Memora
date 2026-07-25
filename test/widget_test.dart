@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:memora/app.dart';
+import 'package:memora/core/backend/models/ai_quota_status.dart';
 import 'package:memora/core/backend/backend_client.dart';
 import 'package:memora/core/backend/backend_provider.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
@@ -137,6 +138,9 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.account_circle_outlined));
+    await tester.pumpAndSettle();
+    // O perfil rola: em viewport pequena o botão fica abaixo da dobra.
+    await tester.ensureVisible(find.text(ProfileText.signOut));
     await tester.pumpAndSettle();
     await tester.tap(find.text(ProfileText.signOut));
     await tester.pumpAndSettle();
@@ -437,6 +441,16 @@ class _FakeStorageGateway implements StorageGateway {
 }
 
 class _FakeAiGateway implements AiGateway {
+  @override
+  Future<AiQuotaStatus> fetchQuotaStatus() async {
+    return AiQuotaStatus(
+      used: 0,
+      quota: 30,
+      tier: 'free',
+      periodEnd: DateTime(2026, 8),
+    );
+  }
+
   @override
   Future<String> chat({
     required String deckId,

@@ -11,6 +11,7 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../auth/auth_repository.dart';
 import '../../../auth/profile_text.dart';
+import '../../../quota/widgets/ai_quota_card.dart';
 import '../../deck_repository.dart';
 
 class ProfileTab extends ConsumerWidget {
@@ -154,6 +155,10 @@ class ProfileTab extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: AppDimensions.xl),
+
+                    // Consumo de IA do mês
+                    AiQuotaCard(isDark: isDark),
                     const SizedBox(height: AppDimensions.xl),
 
                     // Detailed account parameters card
