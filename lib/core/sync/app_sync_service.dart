@@ -172,6 +172,40 @@ class AppSyncService {
     }
   }
 
+  /// Envia as revisões pendentes. Só push: a tabela é append-only, então não
+  /// há conflito a resolver nem deleção remota a propagar.
+  Future<void> syncPendingReviews({bool requireSync = false}) async {
+    if (!await _shouldSync(requireSync: requireSync)) {
+      return;
+    }
+    final userId = _currentUserId();
+    if (userId == null) {
+      if (requireSync) {
+        throw StateError('Sessão expirada. Entre novamente para sincronizar.');
+      }
+      return;
+    }
+
+    final userDeckIds = (await _database.decksDao.getDeckIdsForUser(
+      userId,
+    )).toSet();
+
+    final pending = await _database.reviewsDao.getPendingSyncReviews();
+    final mine = pending
+        .where((review) => userDeckIds.contains(review.deckId))
+        .toList();
+    if (mine.isEmpty) {
+      return;
+    }
+
+    await _withRetry(
+      () => _remoteDatabase.insertReviews(
+        mine.map((review) => review.toBackendReview(userId: userId)).toList(),
+      ),
+    );
+    await _database.reviewsDao.markSynced(mine.map((review) => review.id));
+  }
+
   Future<T> _withRetry<T>(Future<T> Function() operation) async {
     Object? lastError;
     StackTrace? lastStackTrace;
@@ -245,6 +279,7 @@ final appAutoSyncProvider = Provider<void>((ref) {
       final syncService = ref.read(appSyncServiceProvider);
       await syncService.syncDecks();
       await syncService.syncPendingCards();
+      await syncService.syncPendingReviews();
     } catch (error, stackTrace) {
       debugPrint('Global pending sync failed: $error');
       debugPrintStack(stackTrace: stackTrace);

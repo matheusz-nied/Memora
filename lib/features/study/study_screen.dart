@@ -1,10 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
@@ -18,6 +17,7 @@ import '../../core/widgets/offline_banner.dart';
 import '../cards/card_model.dart';
 import '../cards/card_repository.dart';
 import '../decks/deck_model.dart';
+import '../decks/deck_card_counts_provider.dart';
 import '../decks/deck_repository.dart';
 import 'card_rating_model.dart';
 import 'study_session_model.dart';
@@ -28,9 +28,13 @@ import 'widgets/study_rating_bar.dart';
 import 'widgets/study_summary.dart';
 
 class StudyScreen extends ConsumerStatefulWidget {
-  const StudyScreen({super.key, required this.deckId});
+  const StudyScreen({super.key, required this.deckId, this.freeStudy = false});
 
   final String deckId;
+
+  /// Revisa o deck inteiro, ignorando o vencimento. Opção explícita do menu do
+  /// deck — a sessão normal traz só o que vence hoje.
+  final bool freeStudy;
 
   @override
   ConsumerState<StudyScreen> createState() => _StudyScreenState();
@@ -54,10 +58,20 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
   @override
   Widget build(BuildContext context) {
     final deck = ref.watch(deckStreamProvider(widget.deckId));
-    final cards = ref.watch(cardsStreamProvider(widget.deckId));
+    final cards = widget.freeStudy
+        ? ref.watch(cardsStreamProvider(widget.deckId))
+        : ref.watch(
+            dueCardsStreamProvider((
+              deckId: widget.deckId,
+              newCardLimit: AppConstants.kNewCardsPerSession,
+            )),
+          );
     final isOnline = ref
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
+    final deckHasCards = ref
+        .watch(deckCardCountsStreamProvider(widget.deckId))
+        .maybeWhen(data: (counts) => counts.total > 0, orElse: () => false);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -78,7 +92,9 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                     const ErrorState(message: StudyText.loadingError),
                 data: (items) => _StudyContent(
                   deck: deckValue,
-                  cards: _cardsForSession(items, isOnline: isOnline),
+                  freeStudy: widget.freeStudy,
+                  deckHasCards: deckHasCards,
+                  cards: _cardsForSession(items),
                   currentIndex: _currentIndex,
                   showBack: _showBack,
                   isOnline: isOnline,
@@ -96,7 +112,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                   onViewInsight: (cardId) => context.push(
                     RouteConstants.cardInsightPath(deckValue.id, cardId),
                   ),
-                  onRestart: () => _restartSession(items, isOnline: isOnline),
+                  onRestart: () => _restartSession(items),
                   onBackToDeck: () => context.pop(),
                 ),
               );
@@ -107,18 +123,18 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     );
   }
 
-  List<CardModel> _cardsForSession(
-    List<CardModel> cards, {
-    required bool isOnline,
-  }) {
+  List<CardModel> _cardsForSession(List<CardModel> cards) {
     final currentIds = cards.map((card) => card.id).join('|');
     final sessionIds = _sessionCards?.map((card) => card.id).join('|');
     final canReplaceSession = _reviewedCardIds.isEmpty && _currentIndex == 0;
 
     if (_sessionCards == null ||
         (canReplaceSession && sessionIds != currentIds)) {
-      _sessionCards = _orderedCards(cards, isOnline: isOnline);
+      _sessionCards = _orderedCards(cards);
     } else {
+      // A sessão é congelada depois de começar: o stream reemite a cada
+      // avaliação e reordenar no meio embaralharia o que o usuário está vendo.
+      // Só os dados de cada card são atualizados.
       final latestById = {for (final card in cards) card.id: card};
       _sessionCards = _sessionCards
           ?.map((card) => latestById[card.id] ?? card)
@@ -128,23 +144,18 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     return _sessionCards ?? const [];
   }
 
-  List<CardModel> _orderedCards(
-    List<CardModel> cards, {
-    required bool isOnline,
-  }) {
+  /// Sempre por vencimento. Antes a lista era embaralhada quando offline, o
+  /// que não fazia sentido: o `dueDate` está no banco local de qualquer jeito,
+  /// e a ordem mudava conforme a conexão.
+  List<CardModel> _orderedCards(List<CardModel> cards) {
     final ordered = [...cards];
-    if (isOnline) {
-      ordered.sort((a, b) {
-        final dueCompare = a.dueDate.compareTo(b.dueDate);
-        if (dueCompare != 0) {
-          return dueCompare;
-        }
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      return ordered;
-    }
-
-    ordered.shuffle(math.Random(DateTime.now().millisecondsSinceEpoch));
+    ordered.sort((a, b) {
+      final dueCompare = a.dueDate.compareTo(b.dueDate);
+      if (dueCompare != 0) {
+        return dueCompare;
+      }
+      return a.createdAt.compareTo(b.createdAt);
+    });
     return ordered;
   }
 
@@ -169,6 +180,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     final result = calculateStudyProgress(
       currentEaseFactor: card.easeFactor,
       currentIntervalDays: card.intervalDays,
+      repetitions: card.repetitions,
       rating: rating,
     );
 
@@ -183,7 +195,9 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
             card: card,
             easeFactor: result.easeFactor,
             intervalDays: result.intervalDays,
+            repetitions: result.repetitions,
             dueDate: result.dueDate,
+            rating: rating.index,
           );
       if (!mounted) {
         return;
@@ -192,6 +206,12 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
         _reviewedCardIds.add(card.id);
         if (rating == CardRating.again || rating == CardRating.hard) {
           _needsReviewCardIds.add(card.id);
+        }
+        if (rating == CardRating.again) {
+          // Recoloca o card no fim da fila: sem isto "Não sei" não tinha
+          // nenhuma consequência dentro da sessão e o usuário nunca revia o
+          // card que acabou de errar.
+          _sessionCards = [...cards, card];
         }
         _currentIndex += 1;
         _showBack = false;
@@ -227,9 +247,9 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     });
   }
 
-  void _restartSession(List<CardModel> cards, {required bool isOnline}) {
+  void _restartSession(List<CardModel> cards) {
     setState(() {
-      _sessionCards = _orderedCards(cards, isOnline: isOnline);
+      _sessionCards = _orderedCards(cards);
       _reviewedCardIds.clear();
       _needsReviewCardIds.clear();
       _currentIndex = 0;
@@ -337,6 +357,8 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 class _StudyContent extends StatelessWidget {
   const _StudyContent({
     required this.deck,
+    required this.freeStudy,
+    required this.deckHasCards,
     required this.cards,
     required this.currentIndex,
     required this.showBack,
@@ -354,6 +376,8 @@ class _StudyContent extends StatelessWidget {
   });
 
   final DeckModel deck;
+  final bool freeStudy;
+  final bool deckHasCards;
   final List<CardModel> cards;
   final int currentIndex;
   final bool showBack;
@@ -374,9 +398,13 @@ class _StudyContent extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (cards.isEmpty) {
+      // Deck com cards mas nada vencido é sucesso, não estado de erro.
+      final caughtUp = deckHasCards && !freeStudy;
       return EmptyState(
-        title: StudyText.emptyTitle,
-        message: StudyText.emptyMessage,
+        title: caughtUp ? StudyText.allCaughtUpTitle : StudyText.emptyTitle,
+        message: caughtUp
+            ? StudyText.allCaughtUpMessage
+            : StudyText.emptyMessage,
         actionLabel: StudyText.backToDeck,
         onAction: onBackToDeck,
       );
@@ -512,6 +540,7 @@ class _StudyContent extends StatelessWidget {
             ],
           ),
         ),
+        if (freeStudy) const OfflineBanner(message: StudyText.freeStudyBanner),
         if (!isOnline) const OfflineBanner(message: StudyText.offline),
         Expanded(
           child: Padding(

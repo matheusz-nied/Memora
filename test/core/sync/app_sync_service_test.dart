@@ -5,6 +5,7 @@ import 'package:memora/core/backend/contracts/remote_database_gateway.dart';
 import 'package:memora/core/backend/models/backend_card.dart';
 import 'package:memora/core/backend/models/backend_chat_message.dart';
 import 'package:memora/core/backend/models/backend_deck.dart';
+import 'package:memora/core/backend/models/backend_review.dart';
 import 'package:memora/core/database/app_database.dart';
 import 'package:memora/core/sync/app_sync_service.dart';
 
@@ -349,6 +350,13 @@ BackendCard _card({
 }
 
 class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
+  @override
+  Future<void> insertReviews(List<BackendReview> reviews) async {
+    insertedReviews.addAll(reviews);
+  }
+
+  final List<BackendReview> insertedReviews = [];
+
   final Map<String, BackendDeck> decks = {};
   final Map<String, BackendCard> cards = {};
   final List<String> deletedDecks = [];

@@ -109,6 +109,7 @@ void main() {
       cardId: 'card-1',
       easeFactor: 2.7,
       intervalDays: 3,
+      repetitions: 2,
       dueDate: dueDate,
     );
     await database.cardsDao.updateInsight(

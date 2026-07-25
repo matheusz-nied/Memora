@@ -688,6 +688,15 @@ class Cards extends Table with TableInfo<Cards, CardsData> {
     $customConstraints: 'NOT NULL DEFAULT 1',
     defaultValue: const CustomExpression('1'),
   );
+  late final GeneratedColumn<int> repetitions = GeneratedColumn<int>(
+    'repetitions',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0',
+    defaultValue: const CustomExpression('0'),
+  );
   late final GeneratedColumn<int> dueDate = GeneratedColumn<int>(
     'due_date',
     aliasedName,
@@ -745,6 +754,7 @@ class Cards extends Table with TableInfo<Cards, CardsData> {
     back,
     easeFactor,
     intervalDays,
+    repetitions,
     dueDate,
     syncPending,
     insight,
@@ -786,6 +796,10 @@ class Cards extends Table with TableInfo<Cards, CardsData> {
       intervalDays: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}interval_days'],
+      )!,
+      repetitions: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}repetitions'],
       )!,
       dueDate: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -832,6 +846,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
   final String back;
   final double easeFactor;
   final int intervalDays;
+  final int repetitions;
   final int dueDate;
   final int syncPending;
   final String? insight;
@@ -845,6 +860,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
     required this.back,
     required this.easeFactor,
     required this.intervalDays,
+    required this.repetitions,
     required this.dueDate,
     required this.syncPending,
     this.insight,
@@ -861,6 +877,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
     map['back'] = Variable<String>(back);
     map['ease_factor'] = Variable<double>(easeFactor);
     map['interval_days'] = Variable<int>(intervalDays);
+    map['repetitions'] = Variable<int>(repetitions);
     map['due_date'] = Variable<int>(dueDate);
     map['sync_pending'] = Variable<int>(syncPending);
     if (!nullToAbsent || insight != null) {
@@ -882,6 +899,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
       back: Value(back),
       easeFactor: Value(easeFactor),
       intervalDays: Value(intervalDays),
+      repetitions: Value(repetitions),
       dueDate: Value(dueDate),
       syncPending: Value(syncPending),
       insight: insight == null && nullToAbsent
@@ -907,6 +925,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
       back: serializer.fromJson<String>(json['back']),
       easeFactor: serializer.fromJson<double>(json['easeFactor']),
       intervalDays: serializer.fromJson<int>(json['intervalDays']),
+      repetitions: serializer.fromJson<int>(json['repetitions']),
       dueDate: serializer.fromJson<int>(json['dueDate']),
       syncPending: serializer.fromJson<int>(json['syncPending']),
       insight: serializer.fromJson<String?>(json['insight']),
@@ -925,6 +944,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
       'back': serializer.toJson<String>(back),
       'easeFactor': serializer.toJson<double>(easeFactor),
       'intervalDays': serializer.toJson<int>(intervalDays),
+      'repetitions': serializer.toJson<int>(repetitions),
       'dueDate': serializer.toJson<int>(dueDate),
       'syncPending': serializer.toJson<int>(syncPending),
       'insight': serializer.toJson<String?>(insight),
@@ -941,6 +961,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
     String? back,
     double? easeFactor,
     int? intervalDays,
+    int? repetitions,
     int? dueDate,
     int? syncPending,
     Value<String?> insight = const Value.absent(),
@@ -954,6 +975,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
     back: back ?? this.back,
     easeFactor: easeFactor ?? this.easeFactor,
     intervalDays: intervalDays ?? this.intervalDays,
+    repetitions: repetitions ?? this.repetitions,
     dueDate: dueDate ?? this.dueDate,
     syncPending: syncPending ?? this.syncPending,
     insight: insight.present ? insight.value : this.insight,
@@ -973,6 +995,9 @@ class CardsData extends DataClass implements Insertable<CardsData> {
       intervalDays: data.intervalDays.present
           ? data.intervalDays.value
           : this.intervalDays,
+      repetitions: data.repetitions.present
+          ? data.repetitions.value
+          : this.repetitions,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       syncPending: data.syncPending.present
           ? data.syncPending.value
@@ -993,6 +1018,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
           ..write('back: $back, ')
           ..write('easeFactor: $easeFactor, ')
           ..write('intervalDays: $intervalDays, ')
+          ..write('repetitions: $repetitions, ')
           ..write('dueDate: $dueDate, ')
           ..write('syncPending: $syncPending, ')
           ..write('insight: $insight, ')
@@ -1011,6 +1037,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
     back,
     easeFactor,
     intervalDays,
+    repetitions,
     dueDate,
     syncPending,
     insight,
@@ -1028,6 +1055,7 @@ class CardsData extends DataClass implements Insertable<CardsData> {
           other.back == this.back &&
           other.easeFactor == this.easeFactor &&
           other.intervalDays == this.intervalDays &&
+          other.repetitions == this.repetitions &&
           other.dueDate == this.dueDate &&
           other.syncPending == this.syncPending &&
           other.insight == this.insight &&
@@ -1043,6 +1071,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
   final Value<String> back;
   final Value<double> easeFactor;
   final Value<int> intervalDays;
+  final Value<int> repetitions;
   final Value<int> dueDate;
   final Value<int> syncPending;
   final Value<String?> insight;
@@ -1057,6 +1086,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
     this.back = const Value.absent(),
     this.easeFactor = const Value.absent(),
     this.intervalDays = const Value.absent(),
+    this.repetitions = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.syncPending = const Value.absent(),
     this.insight = const Value.absent(),
@@ -1072,6 +1102,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
     required String back,
     this.easeFactor = const Value.absent(),
     this.intervalDays = const Value.absent(),
+    this.repetitions = const Value.absent(),
     required int dueDate,
     this.syncPending = const Value.absent(),
     this.insight = const Value.absent(),
@@ -1093,6 +1124,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
     Expression<String>? back,
     Expression<double>? easeFactor,
     Expression<int>? intervalDays,
+    Expression<int>? repetitions,
     Expression<int>? dueDate,
     Expression<int>? syncPending,
     Expression<String>? insight,
@@ -1108,6 +1140,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
       if (back != null) 'back': back,
       if (easeFactor != null) 'ease_factor': easeFactor,
       if (intervalDays != null) 'interval_days': intervalDays,
+      if (repetitions != null) 'repetitions': repetitions,
       if (dueDate != null) 'due_date': dueDate,
       if (syncPending != null) 'sync_pending': syncPending,
       if (insight != null) 'insight': insight,
@@ -1125,6 +1158,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
     Value<String>? back,
     Value<double>? easeFactor,
     Value<int>? intervalDays,
+    Value<int>? repetitions,
     Value<int>? dueDate,
     Value<int>? syncPending,
     Value<String?>? insight,
@@ -1140,6 +1174,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
       back: back ?? this.back,
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
+      repetitions: repetitions ?? this.repetitions,
       dueDate: dueDate ?? this.dueDate,
       syncPending: syncPending ?? this.syncPending,
       insight: insight ?? this.insight,
@@ -1170,6 +1205,9 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
     }
     if (intervalDays.present) {
       map['interval_days'] = Variable<int>(intervalDays.value);
+    }
+    if (repetitions.present) {
+      map['repetitions'] = Variable<int>(repetitions.value);
     }
     if (dueDate.present) {
       map['due_date'] = Variable<int>(dueDate.value);
@@ -1204,6 +1242,7 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
           ..write('back: $back, ')
           ..write('easeFactor: $easeFactor, ')
           ..write('intervalDays: $intervalDays, ')
+          ..write('repetitions: $repetitions, ')
           ..write('dueDate: $dueDate, ')
           ..write('syncPending: $syncPending, ')
           ..write('insight: $insight, ')
@@ -1216,15 +1255,523 @@ class CardsCompanion extends UpdateCompanion<CardsData> {
   }
 }
 
-class DatabaseAtV1 extends GeneratedDatabase {
-  DatabaseAtV1(QueryExecutor e) : super(e);
+class Reviews extends Table with TableInfo<Reviews, ReviewsData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  Reviews(this.attachedDatabase, [this._alias]);
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<String> cardId = GeneratedColumn<String>(
+    'card_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<String> deckId = GeneratedColumn<String>(
+    'deck_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<double> easeBefore = GeneratedColumn<double>(
+    'ease_before',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<double> easeAfter = GeneratedColumn<double>(
+    'ease_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> intervalBefore = GeneratedColumn<int>(
+    'interval_before',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> intervalAfter = GeneratedColumn<int>(
+    'interval_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> reviewedAt = GeneratedColumn<int>(
+    'reviewed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> syncPending = GeneratedColumn<int>(
+    'sync_pending',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 1 CHECK (sync_pending IN (0, 1))',
+    defaultValue: const CustomExpression('1'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    cardId,
+    deckId,
+    rating,
+    easeBefore,
+    easeAfter,
+    intervalBefore,
+    intervalAfter,
+    reviewedAt,
+    syncPending,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reviews';
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReviewsData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReviewsData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      cardId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}card_id'],
+      )!,
+      deckId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deck_id'],
+      )!,
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rating'],
+      )!,
+      easeBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ease_before'],
+      )!,
+      easeAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ease_after'],
+      )!,
+      intervalBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval_before'],
+      )!,
+      intervalAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval_after'],
+      )!,
+      reviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reviewed_at'],
+      )!,
+      syncPending: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_pending'],
+      )!,
+    );
+  }
+
+  @override
+  Reviews createAlias(String alias) {
+    return Reviews(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const ['PRIMARY KEY(id)'];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ReviewsData extends DataClass implements Insertable<ReviewsData> {
+  final String id;
+  final String cardId;
+  final String deckId;
+  final int rating;
+  final double easeBefore;
+  final double easeAfter;
+  final int intervalBefore;
+  final int intervalAfter;
+  final int reviewedAt;
+  final int syncPending;
+  const ReviewsData({
+    required this.id,
+    required this.cardId,
+    required this.deckId,
+    required this.rating,
+    required this.easeBefore,
+    required this.easeAfter,
+    required this.intervalBefore,
+    required this.intervalAfter,
+    required this.reviewedAt,
+    required this.syncPending,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['card_id'] = Variable<String>(cardId);
+    map['deck_id'] = Variable<String>(deckId);
+    map['rating'] = Variable<int>(rating);
+    map['ease_before'] = Variable<double>(easeBefore);
+    map['ease_after'] = Variable<double>(easeAfter);
+    map['interval_before'] = Variable<int>(intervalBefore);
+    map['interval_after'] = Variable<int>(intervalAfter);
+    map['reviewed_at'] = Variable<int>(reviewedAt);
+    map['sync_pending'] = Variable<int>(syncPending);
+    return map;
+  }
+
+  ReviewsCompanion toCompanion(bool nullToAbsent) {
+    return ReviewsCompanion(
+      id: Value(id),
+      cardId: Value(cardId),
+      deckId: Value(deckId),
+      rating: Value(rating),
+      easeBefore: Value(easeBefore),
+      easeAfter: Value(easeAfter),
+      intervalBefore: Value(intervalBefore),
+      intervalAfter: Value(intervalAfter),
+      reviewedAt: Value(reviewedAt),
+      syncPending: Value(syncPending),
+    );
+  }
+
+  factory ReviewsData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReviewsData(
+      id: serializer.fromJson<String>(json['id']),
+      cardId: serializer.fromJson<String>(json['cardId']),
+      deckId: serializer.fromJson<String>(json['deckId']),
+      rating: serializer.fromJson<int>(json['rating']),
+      easeBefore: serializer.fromJson<double>(json['easeBefore']),
+      easeAfter: serializer.fromJson<double>(json['easeAfter']),
+      intervalBefore: serializer.fromJson<int>(json['intervalBefore']),
+      intervalAfter: serializer.fromJson<int>(json['intervalAfter']),
+      reviewedAt: serializer.fromJson<int>(json['reviewedAt']),
+      syncPending: serializer.fromJson<int>(json['syncPending']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'cardId': serializer.toJson<String>(cardId),
+      'deckId': serializer.toJson<String>(deckId),
+      'rating': serializer.toJson<int>(rating),
+      'easeBefore': serializer.toJson<double>(easeBefore),
+      'easeAfter': serializer.toJson<double>(easeAfter),
+      'intervalBefore': serializer.toJson<int>(intervalBefore),
+      'intervalAfter': serializer.toJson<int>(intervalAfter),
+      'reviewedAt': serializer.toJson<int>(reviewedAt),
+      'syncPending': serializer.toJson<int>(syncPending),
+    };
+  }
+
+  ReviewsData copyWith({
+    String? id,
+    String? cardId,
+    String? deckId,
+    int? rating,
+    double? easeBefore,
+    double? easeAfter,
+    int? intervalBefore,
+    int? intervalAfter,
+    int? reviewedAt,
+    int? syncPending,
+  }) => ReviewsData(
+    id: id ?? this.id,
+    cardId: cardId ?? this.cardId,
+    deckId: deckId ?? this.deckId,
+    rating: rating ?? this.rating,
+    easeBefore: easeBefore ?? this.easeBefore,
+    easeAfter: easeAfter ?? this.easeAfter,
+    intervalBefore: intervalBefore ?? this.intervalBefore,
+    intervalAfter: intervalAfter ?? this.intervalAfter,
+    reviewedAt: reviewedAt ?? this.reviewedAt,
+    syncPending: syncPending ?? this.syncPending,
+  );
+  ReviewsData copyWithCompanion(ReviewsCompanion data) {
+    return ReviewsData(
+      id: data.id.present ? data.id.value : this.id,
+      cardId: data.cardId.present ? data.cardId.value : this.cardId,
+      deckId: data.deckId.present ? data.deckId.value : this.deckId,
+      rating: data.rating.present ? data.rating.value : this.rating,
+      easeBefore: data.easeBefore.present
+          ? data.easeBefore.value
+          : this.easeBefore,
+      easeAfter: data.easeAfter.present ? data.easeAfter.value : this.easeAfter,
+      intervalBefore: data.intervalBefore.present
+          ? data.intervalBefore.value
+          : this.intervalBefore,
+      intervalAfter: data.intervalAfter.present
+          ? data.intervalAfter.value
+          : this.intervalAfter,
+      reviewedAt: data.reviewedAt.present
+          ? data.reviewedAt.value
+          : this.reviewedAt,
+      syncPending: data.syncPending.present
+          ? data.syncPending.value
+          : this.syncPending,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReviewsData(')
+          ..write('id: $id, ')
+          ..write('cardId: $cardId, ')
+          ..write('deckId: $deckId, ')
+          ..write('rating: $rating, ')
+          ..write('easeBefore: $easeBefore, ')
+          ..write('easeAfter: $easeAfter, ')
+          ..write('intervalBefore: $intervalBefore, ')
+          ..write('intervalAfter: $intervalAfter, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('syncPending: $syncPending')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    cardId,
+    deckId,
+    rating,
+    easeBefore,
+    easeAfter,
+    intervalBefore,
+    intervalAfter,
+    reviewedAt,
+    syncPending,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReviewsData &&
+          other.id == this.id &&
+          other.cardId == this.cardId &&
+          other.deckId == this.deckId &&
+          other.rating == this.rating &&
+          other.easeBefore == this.easeBefore &&
+          other.easeAfter == this.easeAfter &&
+          other.intervalBefore == this.intervalBefore &&
+          other.intervalAfter == this.intervalAfter &&
+          other.reviewedAt == this.reviewedAt &&
+          other.syncPending == this.syncPending);
+}
+
+class ReviewsCompanion extends UpdateCompanion<ReviewsData> {
+  final Value<String> id;
+  final Value<String> cardId;
+  final Value<String> deckId;
+  final Value<int> rating;
+  final Value<double> easeBefore;
+  final Value<double> easeAfter;
+  final Value<int> intervalBefore;
+  final Value<int> intervalAfter;
+  final Value<int> reviewedAt;
+  final Value<int> syncPending;
+  final Value<int> rowid;
+  const ReviewsCompanion({
+    this.id = const Value.absent(),
+    this.cardId = const Value.absent(),
+    this.deckId = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.easeBefore = const Value.absent(),
+    this.easeAfter = const Value.absent(),
+    this.intervalBefore = const Value.absent(),
+    this.intervalAfter = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.syncPending = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReviewsCompanion.insert({
+    required String id,
+    required String cardId,
+    required String deckId,
+    required int rating,
+    required double easeBefore,
+    required double easeAfter,
+    required int intervalBefore,
+    required int intervalAfter,
+    required int reviewedAt,
+    this.syncPending = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       cardId = Value(cardId),
+       deckId = Value(deckId),
+       rating = Value(rating),
+       easeBefore = Value(easeBefore),
+       easeAfter = Value(easeAfter),
+       intervalBefore = Value(intervalBefore),
+       intervalAfter = Value(intervalAfter),
+       reviewedAt = Value(reviewedAt);
+  static Insertable<ReviewsData> custom({
+    Expression<String>? id,
+    Expression<String>? cardId,
+    Expression<String>? deckId,
+    Expression<int>? rating,
+    Expression<double>? easeBefore,
+    Expression<double>? easeAfter,
+    Expression<int>? intervalBefore,
+    Expression<int>? intervalAfter,
+    Expression<int>? reviewedAt,
+    Expression<int>? syncPending,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (cardId != null) 'card_id': cardId,
+      if (deckId != null) 'deck_id': deckId,
+      if (rating != null) 'rating': rating,
+      if (easeBefore != null) 'ease_before': easeBefore,
+      if (easeAfter != null) 'ease_after': easeAfter,
+      if (intervalBefore != null) 'interval_before': intervalBefore,
+      if (intervalAfter != null) 'interval_after': intervalAfter,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt,
+      if (syncPending != null) 'sync_pending': syncPending,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReviewsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? cardId,
+    Value<String>? deckId,
+    Value<int>? rating,
+    Value<double>? easeBefore,
+    Value<double>? easeAfter,
+    Value<int>? intervalBefore,
+    Value<int>? intervalAfter,
+    Value<int>? reviewedAt,
+    Value<int>? syncPending,
+    Value<int>? rowid,
+  }) {
+    return ReviewsCompanion(
+      id: id ?? this.id,
+      cardId: cardId ?? this.cardId,
+      deckId: deckId ?? this.deckId,
+      rating: rating ?? this.rating,
+      easeBefore: easeBefore ?? this.easeBefore,
+      easeAfter: easeAfter ?? this.easeAfter,
+      intervalBefore: intervalBefore ?? this.intervalBefore,
+      intervalAfter: intervalAfter ?? this.intervalAfter,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      syncPending: syncPending ?? this.syncPending,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (cardId.present) {
+      map['card_id'] = Variable<String>(cardId.value);
+    }
+    if (deckId.present) {
+      map['deck_id'] = Variable<String>(deckId.value);
+    }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
+    if (easeBefore.present) {
+      map['ease_before'] = Variable<double>(easeBefore.value);
+    }
+    if (easeAfter.present) {
+      map['ease_after'] = Variable<double>(easeAfter.value);
+    }
+    if (intervalBefore.present) {
+      map['interval_before'] = Variable<int>(intervalBefore.value);
+    }
+    if (intervalAfter.present) {
+      map['interval_after'] = Variable<int>(intervalAfter.value);
+    }
+    if (reviewedAt.present) {
+      map['reviewed_at'] = Variable<int>(reviewedAt.value);
+    }
+    if (syncPending.present) {
+      map['sync_pending'] = Variable<int>(syncPending.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReviewsCompanion(')
+          ..write('id: $id, ')
+          ..write('cardId: $cardId, ')
+          ..write('deckId: $deckId, ')
+          ..write('rating: $rating, ')
+          ..write('easeBefore: $easeBefore, ')
+          ..write('easeAfter: $easeAfter, ')
+          ..write('intervalBefore: $intervalBefore, ')
+          ..write('intervalAfter: $intervalAfter, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('syncPending: $syncPending, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class DatabaseAtV2 extends GeneratedDatabase {
+  DatabaseAtV2(QueryExecutor e) : super(e);
   late final Decks decks = Decks(this);
   late final Cards cards = Cards(this);
+  late final Reviews reviews = Reviews(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [decks, cards];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [decks, cards, reviews];
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 }

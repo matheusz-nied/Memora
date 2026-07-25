@@ -1,8 +1,13 @@
 import '../models/backend_card.dart';
 import '../models/backend_chat_message.dart';
 import '../models/backend_deck.dart';
+import '../models/backend_review.dart';
 
 abstract interface class RemoteDatabaseGateway {
+  /// Envia revisões. Append-only, então é idempotente por `id`: reenviar uma
+  /// revisão já sincronizada não duplica nem sobrescreve nada relevante.
+  Future<void> insertReviews(List<BackendReview> reviews);
+
   Future<List<BackendDeck>> fetchDecks();
 
   Future<BackendDeck> upsertDeck(BackendDeck deck);

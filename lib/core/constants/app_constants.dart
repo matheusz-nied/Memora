@@ -13,6 +13,12 @@ class AppConstants {
   static const int kMaxDeckDescription = 200;
   static const int kMaxChatMessages = 40;
   static const int kLocalPageSize = 30;
+
+  /// Cards nunca revisados que entram numa sessão de estudo por dia.
+  ///
+  /// Evita que um deck recém-gerado com 100 cards apareça como 100 vencidos
+  /// de uma vez.
+  static const int kNewCardsPerSession = 20;
   static const double kContentMaxWidth = 640.0;
   static const String kOnboardingKey = 'onboarding_complete';
 }

@@ -18,6 +18,7 @@ import 'package:memora/core/backend/models/ai_chat_message.dart';
 import 'package:memora/core/backend/models/backend_card.dart';
 import 'package:memora/core/backend/models/backend_chat_message.dart';
 import 'package:memora/core/backend/models/backend_deck.dart';
+import 'package:memora/core/backend/models/backend_review.dart';
 import 'package:memora/core/backend/models/backend_session.dart';
 import 'package:memora/core/backend/models/backend_user.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
@@ -380,6 +381,13 @@ BackendSession _sessionFor(String email, {String? displayName}) {
 }
 
 class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
+  @override
+  Future<void> insertReviews(List<BackendReview> reviews) async {
+    insertedReviews.addAll(reviews);
+  }
+
+  final List<BackendReview> insertedReviews = [];
+
   @override
   Future<void> deleteCard(String cardId) async {}
 

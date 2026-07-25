@@ -11,6 +11,7 @@ import 'models/backend_card.dart';
 import 'models/backend_chat_message.dart';
 import 'models/backend_deck.dart';
 import 'models/backend_exception.dart';
+import 'models/backend_review.dart';
 import 'models/backend_session.dart';
 import 'models/generated_card.dart';
 import 'models/storage_upload_result.dart';
@@ -68,6 +69,11 @@ class DisabledAuthGateway implements AuthGateway {
 
 class DisabledRemoteDatabaseGateway implements RemoteDatabaseGateway {
   const DisabledRemoteDatabaseGateway();
+
+  @override
+  Future<void> insertReviews(List<BackendReview> reviews) {
+    throw _notConfigured();
+  }
 
   @override
   Future<void> deleteCard(String cardId) {

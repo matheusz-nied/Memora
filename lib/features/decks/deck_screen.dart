@@ -18,6 +18,7 @@ import '../cards/card_repository.dart';
 import '../cards/card_text.dart';
 import '../cards/widgets/card_form_modal.dart';
 import '../cards/widgets/card_list_item.dart';
+import '../study/study_text.dart';
 import 'deck_card_counts_provider.dart';
 import 'deck_model.dart';
 import 'deck_repository.dart';
@@ -648,7 +649,21 @@ class _QuickActionsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: AppDimensions.md),
+        const SizedBox(height: AppDimensions.xs),
+
+        // Escape hatch para quem quer revisar o deck inteiro fora do
+        // agendamento — a sessão normal traz só o que vence hoje.
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => context.push(
+              RouteConstants.studyPath(deck.id, freeStudy: true),
+            ),
+            icon: const Icon(Icons.all_inclusive, size: 18),
+            label: const Text(StudyText.freeStudy),
+          ),
+        ),
+        const SizedBox(height: AppDimensions.sm),
 
         // Sub horizontal grid with other three actions
         Row(

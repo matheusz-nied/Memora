@@ -30,6 +30,21 @@ final cardStreamProvider = StreamProvider.family<CardModel?, String>((
   return ref.watch(cardRepositoryProvider).watchCard(cardId);
 });
 
+/// Fim do dia local. Um card que vence hoje entra na sessão de hoje.
+DateTime endOfDay(DateTime moment) {
+  return DateTime(moment.year, moment.month, moment.day, 23, 59, 59, 999);
+}
+
+typedef DueCardsQuery = ({String deckId, int newCardLimit});
+
+/// Cards a estudar hoje neste deck.
+final dueCardsStreamProvider =
+    StreamProvider.family<List<CardModel>, DueCardsQuery>((ref, query) {
+      return ref
+          .watch(cardRepositoryProvider)
+          .watchDueCards(query.deckId, newCardLimit: query.newCardLimit);
+    });
+
 typedef CardsPageQuery = ({String deckId, int limit});
 
 final cardsPageProvider =
@@ -68,6 +83,29 @@ class CardRepository {
     return _database.cardsDao
         .watchCardById(cardId)
         .map((card) => card == null ? null : CardModel.fromLocal(card));
+  }
+
+  /// Cards vencidos hoje, já com o limite diário de cards novos aplicado.
+  Stream<List<CardModel>> watchDueCards(
+    String deckId, {
+    required int newCardLimit,
+    DateTime? now,
+  }) {
+    _runSyncSilently(() => syncCards(deckId));
+    return _database.cardsDao
+        .watchDueCards(
+          deckId: deckId,
+          dueBefore: endOfDay(now ?? DateTime.now()).millisecondsSinceEpoch,
+          newCardLimit: newCardLimit,
+        )
+        .map((cards) => cards.map(CardModel.fromLocal).toList());
+  }
+
+  Future<int> countDueCards(String deckId, {DateTime? now}) {
+    return _database.cardsDao.countDueCards(
+      deckId: deckId,
+      dueBefore: endOfDay(now ?? DateTime.now()).millisecondsSinceEpoch,
+    );
   }
 
   Future<int> countCards(String deckId) {
@@ -131,18 +169,43 @@ class CardRepository {
     _runSyncSilently(() => syncCards(card.deckId));
   }
 
+  /// Grava o novo agendamento do card e a revisão correspondente na mesma
+  /// transação: sem isso o histórico pode divergir do estado do card se o app
+  /// morrer entre as duas escritas.
   Future<void> updateProgress({
     required CardModel card,
     required double easeFactor,
     required int intervalDays,
+    required int repetitions,
     required DateTime dueDate,
+    required int rating,
+    DateTime? reviewedAt,
   }) async {
-    await _database.cardsDao.updateProgress(
-      cardId: card.id,
-      easeFactor: easeFactor,
-      intervalDays: intervalDays,
-      dueDate: dueDate,
-    );
+    final reviewTime = reviewedAt ?? DateTime.now();
+
+    await _database.transaction(() async {
+      await _database.cardsDao.updateProgress(
+        cardId: card.id,
+        easeFactor: easeFactor,
+        intervalDays: intervalDays,
+        repetitions: repetitions,
+        dueDate: dueDate,
+      );
+      await _database.reviewsDao.insertReview(
+        ReviewsTableCompanion.insert(
+          id: _uuid.v4(),
+          cardId: card.id,
+          deckId: card.deckId,
+          rating: rating,
+          easeBefore: card.easeFactor,
+          easeAfter: easeFactor,
+          intervalBefore: card.intervalDays,
+          intervalAfter: intervalDays,
+          reviewedAt: reviewTime.millisecondsSinceEpoch,
+        ),
+      );
+    });
+
     _runSyncSilently(() => syncCards(card.deckId));
   }
 

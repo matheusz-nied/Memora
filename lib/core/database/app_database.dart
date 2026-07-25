@@ -5,18 +5,23 @@ import 'package:flutter/foundation.dart';
 
 import 'daos/cards_dao.dart';
 import 'daos/decks_dao.dart';
+import 'daos/reviews_dao.dart';
 import 'tables/cards_table.dart';
 import 'tables/decks_table.dart';
+import 'tables/reviews_table.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [DecksTable, CardsTable], daos: [DecksDao, CardsDao])
+@DriftDatabase(
+  tables: [DecksTable, CardsTable, ReviewsTable],
+  daos: [DecksDao, CardsDao, ReviewsDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openDatabase());
 
   /// Incrementar a cada mudança de schema, junto com um novo passo em
   /// [migration] e um snapshot em `drift_schemas/`. Ver AGENTS.md.
-  static const int latestSchemaVersion = 1;
+  static const int latestSchemaVersion = 2;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -26,9 +31,14 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (migrator) => migrator.createAll(),
       onUpgrade: (migrator, from, to) async {
-        // Sem passos ainda: v1 é o schema inicial. Toda migração futura entra
-        // aqui de forma incremental e é coberta por test/core/database/
-        // migration_test.dart.
+        if (from < 2) {
+          // `repetitions` tem default 0, então as linhas existentes entram
+          // como card novo e voltam a passar pelos learning steps — o que é o
+          // comportamento desejado, já que não há histórico para reconstruir
+          // o valor real.
+          await migrator.addColumn(cardsTable, cardsTable.repetitions);
+          await migrator.createTable(reviewsTable);
+        }
       },
     );
   }

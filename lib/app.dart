@@ -117,7 +117,9 @@ final _routes = [
     path: RouteConstants.kRouteStudy,
     builder: (context, state) {
       final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
-      return StudyScreen(deckId: deckId);
+      final freeStudy =
+          state.uri.queryParameters[RouteConstants.freeStudyParam] == '1';
+      return StudyScreen(deckId: deckId, freeStudy: freeStudy);
     },
   ),
   GoRoute(

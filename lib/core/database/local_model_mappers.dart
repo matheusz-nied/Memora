@@ -2,7 +2,26 @@ import 'package:drift/drift.dart';
 
 import '../backend/models/backend_card.dart';
 import '../backend/models/backend_deck.dart';
+import '../backend/models/backend_review.dart';
 import 'app_database.dart';
+
+extension LocalReviewMapper on LocalReview {
+  /// `userId` vem de fora: a tabela local guarda `deckId` (suficiente para
+  /// filtrar no sync) enquanto a remota guarda `user_id` para a RLS.
+  BackendReview toBackendReview({required String userId}) {
+    return BackendReview(
+      id: id,
+      cardId: cardId,
+      userId: userId,
+      rating: rating,
+      easeBefore: easeBefore,
+      easeAfter: easeAfter,
+      intervalBefore: intervalBefore,
+      intervalAfter: intervalAfter,
+      reviewedAt: DateTime.fromMillisecondsSinceEpoch(reviewedAt),
+    );
+  }
+}
 
 extension LocalDeckMapper on LocalDeck {
   BackendDeck toBackendDeck() {
@@ -54,6 +73,7 @@ extension LocalCardMapper on LocalCard {
       back: back,
       easeFactor: easeFactor,
       intervalDays: intervalDays,
+      repetitions: repetitions,
       dueDate: DateTime.fromMillisecondsSinceEpoch(dueDate),
       insight: insight,
       createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
@@ -74,6 +94,7 @@ extension BackendCardMapper on BackendCard {
       back: back,
       easeFactor: Value(easeFactor),
       intervalDays: Value(intervalDays),
+      repetitions: Value(repetitions),
       dueDate: dueDate.millisecondsSinceEpoch,
       syncPending: Value(syncPending),
       insight: Value(insight),

@@ -8,6 +8,7 @@ class CardModel {
     required this.back,
     required this.easeFactor,
     required this.intervalDays,
+    required this.repetitions,
     required this.dueDate,
     required this.syncPending,
     this.insight,
@@ -21,6 +22,7 @@ class CardModel {
   final String back;
   final double easeFactor;
   final int intervalDays;
+  final int repetitions;
   final DateTime dueDate;
   final bool syncPending;
   final String? insight;
@@ -35,6 +37,7 @@ class CardModel {
       back: card.back,
       easeFactor: card.easeFactor,
       intervalDays: card.intervalDays,
+      repetitions: card.repetitions,
       dueDate: DateTime.fromMillisecondsSinceEpoch(card.dueDate),
       syncPending: card.syncPending,
       insight: card.insight,
@@ -46,6 +49,7 @@ class CardModel {
   CardModel copyWith({
     double? easeFactor,
     int? intervalDays,
+    int? repetitions,
     DateTime? dueDate,
     bool? syncPending,
     String? insight,
@@ -58,6 +62,7 @@ class CardModel {
       back: back,
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
+      repetitions: repetitions ?? this.repetitions,
       dueDate: dueDate ?? this.dueDate,
       syncPending: syncPending ?? this.syncPending,
       insight: insight ?? this.insight,

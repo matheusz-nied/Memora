@@ -95,6 +95,7 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
     required String cardId,
     required double easeFactor,
     required int intervalDays,
+    required int repetitions,
     required DateTime dueDate,
   }) {
     final updatedAt = DateTime.now().millisecondsSinceEpoch;
@@ -104,11 +105,76 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
       CardsTableCompanion(
         easeFactor: Value(easeFactor),
         intervalDays: Value(intervalDays),
+        repetitions: Value(repetitions),
         dueDate: Value(dueDate.millisecondsSinceEpoch),
         syncPending: const Value(true),
         updatedAt: Value(updatedAt),
       ),
     );
+  }
+
+  /// Cards vencidos, filtrados no banco e não em memória.
+  ///
+  /// `dueBefore` é o fim do dia corrente: um card com vencimento hoje deve
+  /// aparecer na sessão de hoje.
+  Stream<List<LocalCard>> watchDueCards({
+    required String deckId,
+    required int dueBefore,
+    required int newCardLimit,
+  }) {
+    return (select(cardsTable)
+          ..where(
+            (table) =>
+                table.deckId.equals(deckId) &
+                table.deletedAt.isNull() &
+                table.dueDate.isSmallerOrEqualValue(dueBefore),
+          )
+          ..orderBy([
+            (table) => OrderingTerm.asc(table.dueDate),
+            (table) => OrderingTerm.asc(table.createdAt),
+          ]))
+        .watch()
+        .map((cards) => _capNewCards(cards, newCardLimit));
+  }
+
+  /// Limita quantos cards nunca revisados entram na sessão.
+  ///
+  /// Sem isto, gerar 100 cards de uma vez cria 100 vencidos no mesmo dia —
+  /// `createCard` nasce com `dueDate = now`, então card novo e card atrasado
+  /// são indistinguíveis pelo vencimento. `repetitions == 0` é o que separa.
+  List<LocalCard> _capNewCards(List<LocalCard> cards, int newCardLimit) {
+    if (newCardLimit < 0) {
+      return cards;
+    }
+
+    final result = <LocalCard>[];
+    var newCards = 0;
+    for (final card in cards) {
+      if (card.repetitions == 0) {
+        if (newCards >= newCardLimit) {
+          continue;
+        }
+        newCards += 1;
+      }
+      result.add(card);
+    }
+    return result;
+  }
+
+  Future<int> countDueCards({
+    required String deckId,
+    required int dueBefore,
+  }) async {
+    final count = cardsTable.id.count();
+    final query = selectOnly(cardsTable)
+      ..addColumns([count])
+      ..where(
+        cardsTable.deckId.equals(deckId) &
+            cardsTable.deletedAt.isNull() &
+            cardsTable.dueDate.isSmallerOrEqualValue(dueBefore),
+      );
+    final row = await query.getSingle();
+    return row.read(count) ?? 0;
   }
 
   Future<void> updateInsight({

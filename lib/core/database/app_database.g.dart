@@ -840,6 +840,18 @@ class $CardsTableTable extends CardsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _repetitionsMeta = const VerificationMeta(
+    'repetitions',
+  );
+  @override
+  late final GeneratedColumn<int> repetitions = GeneratedColumn<int>(
+    'repetitions',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _dueDateMeta = const VerificationMeta(
     'dueDate',
   );
@@ -918,6 +930,7 @@ class $CardsTableTable extends CardsTable
     back,
     easeFactor,
     intervalDays,
+    repetitions,
     dueDate,
     syncPending,
     insight,
@@ -978,6 +991,15 @@ class $CardsTableTable extends CardsTable
         intervalDays.isAcceptableOrUnknown(
           data['interval_days']!,
           _intervalDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('repetitions')) {
+      context.handle(
+        _repetitionsMeta,
+        repetitions.isAcceptableOrUnknown(
+          data['repetitions']!,
+          _repetitionsMeta,
         ),
       );
     }
@@ -1059,6 +1081,10 @@ class $CardsTableTable extends CardsTable
         DriftSqlType.int,
         data['${effectivePrefix}interval_days'],
       )!,
+      repetitions: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}repetitions'],
+      )!,
       dueDate: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}due_date'],
@@ -1099,6 +1125,13 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
   final String back;
   final double easeFactor;
   final int intervalDays;
+
+  /// Revisões acertadas seguidas. Zera em "Não sei".
+  ///
+  /// Distingue card novo de card maduro: os learning steps só valem para as
+  /// duas primeiras repetições, e o limite diário de cards novos filtra por
+  /// `repetitions == 0`.
+  final int repetitions;
   final int dueDate;
   final bool syncPending;
   final String? insight;
@@ -1112,6 +1145,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     required this.back,
     required this.easeFactor,
     required this.intervalDays,
+    required this.repetitions,
     required this.dueDate,
     required this.syncPending,
     this.insight,
@@ -1128,6 +1162,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     map['back'] = Variable<String>(back);
     map['ease_factor'] = Variable<double>(easeFactor);
     map['interval_days'] = Variable<int>(intervalDays);
+    map['repetitions'] = Variable<int>(repetitions);
     map['due_date'] = Variable<int>(dueDate);
     map['sync_pending'] = Variable<bool>(syncPending);
     if (!nullToAbsent || insight != null) {
@@ -1149,6 +1184,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       back: Value(back),
       easeFactor: Value(easeFactor),
       intervalDays: Value(intervalDays),
+      repetitions: Value(repetitions),
       dueDate: Value(dueDate),
       syncPending: Value(syncPending),
       insight: insight == null && nullToAbsent
@@ -1174,6 +1210,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       back: serializer.fromJson<String>(json['back']),
       easeFactor: serializer.fromJson<double>(json['easeFactor']),
       intervalDays: serializer.fromJson<int>(json['intervalDays']),
+      repetitions: serializer.fromJson<int>(json['repetitions']),
       dueDate: serializer.fromJson<int>(json['dueDate']),
       syncPending: serializer.fromJson<bool>(json['syncPending']),
       insight: serializer.fromJson<String?>(json['insight']),
@@ -1192,6 +1229,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       'back': serializer.toJson<String>(back),
       'easeFactor': serializer.toJson<double>(easeFactor),
       'intervalDays': serializer.toJson<int>(intervalDays),
+      'repetitions': serializer.toJson<int>(repetitions),
       'dueDate': serializer.toJson<int>(dueDate),
       'syncPending': serializer.toJson<bool>(syncPending),
       'insight': serializer.toJson<String?>(insight),
@@ -1208,6 +1246,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     String? back,
     double? easeFactor,
     int? intervalDays,
+    int? repetitions,
     int? dueDate,
     bool? syncPending,
     Value<String?> insight = const Value.absent(),
@@ -1221,6 +1260,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     back: back ?? this.back,
     easeFactor: easeFactor ?? this.easeFactor,
     intervalDays: intervalDays ?? this.intervalDays,
+    repetitions: repetitions ?? this.repetitions,
     dueDate: dueDate ?? this.dueDate,
     syncPending: syncPending ?? this.syncPending,
     insight: insight.present ? insight.value : this.insight,
@@ -1240,6 +1280,9 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       intervalDays: data.intervalDays.present
           ? data.intervalDays.value
           : this.intervalDays,
+      repetitions: data.repetitions.present
+          ? data.repetitions.value
+          : this.repetitions,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       syncPending: data.syncPending.present
           ? data.syncPending.value
@@ -1260,6 +1303,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           ..write('back: $back, ')
           ..write('easeFactor: $easeFactor, ')
           ..write('intervalDays: $intervalDays, ')
+          ..write('repetitions: $repetitions, ')
           ..write('dueDate: $dueDate, ')
           ..write('syncPending: $syncPending, ')
           ..write('insight: $insight, ')
@@ -1278,6 +1322,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     back,
     easeFactor,
     intervalDays,
+    repetitions,
     dueDate,
     syncPending,
     insight,
@@ -1295,6 +1340,7 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           other.back == this.back &&
           other.easeFactor == this.easeFactor &&
           other.intervalDays == this.intervalDays &&
+          other.repetitions == this.repetitions &&
           other.dueDate == this.dueDate &&
           other.syncPending == this.syncPending &&
           other.insight == this.insight &&
@@ -1310,6 +1356,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
   final Value<String> back;
   final Value<double> easeFactor;
   final Value<int> intervalDays;
+  final Value<int> repetitions;
   final Value<int> dueDate;
   final Value<bool> syncPending;
   final Value<String?> insight;
@@ -1324,6 +1371,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     this.back = const Value.absent(),
     this.easeFactor = const Value.absent(),
     this.intervalDays = const Value.absent(),
+    this.repetitions = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.syncPending = const Value.absent(),
     this.insight = const Value.absent(),
@@ -1339,6 +1387,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     required String back,
     this.easeFactor = const Value.absent(),
     this.intervalDays = const Value.absent(),
+    this.repetitions = const Value.absent(),
     required int dueDate,
     this.syncPending = const Value.absent(),
     this.insight = const Value.absent(),
@@ -1360,6 +1409,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     Expression<String>? back,
     Expression<double>? easeFactor,
     Expression<int>? intervalDays,
+    Expression<int>? repetitions,
     Expression<int>? dueDate,
     Expression<bool>? syncPending,
     Expression<String>? insight,
@@ -1375,6 +1425,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
       if (back != null) 'back': back,
       if (easeFactor != null) 'ease_factor': easeFactor,
       if (intervalDays != null) 'interval_days': intervalDays,
+      if (repetitions != null) 'repetitions': repetitions,
       if (dueDate != null) 'due_date': dueDate,
       if (syncPending != null) 'sync_pending': syncPending,
       if (insight != null) 'insight': insight,
@@ -1392,6 +1443,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     Value<String>? back,
     Value<double>? easeFactor,
     Value<int>? intervalDays,
+    Value<int>? repetitions,
     Value<int>? dueDate,
     Value<bool>? syncPending,
     Value<String?>? insight,
@@ -1407,6 +1459,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
       back: back ?? this.back,
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
+      repetitions: repetitions ?? this.repetitions,
       dueDate: dueDate ?? this.dueDate,
       syncPending: syncPending ?? this.syncPending,
       insight: insight ?? this.insight,
@@ -1437,6 +1490,9 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     }
     if (intervalDays.present) {
       map['interval_days'] = Variable<int>(intervalDays.value);
+    }
+    if (repetitions.present) {
+      map['repetitions'] = Variable<int>(repetitions.value);
     }
     if (dueDate.present) {
       map['due_date'] = Variable<int>(dueDate.value);
@@ -1471,6 +1527,7 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
           ..write('back: $back, ')
           ..write('easeFactor: $easeFactor, ')
           ..write('intervalDays: $intervalDays, ')
+          ..write('repetitions: $repetitions, ')
           ..write('dueDate: $dueDate, ')
           ..write('syncPending: $syncPending, ')
           ..write('insight: $insight, ')
@@ -1483,18 +1540,653 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
   }
 }
 
+class $ReviewsTableTable extends ReviewsTable
+    with TableInfo<$ReviewsTableTable, LocalReview> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReviewsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cardIdMeta = const VerificationMeta('cardId');
+  @override
+  late final GeneratedColumn<String> cardId = GeneratedColumn<String>(
+    'card_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deckIdMeta = const VerificationMeta('deckId');
+  @override
+  late final GeneratedColumn<String> deckId = GeneratedColumn<String>(
+    'deck_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
+  @override
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _easeBeforeMeta = const VerificationMeta(
+    'easeBefore',
+  );
+  @override
+  late final GeneratedColumn<double> easeBefore = GeneratedColumn<double>(
+    'ease_before',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _easeAfterMeta = const VerificationMeta(
+    'easeAfter',
+  );
+  @override
+  late final GeneratedColumn<double> easeAfter = GeneratedColumn<double>(
+    'ease_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _intervalBeforeMeta = const VerificationMeta(
+    'intervalBefore',
+  );
+  @override
+  late final GeneratedColumn<int> intervalBefore = GeneratedColumn<int>(
+    'interval_before',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _intervalAfterMeta = const VerificationMeta(
+    'intervalAfter',
+  );
+  @override
+  late final GeneratedColumn<int> intervalAfter = GeneratedColumn<int>(
+    'interval_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reviewedAtMeta = const VerificationMeta(
+    'reviewedAt',
+  );
+  @override
+  late final GeneratedColumn<int> reviewedAt = GeneratedColumn<int>(
+    'reviewed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncPendingMeta = const VerificationMeta(
+    'syncPending',
+  );
+  @override
+  late final GeneratedColumn<bool> syncPending = GeneratedColumn<bool>(
+    'sync_pending',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("sync_pending" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    cardId,
+    deckId,
+    rating,
+    easeBefore,
+    easeAfter,
+    intervalBefore,
+    intervalAfter,
+    reviewedAt,
+    syncPending,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reviews';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalReview> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('card_id')) {
+      context.handle(
+        _cardIdMeta,
+        cardId.isAcceptableOrUnknown(data['card_id']!, _cardIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cardIdMeta);
+    }
+    if (data.containsKey('deck_id')) {
+      context.handle(
+        _deckIdMeta,
+        deckId.isAcceptableOrUnknown(data['deck_id']!, _deckIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deckIdMeta);
+    }
+    if (data.containsKey('rating')) {
+      context.handle(
+        _ratingMeta,
+        rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratingMeta);
+    }
+    if (data.containsKey('ease_before')) {
+      context.handle(
+        _easeBeforeMeta,
+        easeBefore.isAcceptableOrUnknown(data['ease_before']!, _easeBeforeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_easeBeforeMeta);
+    }
+    if (data.containsKey('ease_after')) {
+      context.handle(
+        _easeAfterMeta,
+        easeAfter.isAcceptableOrUnknown(data['ease_after']!, _easeAfterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_easeAfterMeta);
+    }
+    if (data.containsKey('interval_before')) {
+      context.handle(
+        _intervalBeforeMeta,
+        intervalBefore.isAcceptableOrUnknown(
+          data['interval_before']!,
+          _intervalBeforeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_intervalBeforeMeta);
+    }
+    if (data.containsKey('interval_after')) {
+      context.handle(
+        _intervalAfterMeta,
+        intervalAfter.isAcceptableOrUnknown(
+          data['interval_after']!,
+          _intervalAfterMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_intervalAfterMeta);
+    }
+    if (data.containsKey('reviewed_at')) {
+      context.handle(
+        _reviewedAtMeta,
+        reviewedAt.isAcceptableOrUnknown(data['reviewed_at']!, _reviewedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reviewedAtMeta);
+    }
+    if (data.containsKey('sync_pending')) {
+      context.handle(
+        _syncPendingMeta,
+        syncPending.isAcceptableOrUnknown(
+          data['sync_pending']!,
+          _syncPendingMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalReview map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalReview(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      cardId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}card_id'],
+      )!,
+      deckId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deck_id'],
+      )!,
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rating'],
+      )!,
+      easeBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ease_before'],
+      )!,
+      easeAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ease_after'],
+      )!,
+      intervalBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval_before'],
+      )!,
+      intervalAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval_after'],
+      )!,
+      reviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reviewed_at'],
+      )!,
+      syncPending: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}sync_pending'],
+      )!,
+    );
+  }
+
+  @override
+  $ReviewsTableTable createAlias(String alias) {
+    return $ReviewsTableTable(attachedDatabase, alias);
+  }
+}
+
+class LocalReview extends DataClass implements Insertable<LocalReview> {
+  final String id;
+  final String cardId;
+
+  /// Redundante com `cards.deckId`, mas evita um join no caminho de sync e
+  /// mantém a revisão utilizável depois que o card é apagado.
+  final String deckId;
+
+  /// Índice de [CardRating]: 0 = again, 1 = hard, 2 = good, 3 = easy.
+  final int rating;
+  final double easeBefore;
+  final double easeAfter;
+  final int intervalBefore;
+  final int intervalAfter;
+
+  /// Epoch ms.
+  final int reviewedAt;
+  final bool syncPending;
+  const LocalReview({
+    required this.id,
+    required this.cardId,
+    required this.deckId,
+    required this.rating,
+    required this.easeBefore,
+    required this.easeAfter,
+    required this.intervalBefore,
+    required this.intervalAfter,
+    required this.reviewedAt,
+    required this.syncPending,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['card_id'] = Variable<String>(cardId);
+    map['deck_id'] = Variable<String>(deckId);
+    map['rating'] = Variable<int>(rating);
+    map['ease_before'] = Variable<double>(easeBefore);
+    map['ease_after'] = Variable<double>(easeAfter);
+    map['interval_before'] = Variable<int>(intervalBefore);
+    map['interval_after'] = Variable<int>(intervalAfter);
+    map['reviewed_at'] = Variable<int>(reviewedAt);
+    map['sync_pending'] = Variable<bool>(syncPending);
+    return map;
+  }
+
+  ReviewsTableCompanion toCompanion(bool nullToAbsent) {
+    return ReviewsTableCompanion(
+      id: Value(id),
+      cardId: Value(cardId),
+      deckId: Value(deckId),
+      rating: Value(rating),
+      easeBefore: Value(easeBefore),
+      easeAfter: Value(easeAfter),
+      intervalBefore: Value(intervalBefore),
+      intervalAfter: Value(intervalAfter),
+      reviewedAt: Value(reviewedAt),
+      syncPending: Value(syncPending),
+    );
+  }
+
+  factory LocalReview.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalReview(
+      id: serializer.fromJson<String>(json['id']),
+      cardId: serializer.fromJson<String>(json['cardId']),
+      deckId: serializer.fromJson<String>(json['deckId']),
+      rating: serializer.fromJson<int>(json['rating']),
+      easeBefore: serializer.fromJson<double>(json['easeBefore']),
+      easeAfter: serializer.fromJson<double>(json['easeAfter']),
+      intervalBefore: serializer.fromJson<int>(json['intervalBefore']),
+      intervalAfter: serializer.fromJson<int>(json['intervalAfter']),
+      reviewedAt: serializer.fromJson<int>(json['reviewedAt']),
+      syncPending: serializer.fromJson<bool>(json['syncPending']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'cardId': serializer.toJson<String>(cardId),
+      'deckId': serializer.toJson<String>(deckId),
+      'rating': serializer.toJson<int>(rating),
+      'easeBefore': serializer.toJson<double>(easeBefore),
+      'easeAfter': serializer.toJson<double>(easeAfter),
+      'intervalBefore': serializer.toJson<int>(intervalBefore),
+      'intervalAfter': serializer.toJson<int>(intervalAfter),
+      'reviewedAt': serializer.toJson<int>(reviewedAt),
+      'syncPending': serializer.toJson<bool>(syncPending),
+    };
+  }
+
+  LocalReview copyWith({
+    String? id,
+    String? cardId,
+    String? deckId,
+    int? rating,
+    double? easeBefore,
+    double? easeAfter,
+    int? intervalBefore,
+    int? intervalAfter,
+    int? reviewedAt,
+    bool? syncPending,
+  }) => LocalReview(
+    id: id ?? this.id,
+    cardId: cardId ?? this.cardId,
+    deckId: deckId ?? this.deckId,
+    rating: rating ?? this.rating,
+    easeBefore: easeBefore ?? this.easeBefore,
+    easeAfter: easeAfter ?? this.easeAfter,
+    intervalBefore: intervalBefore ?? this.intervalBefore,
+    intervalAfter: intervalAfter ?? this.intervalAfter,
+    reviewedAt: reviewedAt ?? this.reviewedAt,
+    syncPending: syncPending ?? this.syncPending,
+  );
+  LocalReview copyWithCompanion(ReviewsTableCompanion data) {
+    return LocalReview(
+      id: data.id.present ? data.id.value : this.id,
+      cardId: data.cardId.present ? data.cardId.value : this.cardId,
+      deckId: data.deckId.present ? data.deckId.value : this.deckId,
+      rating: data.rating.present ? data.rating.value : this.rating,
+      easeBefore: data.easeBefore.present
+          ? data.easeBefore.value
+          : this.easeBefore,
+      easeAfter: data.easeAfter.present ? data.easeAfter.value : this.easeAfter,
+      intervalBefore: data.intervalBefore.present
+          ? data.intervalBefore.value
+          : this.intervalBefore,
+      intervalAfter: data.intervalAfter.present
+          ? data.intervalAfter.value
+          : this.intervalAfter,
+      reviewedAt: data.reviewedAt.present
+          ? data.reviewedAt.value
+          : this.reviewedAt,
+      syncPending: data.syncPending.present
+          ? data.syncPending.value
+          : this.syncPending,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalReview(')
+          ..write('id: $id, ')
+          ..write('cardId: $cardId, ')
+          ..write('deckId: $deckId, ')
+          ..write('rating: $rating, ')
+          ..write('easeBefore: $easeBefore, ')
+          ..write('easeAfter: $easeAfter, ')
+          ..write('intervalBefore: $intervalBefore, ')
+          ..write('intervalAfter: $intervalAfter, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('syncPending: $syncPending')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    cardId,
+    deckId,
+    rating,
+    easeBefore,
+    easeAfter,
+    intervalBefore,
+    intervalAfter,
+    reviewedAt,
+    syncPending,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalReview &&
+          other.id == this.id &&
+          other.cardId == this.cardId &&
+          other.deckId == this.deckId &&
+          other.rating == this.rating &&
+          other.easeBefore == this.easeBefore &&
+          other.easeAfter == this.easeAfter &&
+          other.intervalBefore == this.intervalBefore &&
+          other.intervalAfter == this.intervalAfter &&
+          other.reviewedAt == this.reviewedAt &&
+          other.syncPending == this.syncPending);
+}
+
+class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
+  final Value<String> id;
+  final Value<String> cardId;
+  final Value<String> deckId;
+  final Value<int> rating;
+  final Value<double> easeBefore;
+  final Value<double> easeAfter;
+  final Value<int> intervalBefore;
+  final Value<int> intervalAfter;
+  final Value<int> reviewedAt;
+  final Value<bool> syncPending;
+  final Value<int> rowid;
+  const ReviewsTableCompanion({
+    this.id = const Value.absent(),
+    this.cardId = const Value.absent(),
+    this.deckId = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.easeBefore = const Value.absent(),
+    this.easeAfter = const Value.absent(),
+    this.intervalBefore = const Value.absent(),
+    this.intervalAfter = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.syncPending = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReviewsTableCompanion.insert({
+    required String id,
+    required String cardId,
+    required String deckId,
+    required int rating,
+    required double easeBefore,
+    required double easeAfter,
+    required int intervalBefore,
+    required int intervalAfter,
+    required int reviewedAt,
+    this.syncPending = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       cardId = Value(cardId),
+       deckId = Value(deckId),
+       rating = Value(rating),
+       easeBefore = Value(easeBefore),
+       easeAfter = Value(easeAfter),
+       intervalBefore = Value(intervalBefore),
+       intervalAfter = Value(intervalAfter),
+       reviewedAt = Value(reviewedAt);
+  static Insertable<LocalReview> custom({
+    Expression<String>? id,
+    Expression<String>? cardId,
+    Expression<String>? deckId,
+    Expression<int>? rating,
+    Expression<double>? easeBefore,
+    Expression<double>? easeAfter,
+    Expression<int>? intervalBefore,
+    Expression<int>? intervalAfter,
+    Expression<int>? reviewedAt,
+    Expression<bool>? syncPending,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (cardId != null) 'card_id': cardId,
+      if (deckId != null) 'deck_id': deckId,
+      if (rating != null) 'rating': rating,
+      if (easeBefore != null) 'ease_before': easeBefore,
+      if (easeAfter != null) 'ease_after': easeAfter,
+      if (intervalBefore != null) 'interval_before': intervalBefore,
+      if (intervalAfter != null) 'interval_after': intervalAfter,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt,
+      if (syncPending != null) 'sync_pending': syncPending,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReviewsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? cardId,
+    Value<String>? deckId,
+    Value<int>? rating,
+    Value<double>? easeBefore,
+    Value<double>? easeAfter,
+    Value<int>? intervalBefore,
+    Value<int>? intervalAfter,
+    Value<int>? reviewedAt,
+    Value<bool>? syncPending,
+    Value<int>? rowid,
+  }) {
+    return ReviewsTableCompanion(
+      id: id ?? this.id,
+      cardId: cardId ?? this.cardId,
+      deckId: deckId ?? this.deckId,
+      rating: rating ?? this.rating,
+      easeBefore: easeBefore ?? this.easeBefore,
+      easeAfter: easeAfter ?? this.easeAfter,
+      intervalBefore: intervalBefore ?? this.intervalBefore,
+      intervalAfter: intervalAfter ?? this.intervalAfter,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      syncPending: syncPending ?? this.syncPending,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (cardId.present) {
+      map['card_id'] = Variable<String>(cardId.value);
+    }
+    if (deckId.present) {
+      map['deck_id'] = Variable<String>(deckId.value);
+    }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
+    if (easeBefore.present) {
+      map['ease_before'] = Variable<double>(easeBefore.value);
+    }
+    if (easeAfter.present) {
+      map['ease_after'] = Variable<double>(easeAfter.value);
+    }
+    if (intervalBefore.present) {
+      map['interval_before'] = Variable<int>(intervalBefore.value);
+    }
+    if (intervalAfter.present) {
+      map['interval_after'] = Variable<int>(intervalAfter.value);
+    }
+    if (reviewedAt.present) {
+      map['reviewed_at'] = Variable<int>(reviewedAt.value);
+    }
+    if (syncPending.present) {
+      map['sync_pending'] = Variable<bool>(syncPending.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReviewsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('cardId: $cardId, ')
+          ..write('deckId: $deckId, ')
+          ..write('rating: $rating, ')
+          ..write('easeBefore: $easeBefore, ')
+          ..write('easeAfter: $easeAfter, ')
+          ..write('intervalBefore: $intervalBefore, ')
+          ..write('intervalAfter: $intervalAfter, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('syncPending: $syncPending, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $DecksTableTable decksTable = $DecksTableTable(this);
   late final $CardsTableTable cardsTable = $CardsTableTable(this);
+  late final $ReviewsTableTable reviewsTable = $ReviewsTableTable(this);
   late final DecksDao decksDao = DecksDao(this as AppDatabase);
   late final CardsDao cardsDao = CardsDao(this as AppDatabase);
+  late final ReviewsDao reviewsDao = ReviewsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [decksTable, cardsTable];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    decksTable,
+    cardsTable,
+    reviewsTable,
+  ];
 }
 
 typedef $$DecksTableTableCreateCompanionBuilder =
@@ -1866,6 +2558,7 @@ typedef $$CardsTableTableCreateCompanionBuilder =
       required String back,
       Value<double> easeFactor,
       Value<int> intervalDays,
+      Value<int> repetitions,
       required int dueDate,
       Value<bool> syncPending,
       Value<String?> insight,
@@ -1882,6 +2575,7 @@ typedef $$CardsTableTableUpdateCompanionBuilder =
       Value<String> back,
       Value<double> easeFactor,
       Value<int> intervalDays,
+      Value<int> repetitions,
       Value<int> dueDate,
       Value<bool> syncPending,
       Value<String?> insight,
@@ -1927,6 +2621,11 @@ class $$CardsTableTableFilterComposer
 
   ColumnFilters<int> get intervalDays => $composableBuilder(
     column: $table.intervalDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get repetitions => $composableBuilder(
+    column: $table.repetitions,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2000,6 +2699,11 @@ class $$CardsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get repetitions => $composableBuilder(
+    column: $table.repetitions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get dueDate => $composableBuilder(
     column: $table.dueDate,
     builder: (column) => ColumnOrderings(column),
@@ -2062,6 +2766,11 @@ class $$CardsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get repetitions => $composableBuilder(
+    column: $table.repetitions,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
@@ -2120,6 +2829,7 @@ class $$CardsTableTableTableManager
                 Value<String> back = const Value.absent(),
                 Value<double> easeFactor = const Value.absent(),
                 Value<int> intervalDays = const Value.absent(),
+                Value<int> repetitions = const Value.absent(),
                 Value<int> dueDate = const Value.absent(),
                 Value<bool> syncPending = const Value.absent(),
                 Value<String?> insight = const Value.absent(),
@@ -2134,6 +2844,7 @@ class $$CardsTableTableTableManager
                 back: back,
                 easeFactor: easeFactor,
                 intervalDays: intervalDays,
+                repetitions: repetitions,
                 dueDate: dueDate,
                 syncPending: syncPending,
                 insight: insight,
@@ -2150,6 +2861,7 @@ class $$CardsTableTableTableManager
                 required String back,
                 Value<double> easeFactor = const Value.absent(),
                 Value<int> intervalDays = const Value.absent(),
+                Value<int> repetitions = const Value.absent(),
                 required int dueDate,
                 Value<bool> syncPending = const Value.absent(),
                 Value<String?> insight = const Value.absent(),
@@ -2164,6 +2876,7 @@ class $$CardsTableTableTableManager
                 back: back,
                 easeFactor: easeFactor,
                 intervalDays: intervalDays,
+                repetitions: repetitions,
                 dueDate: dueDate,
                 syncPending: syncPending,
                 insight: insight,
@@ -2194,6 +2907,311 @@ typedef $$CardsTableTableProcessedTableManager =
       LocalCard,
       PrefetchHooks Function()
     >;
+typedef $$ReviewsTableTableCreateCompanionBuilder =
+    ReviewsTableCompanion Function({
+      required String id,
+      required String cardId,
+      required String deckId,
+      required int rating,
+      required double easeBefore,
+      required double easeAfter,
+      required int intervalBefore,
+      required int intervalAfter,
+      required int reviewedAt,
+      Value<bool> syncPending,
+      Value<int> rowid,
+    });
+typedef $$ReviewsTableTableUpdateCompanionBuilder =
+    ReviewsTableCompanion Function({
+      Value<String> id,
+      Value<String> cardId,
+      Value<String> deckId,
+      Value<int> rating,
+      Value<double> easeBefore,
+      Value<double> easeAfter,
+      Value<int> intervalBefore,
+      Value<int> intervalAfter,
+      Value<int> reviewedAt,
+      Value<bool> syncPending,
+      Value<int> rowid,
+    });
+
+class $$ReviewsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ReviewsTableTable> {
+  $$ReviewsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cardId => $composableBuilder(
+    column: $table.cardId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deckId => $composableBuilder(
+    column: $table.deckId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get easeBefore => $composableBuilder(
+    column: $table.easeBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get easeAfter => $composableBuilder(
+    column: $table.easeAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intervalBefore => $composableBuilder(
+    column: $table.intervalBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intervalAfter => $composableBuilder(
+    column: $table.intervalAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get syncPending => $composableBuilder(
+    column: $table.syncPending,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReviewsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReviewsTableTable> {
+  $$ReviewsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cardId => $composableBuilder(
+    column: $table.cardId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deckId => $composableBuilder(
+    column: $table.deckId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get easeBefore => $composableBuilder(
+    column: $table.easeBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get easeAfter => $composableBuilder(
+    column: $table.easeAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intervalBefore => $composableBuilder(
+    column: $table.intervalBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intervalAfter => $composableBuilder(
+    column: $table.intervalAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get syncPending => $composableBuilder(
+    column: $table.syncPending,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReviewsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReviewsTableTable> {
+  $$ReviewsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get cardId =>
+      $composableBuilder(column: $table.cardId, builder: (column) => column);
+
+  GeneratedColumn<String> get deckId =>
+      $composableBuilder(column: $table.deckId, builder: (column) => column);
+
+  GeneratedColumn<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
+
+  GeneratedColumn<double> get easeBefore => $composableBuilder(
+    column: $table.easeBefore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get easeAfter =>
+      $composableBuilder(column: $table.easeAfter, builder: (column) => column);
+
+  GeneratedColumn<int> get intervalBefore => $composableBuilder(
+    column: $table.intervalBefore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get intervalAfter => $composableBuilder(
+    column: $table.intervalAfter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get syncPending => $composableBuilder(
+    column: $table.syncPending,
+    builder: (column) => column,
+  );
+}
+
+class $$ReviewsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReviewsTableTable,
+          LocalReview,
+          $$ReviewsTableTableFilterComposer,
+          $$ReviewsTableTableOrderingComposer,
+          $$ReviewsTableTableAnnotationComposer,
+          $$ReviewsTableTableCreateCompanionBuilder,
+          $$ReviewsTableTableUpdateCompanionBuilder,
+          (
+            LocalReview,
+            BaseReferences<_$AppDatabase, $ReviewsTableTable, LocalReview>,
+          ),
+          LocalReview,
+          PrefetchHooks Function()
+        > {
+  $$ReviewsTableTableTableManager(_$AppDatabase db, $ReviewsTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReviewsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReviewsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReviewsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> cardId = const Value.absent(),
+                Value<String> deckId = const Value.absent(),
+                Value<int> rating = const Value.absent(),
+                Value<double> easeBefore = const Value.absent(),
+                Value<double> easeAfter = const Value.absent(),
+                Value<int> intervalBefore = const Value.absent(),
+                Value<int> intervalAfter = const Value.absent(),
+                Value<int> reviewedAt = const Value.absent(),
+                Value<bool> syncPending = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReviewsTableCompanion(
+                id: id,
+                cardId: cardId,
+                deckId: deckId,
+                rating: rating,
+                easeBefore: easeBefore,
+                easeAfter: easeAfter,
+                intervalBefore: intervalBefore,
+                intervalAfter: intervalAfter,
+                reviewedAt: reviewedAt,
+                syncPending: syncPending,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String cardId,
+                required String deckId,
+                required int rating,
+                required double easeBefore,
+                required double easeAfter,
+                required int intervalBefore,
+                required int intervalAfter,
+                required int reviewedAt,
+                Value<bool> syncPending = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReviewsTableCompanion.insert(
+                id: id,
+                cardId: cardId,
+                deckId: deckId,
+                rating: rating,
+                easeBefore: easeBefore,
+                easeAfter: easeAfter,
+                intervalBefore: intervalBefore,
+                intervalAfter: intervalAfter,
+                reviewedAt: reviewedAt,
+                syncPending: syncPending,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReviewsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReviewsTableTable,
+      LocalReview,
+      $$ReviewsTableTableFilterComposer,
+      $$ReviewsTableTableOrderingComposer,
+      $$ReviewsTableTableAnnotationComposer,
+      $$ReviewsTableTableCreateCompanionBuilder,
+      $$ReviewsTableTableUpdateCompanionBuilder,
+      (
+        LocalReview,
+        BaseReferences<_$AppDatabase, $ReviewsTableTable, LocalReview>,
+      ),
+      LocalReview,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2202,4 +3220,6 @@ class $AppDatabaseManager {
       $$DecksTableTableTableManager(_db, _db.decksTable);
   $$CardsTableTableTableManager get cardsTable =>
       $$CardsTableTableTableManager(_db, _db.cardsTable);
+  $$ReviewsTableTableTableManager get reviewsTable =>
+      $$ReviewsTableTableTableManager(_db, _db.reviewsTable);
 }

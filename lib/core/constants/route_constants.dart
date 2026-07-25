@@ -17,9 +17,11 @@ class RouteConstants {
 
   static const String deckIdParam = 'deckId';
   static const String cardIdParam = 'cardId';
+  static const String freeStudyParam = 'free';
 
   static String deckPath(String deckId) => '/deck/$deckId';
-  static String studyPath(String deckId) => '/deck/$deckId/study';
+  static String studyPath(String deckId, {bool freeStudy = false}) =>
+      '/deck/$deckId/study${freeStudy ? '?$freeStudyParam=1' : ''}';
   static String cardInsightPath(String deckId, String cardId) =>
       '/deck/$deckId/card/$cardId/insight';
   static String generatePath(String deckId) => '/deck/$deckId/generate';

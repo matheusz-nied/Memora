@@ -1,8 +1,11 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memora/core/database/app_database.dart';
 
 import '../../drift/generated/schema.dart';
+import '../../drift/generated/schema_v1.dart' as v1;
+import '../../drift/generated/schema_v2.dart' as v2;
 
 /// Garante que o schema declarado no código continua igual ao snapshot da
 /// versão correspondente e que toda migração intermediária roda limpa.
@@ -33,17 +36,67 @@ void main() {
     }
   });
 
-  test('migra da v1 até a versão atual preservando os dados', () async {
-    const latest = AppDatabase.latestSchemaVersion;
-    if (latest == 1) {
-      // Ainda não há migração para exercitar; o teste acima já cobre o schema.
-      return;
-    }
+  test(
+    'v1 -> v2 preserva decks e cards e aplica o default de repetitions',
+    () async {
+      const deckId = 'deck-1';
+      const cardId = 'card-1';
+      final createdAt = DateTime(2026, 5, 2).millisecondsSinceEpoch;
+      final dueDate = DateTime(2026, 5, 20).millisecondsSinceEpoch;
 
-    final connection = await verifier.startAt(1);
-    final database = AppDatabase(connection);
+      await verifier.testWithDataIntegrity(
+        oldVersion: 1,
+        newVersion: 2,
+        createOld: v1.DatabaseAtV1.new,
+        createNew: v2.DatabaseAtV2.new,
+        openTestedDatabase: AppDatabase.new,
+        createItems: (batch, oldDb) {
+          batch.insert(
+            oldDb.decks,
+            v1.DecksCompanion.insert(
+              id: deckId,
+              userId: 'user-1',
+              title: 'Biologia',
+              createdAt: createdAt,
+              updatedAt: createdAt,
+            ),
+          );
+          batch.insert(
+            oldDb.cards,
+            v1.CardsCompanion.insert(
+              id: cardId,
+              deckId: deckId,
+              front: 'Mitocôndria',
+              back: 'Organela responsável pela respiração celular',
+              easeFactor: const Value(2.7),
+              intervalDays: const Value(9),
+              dueDate: dueDate,
+              createdAt: createdAt,
+              updatedAt: createdAt,
+            ),
+          );
+        },
+        validateItems: (newDb) async {
+          final decks = await newDb.select(newDb.decks).get();
+          expect(decks, hasLength(1));
+          expect(decks.single.title, 'Biologia');
 
-    await verifier.migrateAndValidate(database, latest);
-    await database.close();
-  });
+          final cards = await newDb.select(newDb.cards).get();
+          expect(cards, hasLength(1));
+
+          final card = cards.single;
+          expect(card.front, 'Mitocôndria');
+          expect(card.easeFactor, closeTo(2.7, 0.0001));
+          expect(card.intervalDays, 9);
+          expect(card.dueDate, dueDate);
+          // Coluna nova entra com o default sem apagar a linha existente.
+          expect(card.repetitions, 0);
+
+          // A tabela append-only de revisões nasce vazia.
+          final reviews = await newDb.select(newDb.reviews).get();
+          expect(reviews, isEmpty);
+        },
+      );
+    },
+  );
 }
