@@ -19,4 +19,10 @@ abstract interface class AuthGateway {
   Future<void> resetPasswordForEmail(String email);
 
   Future<void> signOut();
+
+  /// Exclui a conta e todos os dados remotos do usuário, de forma permanente.
+  ///
+  /// Exigido pela App Store para qualquer app que crie conta. Ao voltar, a
+  /// sessão já está encerrada.
+  Future<void> deleteAccount();
 }

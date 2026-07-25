@@ -123,6 +123,9 @@ class _FakeAuthGateway implements AuthGateway {
   const _FakeAuthGateway();
 
   @override
+  Future<void> deleteAccount() async {}
+
+  @override
   Stream<BackendSession?> get authStateChanges => Stream.value(currentSession);
 
   @override

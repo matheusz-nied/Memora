@@ -4,9 +4,13 @@ import '../../core/backend/backend_provider.dart';
 import '../../core/backend/contracts/auth_gateway.dart';
 import '../../core/backend/models/backend_exception.dart';
 import '../../core/backend/models/backend_session.dart';
+import '../../core/database/app_database.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(ref.watch(backendClientProvider).auth);
+  return AuthRepository(
+    ref.watch(backendClientProvider).auth,
+    database: ref.watch(appDatabaseProvider),
+  );
 });
 
 final authStateProvider = StreamProvider<BackendSession?>((ref) {
@@ -23,9 +27,11 @@ final authStateProvider = StreamProvider<BackendSession?>((ref) {
 });
 
 class AuthRepository {
-  const AuthRepository(this._authGateway);
+  const AuthRepository(this._authGateway, {required AppDatabase database})
+    : _database = database;
 
   final AuthGateway _authGateway;
+  final AppDatabase _database;
 
   Stream<BackendSession?> get authStateChanges => _authGateway.authStateChanges;
 
@@ -59,6 +65,26 @@ class AuthRepository {
 
   Future<void> signOut() {
     return _authGateway.signOut();
+  }
+
+  /// Exclui a conta remota e apaga o banco local.
+  ///
+  /// A ordem importa: se o remoto falhar, o dispositivo continua com os dados
+  /// e a conta intacta. O caminho inverso deixaria o usuário sem os cards por
+  /// causa de um erro de rede.
+  Future<void> deleteAccount() async {
+    await _authGateway.deleteAccount();
+    await clearLocalData();
+  }
+
+  /// Zera o cache local. Também usado no logout forçado, para a sessão
+  /// seguinte não herdar decks de outro usuário no mesmo dispositivo.
+  Future<void> clearLocalData() async {
+    await _database.transaction(() async {
+      await _database.delete(_database.reviewsTable).go();
+      await _database.delete(_database.cardsTable).go();
+      await _database.delete(_database.decksTable).go();
+    });
   }
 }
 

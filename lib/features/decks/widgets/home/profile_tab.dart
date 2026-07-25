@@ -11,6 +11,7 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../auth/auth_repository.dart';
 import '../../../auth/profile_text.dart';
+import '../../../auth/widgets/delete_account_button.dart';
 import '../../../quota/widgets/ai_quota_card.dart';
 import '../../deck_repository.dart';
 
@@ -177,6 +178,10 @@ class ProfileTab extends ConsumerWidget {
                       variant: AppButtonVariant.secondary,
                       onPressed: onSignOut,
                     ),
+                    const SizedBox(height: AppDimensions.sm),
+
+                    // Exigido pela App Store para app com cadastro de conta.
+                    const DeleteAccountButton(),
                     const SizedBox(height: 120), // Spacing for navigation bar
                   ],
                 );

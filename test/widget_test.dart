@@ -319,6 +319,13 @@ class _FakeBackendClient implements BackendClient {
 }
 
 class _FakeAuthGateway implements AuthGateway {
+  @override
+  Future<void> deleteAccount() async {
+    deleteAccountCount += 1;
+  }
+
+  int deleteAccountCount = 0;
+
   _FakeAuthGateway(this._session, {required this.signUpReturnsSession});
 
   final _controller = StreamController<BackendSession?>.broadcast();

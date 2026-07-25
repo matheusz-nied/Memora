@@ -65,6 +65,11 @@ class DisabledAuthGateway implements AuthGateway {
 
   @override
   Future<void> signOut() async {}
+
+  @override
+  Future<void> deleteAccount() {
+    throw _notConfigured();
+  }
 }
 
 class DisabledRemoteDatabaseGateway implements RemoteDatabaseGateway {

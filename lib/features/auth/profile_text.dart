@@ -13,4 +13,15 @@ class ProfileText {
   static const String signOutError = 'Não foi possível sair. Tente novamente.';
   static const String sessionUnavailable =
       'Sessão não encontrada. Entre novamente.';
+
+  static const String cancel = 'Cancelar';
+  static const String deleteAccount = 'Excluir minha conta';
+  static const String deleteAccountTitle = 'Excluir conta';
+  static const String deleteAccountWarning =
+      'Esta ação é permanente e não pode ser desfeita. Seus decks, cards, '
+      'histórico de estudo, conversas e arquivos enviados serão apagados '
+      'definitivamente dos nossos servidores e deste dispositivo.';
+  static const String deleteConfirmationLabel = 'Digite EXCLUIR para confirmar';
+  static const String deleteConfirmationWord = 'EXCLUIR';
+  static const String deleteAccountConfirm = 'Excluir para sempre';
 }

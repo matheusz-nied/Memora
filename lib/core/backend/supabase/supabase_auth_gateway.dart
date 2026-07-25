@@ -9,6 +9,8 @@ import '../models/backend_user.dart';
 class SupabaseAuthGateway implements AuthGateway {
   const SupabaseAuthGateway(this._client);
 
+  static const String _deleteAccountFunction = 'delete-account';
+
   final SupabaseClient _client;
 
   @override
@@ -84,6 +86,28 @@ class SupabaseAuthGateway implements AuthGateway {
     } on AuthException catch (error) {
       throw BackendException(_readableSupabaseAuthError(error));
     }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await _client.functions.invoke(_deleteAccountFunction);
+    } on FunctionException catch (error) {
+      final details = error.details;
+      final message = details is Map ? details['error'] : null;
+      throw BackendException(
+        message?.toString() ?? 'Não foi possível excluir a conta agora.',
+        code: details is Map ? details['code'] as String? : null,
+      );
+    } on AuthException catch (error) {
+      throw BackendException(_readableSupabaseAuthError(error));
+    }
+
+    // O usuário remoto já não existe; encerrar a sessão local é o que resta.
+    // Uma falha aqui não deve reverter uma exclusão que já aconteceu.
+    try {
+      await _client.auth.signOut();
+    } catch (_) {}
   }
 
   BackendSession? _sessionFromSupabase(Session? session) {
