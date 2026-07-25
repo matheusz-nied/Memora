@@ -8,6 +8,7 @@ import {
   requireEnv,
 } from "../_shared/generate_cards.ts";
 import { withQuota } from "../_shared/quota.ts";
+import { serve } from "../_shared/runtime.ts";
 
 /// Espelha AppConstants.kMaxChatMessages. O cliente já limita, mas o servidor
 /// não pode confiar nisso: sem teto aqui, uma requisição com centenas de
@@ -133,7 +134,7 @@ Nível do aluno: {level}
 Siga as instruções acima e ajude o aluno da melhor forma possível.`,
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   try {
     if (req.method === "OPTIONS") {
       return optionsResponse();

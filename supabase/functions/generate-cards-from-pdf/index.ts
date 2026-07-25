@@ -12,11 +12,12 @@ import {
   validateText,
 } from "../_shared/generate_cards.ts";
 import { withQuota } from "../_shared/quota.ts";
+import { serve } from "../_shared/runtime.ts";
 
 const maxPdfSizeBytes = 5 * 1024 * 1024;
 const maxPdfPages = 10;
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   try {
     if (req.method === "OPTIONS") {
       return optionsResponse();

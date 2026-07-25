@@ -53,6 +53,28 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: ignore
 
+  runtime-boundary:
+    name: fronteira de runtime das edge functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A fronteira do lado Flutter é coberta por
+      # test/architecture/backend_boundary_test.dart. Esta é a equivalente do
+      # lado das functions: todo o resto é TypeScript comum sobre
+      # Request/Response, então portar para Node ou Workers é reescrever
+      # um arquivo só.
+      - name: Deno.* só pode aparecer em _shared/runtime.ts
+        run: |
+          offenders=$(grep -rln 'Deno\.' supabase/functions --include='*.ts' \
+            | grep -v '_shared/runtime.ts' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::Deno.* fora de supabase/functions/_shared/runtime.ts:"
+            echo "$offenders"
+            echo "Use getEnv() / serve() de _shared/runtime.ts."
+            exit 1
+          fi
+
   edge-functions:
     name: supabase edge functions (deno)
     runs-on: ubuntu-latest

@@ -9,6 +9,7 @@ import {
   requireEnv,
 } from "../_shared/generate_cards.ts";
 import { withQuota } from "../_shared/quota.ts";
+import { serve } from "../_shared/runtime.ts";
 
 type CardInsightInput = {
   deckId?: unknown;
@@ -16,7 +17,7 @@ type CardInsightInput = {
   back?: unknown;
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   try {
     if (req.method === "OPTIONS") {
       return optionsResponse();

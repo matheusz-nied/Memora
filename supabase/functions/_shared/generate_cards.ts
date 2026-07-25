@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.44.4";
 
+import { getEnv } from "./runtime.ts";
+
 export type GeneratedCard = {
   front: string;
   back: string;
@@ -31,7 +33,7 @@ const maxBackLength = 600;
 /// Origem permitida no CORS. Defina ALLOWED_ORIGIN com o domínio do app web
 /// em produção; `*` só é aceitável em desenvolvimento.
 export const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
+  "Access-Control-Allow-Origin": getEnv("ALLOWED_ORIGIN") ?? "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -90,7 +92,7 @@ export function validateText(text: unknown): string | null {
 }
 
 export function requireEnv(name: string): string {
-  const value = Deno.env.get(name);
+  const value = getEnv(name);
   if (!value) {
     throw new AiGatewayError(
       `Variável de ambiente ausente: ${name}.`,

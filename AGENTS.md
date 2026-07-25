@@ -55,7 +55,8 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
    4. `dart run drift_dev schema generate drift_schemas/ test/drift/generated/`
 
    `test/core/database/migration_test.dart` falha se algum passo for esquecido. A partir do primeiro build distribuído, pular isso corrompe o banco de quem já instalou.
-10. **Backend desacoplado:** nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`; somente `lib/core/backend/supabase/` pode conhecer o SDK Supabase.
+10. **Backend desacoplado:** nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`; somente `lib/core/backend/supabase/` pode conhecer o SDK Supabase. Além disso, só `main.dart` e `backend_provider.dart` podem importar o adaptador — a escolha da implementação ativa é de um ponto só. `test/architecture/backend_boundary_test.dart` falha se a regra for violada, então ela se sustenta sozinha.
+11. **Fronteira de runtime nas Edge Functions:** `Deno.*` só pode aparecer em `supabase/functions/_shared/runtime.ts`. Todo o resto usa `getEnv()` e `serve()` de lá e é TypeScript comum sobre `Request`/`Response`. Portar as functions para Node, Bun ou Cloudflare Workers deve significar reescrever esse arquivo e nada mais. A CI cobra isso no job `runtime-boundary`.
 
 ## Backend desacoplado
 

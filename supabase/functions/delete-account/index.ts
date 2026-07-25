@@ -7,6 +7,7 @@ import {
   optionsResponse,
   requireEnv,
 } from "../_shared/generate_cards.ts";
+import { serve } from "../_shared/runtime.ts";
 
 /// Exclusão de conta iniciada pelo usuário.
 ///
@@ -16,7 +17,7 @@ import {
 ///
 /// `on delete cascade` das FKs cuida de decks, cards, chat_messages, reviews e
 /// ai_usage. O que o banco não alcança é o bucket de PDFs, removido aqui.
-Deno.serve(async (req) => {
+serve(async (req) => {
   try {
     if (req.method === "OPTIONS") {
       return optionsResponse();
