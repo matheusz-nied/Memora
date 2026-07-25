@@ -150,7 +150,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                             filled: true,
                             fillColor: isDark
                                 ? const Color(0xFF1A2230)
-                                : AppColors.primary.withOpacity(0.01),
+                                : AppColors.primary.withValues(alpha: 0.01),
                             prefixIcon: Icon(
                               Icons.smart_toy_outlined,
                               color: isDark ? slate400 : slate600,
@@ -161,7 +161,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                               borderSide: BorderSide(
                                 color: isDark
                                     ? slate800
-                                    : Colors.black.withOpacity(0.06),
+                                    : Colors.black.withValues(alpha: 0.06),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -204,7 +204,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                         ),
                         const SizedBox(height: AppDimensions.sm),
                         DropdownButtonFormField<AgentTemplate>(
-                          value: _selectedTemplate,
+                          initialValue: _selectedTemplate,
                           dropdownColor: isDark
                               ? const Color(0xFF1A2230)
                               : Colors.white,
@@ -245,7 +245,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                         ),
                         const SizedBox(height: AppDimensions.sm),
                         DropdownButtonFormField<String>(
-                          value: _selectedLanguage,
+                          initialValue: _selectedLanguage,
                           dropdownColor: isDark
                               ? const Color(0xFF1A2230)
                               : Colors.white,
@@ -288,7 +288,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                         ),
                         const SizedBox(height: AppDimensions.sm),
                         DropdownButtonFormField<String>(
-                          value: _selectedLevel,
+                          initialValue: _selectedLevel,
                           dropdownColor: isDark
                               ? const Color(0xFF1A2230)
                               : Colors.white,
@@ -357,13 +357,13 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                               filled: true,
                               fillColor: isDark
                                   ? const Color(0xFF1A2230)
-                                  : AppColors.primary.withOpacity(0.01),
+                                  : AppColors.primary.withValues(alpha: 0.01),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
                                   color: isDark
                                       ? slate800
-                                      : Colors.black.withOpacity(0.06),
+                                      : Colors.black.withValues(alpha: 0.06),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -384,10 +384,12 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppDimensions.md),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.05),
+                              color: AppColors.primary.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.15),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.15,
+                                ),
                               ),
                             ),
                             child: Column(
@@ -465,11 +467,11 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
       filled: true,
       fillColor: isDark
           ? const Color(0xFF1A2230)
-          : AppColors.primary.withOpacity(0.01),
+          : AppColors.primary.withValues(alpha: 0.01),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: isDark ? slate800 : Colors.black.withOpacity(0.06),
+          color: isDark ? slate800 : Colors.black.withValues(alpha: 0.06),
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -574,14 +576,14 @@ class _FormSectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 3),
                 ),
@@ -644,8 +646,8 @@ class _AgentPreviewCard extends StatelessWidget {
           colors: isDark
               ? [const Color(0xFF1E2640), const Color(0xFF131A26)]
               : [
-                  AppColors.primary.withOpacity(0.08),
-                  AppColors.primary.withOpacity(0.02),
+                  AppColors.primary.withValues(alpha: 0.08),
+                  AppColors.primary.withValues(alpha: 0.02),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -653,8 +655,8 @@ class _AgentPreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : AppColors.primary.withOpacity(0.12),
+              ? Colors.white.withValues(alpha: 0.06)
+              : AppColors.primary.withValues(alpha: 0.12),
         ),
       ),
       child: Padding(
@@ -674,7 +676,7 @@ class _AgentPreviewCard extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35),
+                    color: AppColors.primary.withValues(alpha: 0.35),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -700,7 +702,7 @@ class _AgentPreviewCard extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(

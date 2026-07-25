@@ -32,13 +32,13 @@ class ChatInputBar extends StatelessWidget {
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF101622).withOpacity(0.95)
-            : AppColors.background.withOpacity(0.95),
+            ? const Color(0xFF101622).withValues(alpha: 0.95)
+            : AppColors.background.withValues(alpha: 0.95),
         border: Border(
           top: BorderSide(
             color: isDark
-                ? Colors.white.withOpacity(0.06)
-                : Colors.black.withOpacity(0.06),
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.06),
           ),
         ),
       ),
@@ -52,16 +52,19 @@ class ChatInputBar extends StatelessWidget {
             Center(
               child: Container(
                 margin: const EdgeInsets.only(bottom: AppDimensions.md),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? const Color(0xFF1E2638)
-                      : AppColors.primary.withOpacity(0.06),
+                      : AppColors.primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : AppColors.primary.withOpacity(0.12),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : AppColors.primary.withValues(alpha: 0.12),
                   ),
                 ),
                 child: Row(
@@ -76,7 +79,9 @@ class ChatInputBar extends StatelessWidget {
                     Text(
                       'TUTOR ATIVO • Consultando cards do deck',
                       style: AppTypography.labelSmall.copyWith(
-                        color: isDark ? const Color(0xFF94A3B8) : AppColors.primary,
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : AppColors.primary,
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -110,24 +115,24 @@ class ChatInputBar extends StatelessWidget {
                       suffixIcon: Icon(
                         Icons.mic_none_outlined,
                         color: isDark
-                            ? Colors.white.withOpacity(0.25)
-                            : Colors.black.withOpacity(0.25),
+                            ? Colors.white.withValues(alpha: 0.25)
+                            : Colors.black.withValues(alpha: 0.25),
                         size: 20,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide(
                           color: isDark
-                              ? Colors.white.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.08),
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.08),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide(
                           color: isDark
-                              ? Colors.white.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.08),
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.08),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -144,7 +149,7 @@ class ChatInputBar extends StatelessWidget {
                       filled: true,
                       fillColor: isDark
                           ? const Color(0xFF1C2333)
-                          : AppColors.primary.withOpacity(0.01),
+                          : AppColors.primary.withValues(alpha: 0.01),
                     ),
                   ),
                 ),
@@ -177,11 +182,13 @@ class _SendButton extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: active ? AppColors.primary : const Color(0xFF334155).withOpacity(0.2),
+        color: active
+            ? AppColors.primary
+            : const Color(0xFF334155).withValues(alpha: 0.2),
         boxShadow: active
             ? [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.25),
+                  color: AppColors.primary.withValues(alpha: 0.25),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -203,11 +210,7 @@ class _SendButton extends StatelessWidget {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(
-                    Icons.arrow_upward,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                : const Icon(Icons.arrow_upward, color: Colors.white, size: 20),
           ),
         ),
       ),

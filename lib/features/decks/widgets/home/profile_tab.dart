@@ -129,7 +129,7 @@ class ProfileTab extends ConsumerWidget {
                                             (isOnline
                                                     ? AppColors.success
                                                     : AppColors.warning)
-                                                .withOpacity(0.4),
+                                                .withValues(alpha: 0.4),
                                         blurRadius: 6,
                                         spreadRadius: 2,
                                       ),
@@ -209,14 +209,14 @@ class _ProfileHeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -239,7 +239,7 @@ class _ProfileHeaderCard extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -295,7 +295,7 @@ class _ProfileHeaderCard extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
@@ -344,8 +344,8 @@ class _StatBlock extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
         ),
       ),
       child: Padding(
@@ -405,8 +405,8 @@ class _ProfileDetailsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
         ),
       ),
       child: Padding(

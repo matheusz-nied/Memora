@@ -64,13 +64,17 @@ class _UserBubble extends StatelessWidget {
                 color: AppColors.primary,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
-                  topRight: Radius.circular(4), // Asymmetric sharp top-right corner
+                  topRight: Radius.circular(
+                    4,
+                  ), // Asymmetric sharp top-right corner
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(isDark ? 0.15 : 0.22),
+                    color: AppColors.primary.withValues(
+                      alpha: isDark ? 0.15 : 0.22,
+                    ),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -146,21 +150,23 @@ class _AssistantBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4), // Asymmetric sharp top-left corner
+                    topLeft: Radius.circular(
+                      4,
+                    ), // Asymmetric sharp top-left corner
                     topRight: Radius.circular(16),
                     bottomLeft: Radius.circular(16),
                     bottomRight: Radius.circular(16),
                   ),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.06)
-                        : Colors.black.withOpacity(0.06),
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.06),
                   ),
                   boxShadow: isDark
                       ? []
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
+                            color: Colors.black.withValues(alpha: 0.02),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -195,10 +201,12 @@ class _AssistantBubble extends StatelessWidget {
                       fontSize: 15,
                     ),
                     code: TextStyle(
-                      color: isDark ? const Color(0xFFF43F5E) : const Color(0xFFBE123C),
+                      color: isDark
+                          ? const Color(0xFFF43F5E)
+                          : const Color(0xFFBE123C),
                       backgroundColor: isDark
-                          ? Colors.white.withOpacity(0.06)
-                          : Colors.black.withOpacity(0.04),
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
                       fontFamily: 'monospace',
                       fontSize: 13,
                     ),
@@ -233,7 +241,9 @@ class _AgentAvatar extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(isDark ? 0.25 : 0.35),
+            color: const Color(
+              0xFF6366F1,
+            ).withValues(alpha: isDark ? 0.25 : 0.35),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),

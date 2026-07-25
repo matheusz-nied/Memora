@@ -94,7 +94,10 @@ class DeckRepository {
     return _syncService.syncDecks(requireSync: requireSync);
   }
 
-  Future<String> createDeck({required String title, String? description}) async {
+  Future<String> createDeck({
+    required String title,
+    String? description,
+  }) async {
     final session = _authRepository.currentSession;
     if (session == null) {
       throw StateError('Sessão expirada. Entre novamente.');

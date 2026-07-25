@@ -47,7 +47,14 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 6. **Touch targets mínimos de 48px**
 7. **Widgets > 100 linhas** → extrair para `widgets/` da feature
 8. **Offline-first:** toda escrita vai primeiro no banco Drift local; sync com backend remoto é secundário. Nunca bloquear UX por falta de rede.
-9. **Nunca gerar código Drift manualmente** — usar `flutter pub run build_runner build` para gerar os arquivos `.g.dart`.
+9. **Nunca gerar código Drift manualmente** — usar `dart run build_runner build --delete-conflicting-outputs` para gerar os arquivos `.g.dart`. Os `.g.dart` de `lib/core/database/` são versionados e a CI falha se estiverem desatualizados.
+9a. **Toda mudança de tabela Drift exige os 4 passos**, na ordem:
+   1. incrementar `AppDatabase.latestSchemaVersion`
+   2. adicionar o passo incremental em `AppDatabase.migration.onUpgrade`
+   3. `dart run drift_dev schema dump lib/core/database/app_database.dart drift_schemas/`
+   4. `dart run drift_dev schema generate drift_schemas/ test/drift/generated/`
+
+   `test/core/database/migration_test.dart` falha se algum passo for esquecido. A partir do primeiro build distribuído, pular isso corrompe o banco de quem já instalou.
 10. **Backend desacoplado:** nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`; somente `lib/core/backend/supabase/` pode conhecer o SDK Supabase.
 
 ## Backend desacoplado

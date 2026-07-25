@@ -222,8 +222,8 @@ class _DeckSearchField extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.08),
         ),
       ),
       child: TextField(

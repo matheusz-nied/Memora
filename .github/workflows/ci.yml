@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: flutter (format, analyze, test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      # O pubspec declara `.env` como asset, então `flutter test` falha sem ele.
+      # Os valores não importam aqui: nenhum teste toca a rede.
+      - name: Preparar .env
+        run: cp .env.example .env
+
+      - run: flutter pub get
+
+      # Os .g.dart do Drift são versionados (ver .gitignore). Se o gerado
+      # divergir do commitado, o schema mudou sem regenerar.
+      - name: Verificar código gerado
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          if ! git diff --quiet -- '*.g.dart'; then
+            echo "::error::Código gerado desatualizado. Rode:"
+            echo "::error::dart run build_runner build --delete-conflicting-outputs"
+            git diff --stat -- '*.g.dart'
+            exit 1
+          fi
+
+      - run: dart format --set-exit-if-changed lib test
+
+      - run: flutter analyze --fatal-infos
+
+      - run: flutter test --coverage
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+  edge-functions:
+    name: supabase edge functions (deno)
+    runs-on: ubuntu-latest
+    # Advisory: as functions nunca passaram por deno fmt/lint/check, então a
+    # primeira execução provavelmente acusa dívida antiga. Rode localmente,
+    # limpe o que aparecer e então remova este continue-on-error para tornar
+    # o job bloqueante.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: deno fmt
+        run: deno fmt --check supabase/functions
+
+      - name: deno lint
+        run: deno lint supabase/functions
+
+      - name: deno check
+        run: |
+          for entry in supabase/functions/*/index.ts; do
+            echo "==> $entry"
+            deno check "$entry"
+          done

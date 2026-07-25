@@ -173,10 +173,10 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                         data: (deck) => deck == null
                             ? const SizedBox.shrink()
                             : _QuickActionsRow(
-                              deck: deck,
-                              isOnline: isOnline,
-                              isDark: isDark,
-                            ),
+                                deck: deck,
+                                isOnline: isOnline,
+                                isDark: isDark,
+                              ),
                         orElse: () => const SizedBox.shrink(),
                       ),
                       const SizedBox(height: AppDimensions.xl),
@@ -188,10 +188,9 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                           Text(
                             DeckText.yourCards,
                             style: AppTypography.headingMedium.copyWith(
-                              color:
-                                  isDark
-                                      ? AppColors.textPrimaryDark
-                                      : AppColors.textPrimary,
+                              color: isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -202,25 +201,22 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                                 vertical: AppDimensions.xs,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    isDark
-                                        ? AppColors.surfaceDark
-                                        : Colors.white,
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(100),
                                 border: Border.all(
-                                  color:
-                                      isDark
-                                          ? Colors.white.withOpacity(0.05)
-                                          : Colors.black.withOpacity(0.05),
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : Colors.black.withValues(alpha: 0.05),
                                 ),
                               ),
                               child: Text(
                                 '${counts.total} Cards',
                                 style: AppTypography.labelSmall.copyWith(
-                                  color:
-                                      isDark
-                                          ? AppColors.textSecDark
-                                          : AppColors.textSecondary,
+                                  color: isDark
+                                      ? AppColors.textSecDark
+                                      : AppColors.textSecondary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 10,
                                 ),
@@ -241,48 +237,43 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                             AppDimensions.radiusLg,
                           ),
                           border: Border.all(
-                            color:
-                                isDark
-                                    ? Colors.white.withOpacity(0.08)
-                                    : Colors.black.withOpacity(0.08),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.08),
                           ),
                         ),
                         child: TextField(
                           controller: _searchController,
                           style: AppTypography.bodyLarge.copyWith(
-                            color:
-                                isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimary,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimary,
                             fontSize: 16,
                           ),
                           decoration: InputDecoration(
                             hintText: DeckText.searchCards,
                             hintStyle: AppTypography.bodyMedium.copyWith(
-                              color:
-                                  isDark
-                                      ? AppColors.textSecDark
-                                      : AppColors.textSecondary,
+                              color: isDark
+                                  ? AppColors.textSecDark
+                                  : AppColors.textSecondary,
                             ),
                             prefixIcon: Icon(
                               Icons.search,
-                              color:
-                                  isDark
-                                      ? AppColors.textSecDark
-                                      : AppColors.textSecondary,
+                              color: isDark
+                                  ? AppColors.textSecDark
+                                  : AppColors.textSecondary,
                             ),
-                            suffixIcon:
-                                _searchQuery.isNotEmpty
-                                    ? IconButton(
-                                      icon: const Icon(Icons.clear),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _searchQuery = '';
-                                        });
-                                      },
-                                    )
-                                    : null,
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 12,
@@ -299,57 +290,55 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                           error: (_, __) =>
                               const ErrorState(message: CardText.loadError),
                           data: (items) {
-                            final filteredCards =
-                                items.where((card) {
-                                  if (_searchQuery.isEmpty) return true;
-                                  return card.front.toLowerCase().contains(
-                                        _searchQuery,
-                                      ) ||
-                                      card.back.toLowerCase().contains(
-                                        _searchQuery,
-                                      );
-                                }).toList();
+                            final filteredCards = items.where((card) {
+                              if (_searchQuery.isEmpty) return true;
+                              return card.front.toLowerCase().contains(
+                                    _searchQuery,
+                                  ) ||
+                                  card.back.toLowerCase().contains(
+                                    _searchQuery,
+                                  );
+                            }).toList();
 
                             _hasMoreCards = items.length >= _visibleCardLimit;
 
                             if (filteredCards.isEmpty) {
                               return _searchQuery.isNotEmpty
                                   ? Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(
-                                        AppDimensions.xl,
-                                      ),
-                                      child: Text(
-                                        'Nenhum flashcard corresponde à busca.',
-                                        style: AppTypography.bodyMedium.copyWith(
-                                          color:
-                                              isDark
-                                                  ? AppColors.textSecDark
-                                                  : AppColors.textSecondary,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(
+                                          AppDimensions.xl,
+                                        ),
+                                        child: Text(
+                                          'Nenhum flashcard corresponde à busca.',
+                                          style: AppTypography.bodyMedium
+                                              .copyWith(
+                                                color: isDark
+                                                    ? AppColors.textSecDark
+                                                    : AppColors.textSecondary,
+                                              ),
                                         ),
                                       ),
-                                    ),
-                                  )
+                                    )
                                   : EmptyState(
-                                    title: CardText.emptyTitle,
-                                    message: CardText.emptyMessage,
-                                    actionLabel: CardText.newCard,
-                                    onAction: () => _showCardForm(context),
-                                  );
+                                      title: CardText.emptyTitle,
+                                      message: CardText.emptyMessage,
+                                      actionLabel: CardText.newCard,
+                                      onAction: () => _showCardForm(context),
+                                    );
                             }
 
                             return ListView.separated(
                               controller: _scrollController,
                               itemCount: filteredCards.length,
-                              separatorBuilder:
-                                  (context, index) => const SizedBox(
-                                    height: AppDimensions.md,
-                                  ),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: AppDimensions.md),
                               itemBuilder: (context, index) {
                                 final card = filteredCards[index];
                                 return CardListItem(
                                   card: card,
-                                  onEdit: () => _showCardForm(context, card: card),
+                                  onEdit: () =>
+                                      _showCardForm(context, card: card),
                                   onDelete: () => _confirmDeleteCard(
                                     context: context,
                                     card: card,
@@ -376,28 +365,23 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder:
-          (context) => FractionallySizedBox(
-            heightFactor: 0.92,
-            child: CardFormModal(
-              card: card,
-              onSubmit: (front, back) {
-                final repository = ref.read(cardRepositoryProvider);
-                if (card == null) {
-                  return repository.createCard(
-                    deckId: widget.deckId,
-                    front: front,
-                    back: back,
-                  );
-                }
-                return repository.updateCard(
-                  card: card,
-                  front: front,
-                  back: back,
-                );
-              },
-            ),
-          ),
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.92,
+        child: CardFormModal(
+          card: card,
+          onSubmit: (front, back) {
+            final repository = ref.read(cardRepositoryProvider);
+            if (card == null) {
+              return repository.createCard(
+                deckId: widget.deckId,
+                front: front,
+                back: back,
+              );
+            }
+            return repository.updateCard(card: card, front: front, back: back);
+          },
+        ),
+      ),
     );
   }
 
@@ -407,21 +391,20 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
   }) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text(CardText.confirmDeleteCardTitle),
-            content: const Text(CardText.confirmDeleteCardMessage),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text(CardText.cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text(CardText.delete),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text(CardText.confirmDeleteCardTitle),
+        content: const Text(CardText.confirmDeleteCardMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(CardText.cancel),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(CardText.delete),
+          ),
+        ],
+      ),
     );
     if (confirmed ?? false) {
       await ref.read(cardRepositoryProvider).deleteCard(card);
@@ -455,21 +438,19 @@ class _DeckHeroCard extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
         border: Border.all(
-          color:
-              isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.black.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
         ),
-        boxShadow:
-            isDark
-                ? []
-                : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppDimensions.xl),
@@ -488,11 +469,7 @@ class _DeckHeroCard extends StatelessWidget {
                     color: visual.backgroundColor,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                   ),
-                  child: Icon(
-                    visual.icon,
-                    color: visual.color,
-                    size: 26,
-                  ),
+                  child: Icon(visual.icon, color: visual.color, size: 26),
                 ),
                 const SizedBox(width: AppDimensions.lg),
 
@@ -504,10 +481,9 @@ class _DeckHeroCard extends StatelessWidget {
                       Text(
                         deck.title,
                         style: AppTypography.headingLarge.copyWith(
-                          color:
-                              isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -519,10 +495,9 @@ class _DeckHeroCard extends StatelessWidget {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.bodyMedium.copyWith(
-                            color:
-                                isDark
-                                    ? AppColors.textSecDark
-                                    : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.textSecDark
+                                : AppColors.textSecondary,
                             height: 1.3,
                           ),
                         ),
@@ -544,10 +519,9 @@ class _DeckHeroCard extends StatelessWidget {
                     vertical: AppDimensions.xs,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        deck.syncPending
-                            ? AppColors.warningBg
-                            : AppColors.successBg,
+                    color: deck.syncPending
+                        ? AppColors.warningBg
+                        : AppColors.successBg,
                     borderRadius: BorderRadius.circular(
                       AppDimensions.radiusFull,
                     ),
@@ -555,10 +529,9 @@ class _DeckHeroCard extends StatelessWidget {
                   child: Text(
                     deck.syncPending ? DeckText.pending : DeckText.synced,
                     style: AppTypography.labelSmall.copyWith(
-                      color:
-                          deck.syncPending
-                              ? AppColors.warning
-                              : AppColors.success,
+                      color: deck.syncPending
+                          ? AppColors.warning
+                          : AppColors.success,
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
                     ),
@@ -573,10 +546,9 @@ class _DeckHeroCard extends StatelessWidget {
                     Text(
                       'TOTAL',
                       style: AppTypography.labelSmall.copyWith(
-                        color:
-                            isDark
-                                ? AppColors.textTertDark
-                                : AppColors.textTertiary,
+                        color: isDark
+                            ? AppColors.textTertDark
+                            : AppColors.textTertiary,
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
@@ -584,10 +556,9 @@ class _DeckHeroCard extends StatelessWidget {
                     Text(
                       '$total',
                       style: AppTypography.bodyLarge.copyWith(
-                        color:
-                            isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -602,10 +573,9 @@ class _DeckHeroCard extends StatelessWidget {
                     Text(
                       'A REVISAR',
                       style: AppTypography.labelSmall.copyWith(
-                        color:
-                            isDark
-                                ? AppColors.textTertDark
-                                : AppColors.textTertiary,
+                        color: isDark
+                            ? AppColors.textTertDark
+                            : AppColors.textTertiary,
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
@@ -613,12 +583,11 @@ class _DeckHeroCard extends StatelessWidget {
                     Text(
                       '$due',
                       style: AppTypography.bodyLarge.copyWith(
-                        color:
-                            due > 0
-                                ? AppColors.warning
-                                : (isDark
-                                    ? AppColors.textSecDark
-                                    : AppColors.textSecondary),
+                        color: due > 0
+                            ? AppColors.warning
+                            : (isDark
+                                  ? AppColors.textSecDark
+                                  : AppColors.textSecondary),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -675,7 +644,7 @@ class _QuickActionsRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
               ),
               elevation: 4,
-              shadowColor: AppColors.primary.withOpacity(0.3),
+              shadowColor: AppColors.primary.withValues(alpha: 0.3),
             ),
           ),
         ),
@@ -691,8 +660,9 @@ class _QuickActionsRow extends StatelessWidget {
                 label: DeckText.chatTutor,
                 isDark: isDark,
                 isEnabled: isOnline,
-                tooltip:
-                    isOnline ? null : 'Requer conexão com a internet para chat',
+                tooltip: isOnline
+                    ? null
+                    : 'Requer conexão com a internet para chat',
                 onTap: () {
                   context.push(RouteConstants.chatPath(deck.id));
                 },
@@ -707,10 +677,9 @@ class _QuickActionsRow extends StatelessWidget {
                 label: DeckText.importAi,
                 isDark: isDark,
                 isEnabled: isOnline,
-                tooltip:
-                    isOnline
-                        ? null
-                        : 'Requer conexão com a internet para gerar cards',
+                tooltip: isOnline
+                    ? null
+                    : 'Requer conexão com a internet para gerar cards',
                 onTap: () {
                   context.push(RouteConstants.generatePath(deck.id));
                 },
@@ -758,10 +727,9 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeBg = isDark ? AppColors.surfaceDark : Colors.white;
-    final activeBorder =
-        isDark
-            ? Colors.white.withOpacity(0.08)
-            : Colors.black.withOpacity(0.08);
+    final activeBorder = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.08);
 
     final widgetChild = InkWell(
       borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -773,22 +741,20 @@ class _QuickActionButton extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color:
-                  isEnabled
-                      ? AppColors.primary
-                      : (isDark ? Colors.white30 : Colors.black26),
+              color: isEnabled
+                  ? AppColors.primary
+                  : (isDark ? Colors.white30 : Colors.black26),
               size: 20,
             ),
             const SizedBox(height: 6),
             Text(
               label,
               style: AppTypography.labelSmall.copyWith(
-                color:
-                    isEnabled
-                        ? (isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimary)
-                        : (isDark ? Colors.white30 : Colors.black26),
+                color: isEnabled
+                    ? (isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary)
+                    : (isDark ? Colors.white30 : Colors.black26),
                 fontWeight: FontWeight.bold,
                 fontSize: 10,
               ),
@@ -840,39 +806,39 @@ class _DeckSettingsMenu extends ConsumerWidget {
               context: context,
               isScrollControlled: true,
               useSafeArea: true,
-              builder:
-                  (context) => DeckFormModal(
-                    deck: deck,
-                    onSubmit: (title, description) async {
-                      await ref.read(deckRepositoryProvider).updateDeck(
+              builder: (context) => DeckFormModal(
+                deck: deck,
+                onSubmit: (title, description) async {
+                  await ref
+                      .read(deckRepositoryProvider)
+                      .updateDeck(
                         deck: deck,
                         title: title,
                         description: description,
                       );
-                      return null;
-                    },
-                  ),
+                  return null;
+                },
+              ),
             );
           case _DeckAction.agentConfig:
             context.push(RouteConstants.agentConfigPath(deck.id));
           case _DeckAction.delete:
             final confirmed = await showDialog<bool>(
               context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: const Text(DeckText.confirmDeleteDeckTitle),
-                    content: const Text(DeckText.confirmDeleteDeckMessage),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text(DeckText.cancel),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text(DeckText.delete),
-                      ),
-                    ],
+              builder: (context) => AlertDialog(
+                title: const Text(DeckText.confirmDeleteDeckTitle),
+                content: const Text(DeckText.confirmDeleteDeckMessage),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text(DeckText.cancel),
                   ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text(DeckText.delete),
+                  ),
+                ],
+              ),
             );
             if (confirmed ?? false) {
               await ref.read(deckRepositoryProvider).deleteDeck(deck.id);
@@ -882,22 +848,21 @@ class _DeckSettingsMenu extends ConsumerWidget {
             }
         }
       },
-      itemBuilder:
-          (context) => const [
-            PopupMenuItem(value: _DeckAction.edit, child: Text(DeckText.edit)),
-            PopupMenuItem(
-              value: _DeckAction.agentConfig,
-              child: Text(DeckText.agentConfig),
-            ),
-            PopupMenuDivider(),
-            PopupMenuItem(
-              value: _DeckAction.delete,
-              child: Text(
-                DeckText.delete,
-                style: TextStyle(color: AppColors.error),
-              ),
-            ),
-          ],
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: _DeckAction.edit, child: Text(DeckText.edit)),
+        PopupMenuItem(
+          value: _DeckAction.agentConfig,
+          child: Text(DeckText.agentConfig),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(
+          value: _DeckAction.delete,
+          child: Text(
+            DeckText.delete,
+            style: TextStyle(color: AppColors.error),
+          ),
+        ),
+      ],
     );
   }
 }

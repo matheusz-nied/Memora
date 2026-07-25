@@ -34,8 +34,8 @@ class LibraryDeckCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         side: BorderSide(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.black.withOpacity(0.06),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.06),
         ),
       ),
       color: isDark ? AppColors.surfaceDark : Colors.white,
@@ -106,12 +106,12 @@ class LibraryDeckCard extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: isDone
                                   ? AppColors.successBg
-                                  : AppColors.primary.withOpacity(0.1),
+                                  : AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(100),
                               border: Border.all(
                                 color: isDone
-                                    ? AppColors.success.withOpacity(0.3)
-                                    : AppColors.primary.withOpacity(0.3),
+                                    ? AppColors.success.withValues(alpha: 0.3)
+                                    : AppColors.primary.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
@@ -210,8 +210,8 @@ class LibraryDeckCard extends ConsumerWidget {
                           value: total == 0 ? 1.0 : (total - due) / total,
                           minHeight: 5,
                           backgroundColor: isDark
-                              ? Colors.white.withOpacity(0.05)
-                              : Colors.black.withOpacity(0.05),
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.05),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             AppColors.primary,
                           ),

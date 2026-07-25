@@ -56,9 +56,7 @@ class _DeckFormModalState extends State<DeckFormModal> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151B26) : Colors.white,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
         child: Padding(
@@ -81,8 +79,8 @@ class _DeckFormModalState extends State<DeckFormModal> {
                     height: 5,
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.15)
-                          : Colors.black.withOpacity(0.15),
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : Colors.black.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(100),
                     ),
                   ),
@@ -145,7 +143,7 @@ class _DeckFormModalState extends State<DeckFormModal> {
                         filled: true,
                         fillColor: isDark
                             ? const Color(0xFF1A2230)
-                            : AppColors.primary.withOpacity(0.02),
+                            : AppColors.primary.withValues(alpha: 0.02),
                         suffixIcon: Icon(
                           Icons.edit,
                           color: isDark ? slate600 : slate400,
@@ -156,7 +154,7 @@ class _DeckFormModalState extends State<DeckFormModal> {
                           borderSide: BorderSide(
                             color: isDark
                                 ? slate800
-                                : Colors.black.withOpacity(0.08),
+                                : Colors.black.withValues(alpha: 0.08),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -203,9 +201,9 @@ class _DeckFormModalState extends State<DeckFormModal> {
                           style: AppTypography.labelSmall.copyWith(
                             color: isDark ? slate400 : slate600,
                             fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
                       TextFormField(
                         controller: _descriptionController,
                         maxLines: 3,
@@ -222,13 +220,13 @@ class _DeckFormModalState extends State<DeckFormModal> {
                           filled: true,
                           fillColor: isDark
                               ? const Color(0xFF1A2230)
-                              : AppColors.primary.withOpacity(0.02),
+                              : AppColors.primary.withValues(alpha: 0.02),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
                               color: isDark
                                   ? slate800
-                                  : Colors.black.withOpacity(0.08),
+                                  : Colors.black.withValues(alpha: 0.08),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -263,23 +261,26 @@ class _DeckFormModalState extends State<DeckFormModal> {
                       : Column(
                           children: [
                             ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                minimumSize: const Size.fromHeight(56),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
-                              ).copyWith(
-                                // Simulated pulse glow visual style border
-                                side: MaterialStateProperty.all(
-                                  BorderSide(
-                                    color: AppColors.primary.withOpacity(0.4),
-                                    width: 1,
+                              style:
+                                  ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size.fromHeight(56),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ).copyWith(
+                                    // Simulated pulse glow visual style border
+                                    side: WidgetStateProperty.all(
+                                      BorderSide(
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
                               onPressed: () => _submit(isAiGeneration: true),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -308,7 +309,7 @@ class _DeckFormModalState extends State<DeckFormModal> {
                                 side: BorderSide(
                                   color: isDark
                                       ? slate800
-                                      : Colors.black.withOpacity(0.12),
+                                      : Colors.black.withValues(alpha: 0.12),
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),

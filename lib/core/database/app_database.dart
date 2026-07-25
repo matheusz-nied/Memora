@@ -14,8 +14,24 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openDatabase());
 
+  /// Incrementar a cada mudança de schema, junto com um novo passo em
+  /// [migration] e um snapshot em `drift_schemas/`. Ver AGENTS.md.
+  static const int latestSchemaVersion = 1;
+
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => latestSchemaVersion;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (migrator) => migrator.createAll(),
+      onUpgrade: (migrator, from, to) async {
+        // Sem passos ainda: v1 é o schema inicial. Toda migração futura entra
+        // aqui de forma incremental e é coberta por test/core/database/
+        // migration_test.dart.
+      },
+    );
+  }
 }
 
 QueryExecutor _openDatabase() {

@@ -181,7 +181,9 @@ class _StatsRow extends StatelessWidget {
     final hasCounts = counts != null;
     final total = counts?.total ?? 0;
     final due = counts?.due ?? 0;
-    final progressVal = total == 0 ? 100 : (((total - due) / total) * 100).round();
+    final progressVal = total == 0
+        ? 100
+        : (((total - due) / total) * 100).round();
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -193,8 +195,8 @@ class _StatsRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         border: Border.all(
           color: isDark
-              ? AppColors.surface.withOpacity(0.05)
-              : AppColors.textPrimary.withOpacity(0.03),
+              ? AppColors.surface.withValues(alpha: 0.05)
+              : AppColors.textPrimary.withValues(alpha: 0.03),
         ),
       ),
       child: Row(
@@ -211,8 +213,8 @@ class _StatsRow extends StatelessWidget {
             width: 1,
             height: 28,
             color: isDark
-                ? AppColors.surface.withOpacity(0.1)
-                : AppColors.textPrimary.withOpacity(0.08),
+                ? AppColors.surface.withValues(alpha: 0.1)
+                : AppColors.textPrimary.withValues(alpha: 0.08),
           ),
           Expanded(
             child: _StatValue(
