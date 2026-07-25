@@ -1,10 +1,11 @@
 # Memora — Plano de Lançamento (revisado)
 
 > Revisão do plano original a partir de uma leitura do código.
-
-> Ações pendentes, ordenadas por urgência: [`TODO_IMPORTANTE.md`](TODO_IMPORTANTE.md).
 > O que mudou: correções de fatos errados, uma inversão de dependência,
 > itens que faltavam e um bug de perda de dados que não estava mapeado.
+>
+> Ações pendentes, ordenadas por urgência:
+> [`TODO_IMPORTANTE.md`](TODO_IMPORTANTE.md).
 
 ---
 
