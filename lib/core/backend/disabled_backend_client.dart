@@ -14,6 +14,7 @@ import 'models/backend_exception.dart';
 import 'models/backend_review.dart';
 import 'models/backend_session.dart';
 import 'models/generated_card.dart';
+import 'models/pdf_extraction_result.dart';
 import 'models/storage_upload_result.dart';
 
 class DisabledBackendClient implements BackendClient {
@@ -185,16 +186,14 @@ class DisabledAiGateway implements AiGateway {
     required String text,
     required int quantity,
     required String deckId,
+    List<String> avoidFronts = const [],
+    bool fromPdf = false,
   }) {
     throw _notConfigured();
   }
 
   @override
-  Future<List<GeneratedCard>> generateCardsFromPdf({
-    required String pdfPath,
-    required int quantity,
-    required String deckId,
-  }) {
+  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) {
     throw _notConfigured();
   }
 }

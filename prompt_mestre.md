@@ -251,6 +251,8 @@ supabase/
 └── functions/
     ├── generate-cards/
     │   └── index.ts
+    ├── extract-pdf-text/
+    │   └── index.ts
     ├── chat/
     │   └── index.ts
     └── card-insight/
@@ -424,10 +426,15 @@ As tabelas abaixo descrevem o schema remoto inicial no Supabase. O domínio do a
 
 | Constante | Valor | Descrição |
 |---|---|---|
+| `kMinTextInput` | 50 | Mínimo de texto para geração |
 | `kMaxTextInput` | 4000 | Limite de texto para geração |
-| `kMaxPdfSizeMb` | 5 | Limite de PDF em MB |
-| `kMaxPdfPages` | 10 | Limite de páginas do PDF |
-| `kCardQuantityOptions` | [5, 10, 15] | Opções de quantidade de cards |
+| `kMaxPdfSizeMb` | 20 | Limite de PDF em MB |
+| `kMaxPdfPages` | 100 | Limite de páginas do PDF |
+| `kCardQuantityOptions` | [5, 10, 15, 25, 50] | Opções de quantidade de cards |
+| `kMaxCardsPerBatch` | 15 | Cards por chamada à IA |
+| `kChunkTargetChars` | 3500 | Tamanho alvo de cada fatia do material |
+| `kChunkMinChars` | 800 | Sobra menor que isto funde na fatia anterior |
+| `kMaxAvoidFronts` | 60 | Frentes enviadas ao prompt anti-duplicação |
 | `kMaxCardFront` | 300 | Limite da frente do card |
 | `kMaxCardBack` | 600 | Limite do verso do card |
 | `kMaxDeckTitle` | 60 | Limite do título do deck |
@@ -564,14 +571,24 @@ As Edge Functions abaixo são a implementação inicial do `AiGateway` no adapta
 ```json
 {
   "text": "string",
-  "quantity": 5,
-  "deckId": "uuid"
+  "quantity": 13,
+  "deckId": "uuid",
+  "source": "text | pdf",
+  "avoidFronts": ["pergunta já gerada"]
 }
 ```
 
+Gera **um lote**. O app quebra pedidos maiores (25, 50) em lotes de no máximo
+`kMaxCardsPerBatch` e chama a function uma vez por lote, passando em
+`avoidFronts` as frentes já geradas para o lote seguinte não repeti-las.
+
 **Validações:**
-- `text`: entre 100 e 4000 caracteres
-- `quantity`: pertence a `[5, 10, 15]`
+- `text`: entre 50 e 4000 caracteres (6000 quando `source` é `pdf`, porque a
+  fatia de um documento é maior que o texto que cabe na tela)
+- `quantity`: inteiro entre 1 e 15
+- `source`: ausente, `text` ou `pdf` — define o custo de quota (2 ou 3)
+- `avoidFronts`: lista de strings; itens inválidos são descartados e a lista é
+  truncada nas 60 mais recentes em vez de virar erro
 - JWT válido no header `Authorization`
 
 **Saída (sucesso):**
@@ -588,9 +605,38 @@ As Edge Functions abaixo são a implementação inicial do `AiGateway` no adapta
 
 ```json
 {
-  "error": "string"
+  "error": "string",
+  "code": "string"
 }
 ```
+
+### `extract-pdf-text`
+
+Extrai o texto de um PDF já enviado ao bucket `pdfs`. Não chama IA e não
+consome quota. Separada da geração porque `pdf-parse` é trabalho de CPU e a
+Edge Function tem teto de CPU mais apertado que o de tempo — na mesma
+invocação da chamada à DeepSeek, um PDF grande estourava.
+
+**Entrada:**
+
+```json
+{
+  "pdfPath": "userId/timestamp-arquivo.pdf"
+}
+```
+
+**Validações:**
+- `pdfPath` começa com `${userId}/` (403 caso contrário)
+- máximo 20 MB e 100 páginas
+- pelo menos 50 caracteres extraídos
+
+**Saída (sucesso):** `{ "text": "string", "pages": 12 }`
+
+O texto excedente é truncado, nunca rejeitado: PDF com texto demais é um PDF
+bom. Os códigos de erro são distintos (`pdf_no_text`, `pdf_parse_failed`,
+`pdf_too_large`, `pdf_too_many_pages`) para a tela dizer o que fazer — um PDF
+escaneado não melhora se o usuário procurar um arquivo maior. O objeto é
+removido do bucket ao fim da invocação, em sucesso ou falha.
 
 ### `chat`
 

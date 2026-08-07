@@ -35,7 +35,7 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 - `lib/features/generate/` — generate_repository, import_content_screen, review_cards_screen
 - `lib/features/agent/` — agent_templates, agent_repository, chat_screen, agent_config_screen
 - `lib/features/study/` — study_screen, card_rating_model, study_session_model, widgets/insight_widget
-- `supabase/functions/` — generate-cards/index.ts, chat/index.ts, card-insight/index.ts (implementação inicial do `AiGateway`)
+- `supabase/functions/` — generate-cards/index.ts, extract-pdf-text/index.ts, chat/index.ts, card-insight/index.ts (implementação inicial do `AiGateway`)
 
 ## Regras invioláveis
 
@@ -56,7 +56,7 @@ Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flut
 
    `test/core/database/migration_test.dart` falha se algum passo for esquecido. A partir do primeiro build distribuído, pular isso corrompe o banco de quem já instalou.
 10. **Backend desacoplado:** nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`; somente `lib/core/backend/supabase/` pode conhecer o SDK Supabase. Além disso, só `main.dart` e `backend_provider.dart` podem importar o adaptador — a escolha da implementação ativa é de um ponto só. `test/architecture/backend_boundary_test.dart` falha se a regra for violada, então ela se sustenta sozinha.
-11. **Fronteira de runtime nas Edge Functions:** `Deno.*` só pode aparecer em `supabase/functions/_shared/runtime.ts`. Todo o resto usa `getEnv()` e `serve()` de lá e é TypeScript comum sobre `Request`/`Response`. Portar as functions para Node, Bun ou Cloudflare Workers deve significar reescrever esse arquivo e nada mais. A CI cobra isso no job `runtime-boundary`.
+11. **Fronteira de runtime nas Edge Functions:** `Deno.*` só pode aparecer em `supabase/functions/_shared/runtime.ts`. Todo o resto usa `getEnv()` e `serve()` de lá e é TypeScript comum sobre `Request`/`Response`. Portar as functions para Node, Bun ou Cloudflare Workers deve significar reescrever esse arquivo e nada mais. A CI cobra isso no job `runtime-boundary`. Arquivos `*_test.ts` são exceção: `Deno.test` é o runner, não acoplamento do que roda em produção.
 
 ## Backend desacoplado
 
@@ -71,7 +71,7 @@ Contratos mínimos:
 - `AuthGateway` cobre sessão, login, cadastro, recuperação de senha e logout
 - `RemoteDatabaseGateway` cobre fetch/upsert/delete remoto de decks/cards, progresso e insight
 - `StorageGateway` cobre upload remoto de PDF
-- `AiGateway` cobre gerar cards, chat e insight
+- `AiGateway` cobre gerar cards (em lotes), extrair texto de PDF, chat e insight
 
 `backendClientProvider` é o único ponto que escolhe a implementação ativa. Inicialmente retorna `SupabaseBackendClient`. Para migrar para backend próprio, trocar esse provider/factory para `CustomBackendClient`; telas, widgets, DAOs, repositories de feature e regras de domínio não devem saber qual infraestrutura remota está em uso.
 
@@ -79,10 +79,15 @@ Contratos mínimos:
 
 | Constante | Valor |
 |---|---|
+| `kMinTextInput` | 50 |
 | `kMaxTextInput` | 4000 |
-| `kMaxPdfSizeMb` | 5 |
-| `kMaxPdfPages` | 10 |
-| `kCardQuantityOptions` | [5, 10, 15] |
+| `kMaxPdfSizeMb` | 20 |
+| `kMaxPdfPages` | 100 |
+| `kCardQuantityOptions` | [5, 10, 15, 25, 50] |
+| `kMaxCardsPerBatch` | 15 |
+| `kChunkTargetChars` | 3500 |
+| `kChunkMinChars` | 800 |
+| `kMaxAvoidFronts` | 60 |
 | `kMaxCardFront` | 300 |
 | `kMaxCardBack` | 600 |
 | `kMaxDeckTitle` | 60 |
@@ -113,7 +118,13 @@ Contratos mínimos:
 
 As Edge Functions são a implementação inicial do `AiGateway` no adaptador Supabase. Telas e repositories de feature não chamam Edge Functions diretamente; eles chamam `AiGateway`.
 
-**generate-cards:** entrada `{text, quantity, deckId}` | validações: text 100-4000 chars, quantity [5,10,15], JWT válido | saída `{cards: [{front, back}]}` ou `{error}`
+**generate-cards:** entrada `{text, quantity, deckId, source?, avoidFronts?}` | validações: text 50-4000 chars (6000 quando `source: "pdf"`), quantity inteiro 1-15, JWT válido | saída `{cards: [{front, back}]}` ou `{error, code}`
+
+Gera **um lote**. Quem pede 25 ou 50 cards é o app, que quebra o pedido em lotes de no máximo `kMaxCardsPerBatch` e chama a function uma vez por lote, mandando em `avoidFronts` as frentes já geradas para o lote seguinte não repeti-las. Cada lote é uma reserva de quota independente, então uma falha no meio não cobra nem perde o que já saiu. A chamada à DeepSeek tem timeout de 60s (`AbortController`) e uma retentativa para falha de rede/5xx — nunca para 401/402/429 nem para o próprio timeout.
+
+**extract-pdf-text:** entrada `{pdfPath}` | validações: path começa com `${userId}/`, 20 MB, 100 páginas, ≥50 chars extraídos | saída `{text, pages}` ou `{error, code}`
+
+Só extrai; não chama IA e não consome quota. Existe separada porque `pdf-parse` é trabalho de CPU e a Edge Function tem teto de CPU mais apertado que o de tempo — junto com a chamada à DeepSeek, PDF grande estourava. O app extrai uma vez, fatia o texto e alimenta os lotes por `generate-cards`. O objeto é **removido do bucket** ao fim da invocação, em sucesso ou falha. Códigos de erro distintos (`pdf_no_text`, `pdf_parse_failed`, `pdf_too_large`, `pdf_too_many_pages`) porque "não foi possível extrair texto" para todos os casos mandava o usuário procurar arquivo maior quando o problema era PDF escaneado. **Nunca rejeitar PDF por ter texto demais** — texto excedente é truncado.
 
 **chat:** entrada `{deckId, messages, userMessage}` | busca deck + últimos 20 cards → substitui `{name}`, `{deck_title}`, `{deck_context}`, `{language}`, `{level}` no agent_prompt → chama IA → retorna `{reply}`
 

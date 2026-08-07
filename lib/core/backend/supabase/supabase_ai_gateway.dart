@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../contracts/ai_gateway.dart';
@@ -5,15 +7,23 @@ import '../models/ai_chat_message.dart';
 import '../models/ai_quota_status.dart';
 import '../models/backend_exception.dart';
 import '../models/generated_card.dart';
+import '../models/pdf_extraction_result.dart';
 
 class SupabaseAiGateway implements AiGateway {
   const SupabaseAiGateway(this._client);
 
   static const String _generateCardsFunction = 'generate-cards';
-  static const String _generateCardsFromPdfFunction = 'generate-cards-from-pdf';
+  static const String _extractPdfTextFunction = 'extract-pdf-text';
   static const String _chatFunction = 'chat';
   static const String _cardInsightFunction = 'card-insight';
   static const String _quotaStatusRpc = 'ai_quota_status';
+
+  /// Sem timeout, uma Edge Function pendurada deixa a tela em "gerando..."
+  /// para sempre. Os valores dão folga sobre o timeout de 60s que a própria
+  /// function aplica na chamada à IA.
+  static const Duration _generateTimeout = Duration(seconds: 90);
+  static const Duration _extractPdfTimeout = Duration(seconds: 150);
+  static const Duration _defaultTimeout = Duration(seconds: 45);
 
   final SupabaseClient _client;
 
@@ -46,27 +56,34 @@ class SupabaseAiGateway implements AiGateway {
     required String text,
     required int quantity,
     required String deckId,
+    List<String> avoidFronts = const [],
+    bool fromPdf = false,
   }) async {
     final data = await _invoke(_generateCardsFunction, {
       'text': text,
       'quantity': quantity,
       'deckId': deckId,
-    });
+      'source': fromPdf ? 'pdf' : 'text',
+      'avoidFronts': avoidFronts,
+    }, timeout: _generateTimeout);
     return _generatedCardsFromData(data);
   }
 
   @override
-  Future<List<GeneratedCard>> generateCardsFromPdf({
-    required String pdfPath,
-    required int quantity,
-    required String deckId,
-  }) async {
-    final data = await _invoke(_generateCardsFromPdfFunction, {
+  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) async {
+    final data = await _invoke(_extractPdfTextFunction, {
       'pdfPath': pdfPath,
-      'quantity': quantity,
-      'deckId': deckId,
-    });
-    return _generatedCardsFromData(data);
+    }, timeout: _extractPdfTimeout);
+
+    final text = data['text'];
+    if (text is! String) {
+      throw const BackendException('Invalid pdf extraction response.');
+    }
+
+    return PdfExtractionResult(
+      text: text,
+      pages: (data['pages'] as num?)?.toInt() ?? 0,
+    );
   }
 
   List<GeneratedCard> _generatedCardsFromData(Map<String, dynamic> data) {
@@ -133,17 +150,25 @@ class SupabaseAiGateway implements AiGateway {
 
   Future<Map<String, dynamic>> _invoke(
     String functionName,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    Duration timeout = _defaultTimeout,
+  }) async {
     final FunctionResponse response;
     try {
-      response = await _client.functions.invoke(functionName, body: body);
+      response = await _client.functions
+          .invoke(functionName, body: body)
+          .timeout(timeout);
     } on FunctionException catch (error) {
       // As Edge Functions respondem erro com status >= 400, e nesse caso o
       // functions_client lança em vez de devolver o corpo. Sem este catch a
       // mensagem em português da function era descartada e a UI mostrava o
       // toString() cru da FunctionException.
       throw _exceptionFromDetails(error.details);
+    } on TimeoutException {
+      throw const BackendException(
+        'A operação demorou demais. Verifique sua conexão e tente novamente.',
+        code: BackendException.codeClientTimeout,
+      );
     }
 
     final data = response.data;

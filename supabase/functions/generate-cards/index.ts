@@ -4,8 +4,11 @@ import {
   fetchDeckContext,
   generateCardsWithDeepSeek,
   jsonResponse,
+  maxChunkChars,
+  maxTextChars,
   optionsResponse,
   requireEnv,
+  sanitizeAvoidFronts,
   validateGenerateInput,
   validateText,
 } from "../_shared/generate_cards.ts";
@@ -33,7 +36,13 @@ serve(async (req) => {
       return jsonResponse({ error: inputError }, 400);
     }
 
-    const textError = validateText(body.text);
+    // Uma fatia de PDF pode ser maior que o texto que cabe na tela, e custa
+    // mais crédito porque veio de um documento que já consumiu extração.
+    const fromPdf = body.source === "pdf";
+    const textError = validateText(
+      body.text,
+      fromPdf ? maxChunkChars : maxTextChars,
+    );
     if (textError) {
       return jsonResponse({ error: textError }, 400);
     }
@@ -43,13 +52,20 @@ serve(async (req) => {
       return deck;
     }
 
-    const cards = await withQuota(auth.user.id, "generate_cards", () =>
-      generateCardsWithDeepSeek({
-        apiKey: requireEnv("DEEPSEEK_API_KEY"),
-        text: String(body.text).trim(),
-        quantity: body.quantity,
-        deck,
-      }));
+    const operation = fromPdf ? "generate_pdf" : "generate_cards";
+    const cards = await withQuota(
+      auth.user.id,
+      operation,
+      () =>
+        generateCardsWithDeepSeek({
+          apiKey: requireEnv("DEEPSEEK_API_KEY"),
+          text: String(body.text).trim(),
+          quantity: body.quantity,
+          deck,
+          avoidFronts: sanitizeAvoidFronts(body.avoidFronts),
+          isChunk: fromPdf,
+        }),
+    );
 
     return jsonResponse({ cards });
   } catch (error) {

@@ -4,7 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pdfx/pdfx.dart';
 
+import '../../core/backend/models/backend_exception.dart';
+import '../../core/backend/models/generated_card.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -16,6 +19,7 @@ import '../../core/widgets/offline_banner.dart';
 import 'generate_repository.dart';
 import 'generate_text.dart';
 import 'generated_cards_review_args.dart';
+import 'generation_progress.dart';
 import 'widgets/quantity_selector.dart';
 
 enum _GenerateMode { text, pdf }
@@ -34,10 +38,12 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
   final _textController = TextEditingController();
   var _mode = _GenerateMode.text;
   var _quantity = AppConstants.kCardQuantityOptions.first;
-  var _isGenerating = false;
+  GenerateProgress? _progress;
   String? _errorMessage;
   String? _pdfName;
   Uint8List? _pdfBytes;
+
+  bool get _isGenerating => _progress != null;
 
   @override
   void dispose() {
@@ -112,6 +118,10 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
                   ).textTheme.bodyMedium?.copyWith(color: AppColors.error),
                 ),
               ],
+              if (_progress case final progress?) ...[
+                const SizedBox(height: AppDimensions.lg),
+                _GenerateProgressIndicator(progress: progress),
+              ],
               const SizedBox(height: AppDimensions.xxl),
               AppButton(
                 label: _isGenerating
@@ -135,59 +145,208 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
       withData: true,
     );
     final file = result?.files.single;
-    if (file == null) {
+    final bytes = file?.bytes;
+    if (file == null || bytes == null) {
+      return;
+    }
+
+    final rejection = await _pdfRejection(bytes);
+    if (!mounted) {
       return;
     }
 
     setState(() {
-      _pdfName = file.name;
-      _pdfBytes = file.bytes;
-      _errorMessage = null;
+      _errorMessage = rejection;
+      _pdfName = rejection == null ? file.name : null;
+      _pdfBytes = rejection == null ? bytes : null;
     });
+  }
+
+  /// Barra o arquivo aqui em vez de deixar o servidor recusar: subir 20 MB
+  /// para receber "páginas demais" gasta a franquia de dados do usuário.
+  Future<String?> _pdfRejection(Uint8List bytes) async {
+    if (bytes.length > AppConstants.kMaxPdfSizeMb * 1024 * 1024) {
+      return GenerateText.pdfTooLarge;
+    }
+
+    try {
+      final document = await PdfDocument.openData(bytes);
+      final pages = document.pagesCount;
+      await document.close();
+      if (pages > AppConstants.kMaxPdfPages) {
+        return GenerateText.pdfTooManyPages;
+      }
+    } catch (_) {
+      // Contar páginas é adiantamento, não autoridade: se a plataforma não
+      // conseguir abrir o arquivo aqui, o servidor decide.
+      return null;
+    }
+
+    return null;
   }
 
   Future<void> _generate() async {
     setState(() {
-      _isGenerating = true;
+      _progress = _initialProgress();
       _errorMessage = null;
     });
 
     try {
       final repository = ref.read(generateRepositoryProvider);
-      final cards = switch (_mode) {
+      void onProgress(GenerateProgress progress) {
+        if (mounted) {
+          setState(() => _progress = progress);
+        }
+      }
+
+      final result = switch (_mode) {
         _GenerateMode.text => await repository.generateFromText(
           deckId: widget.deckId,
           text: _textController.text,
           quantity: _quantity,
+          onProgress: onProgress,
         ),
         _GenerateMode.pdf => await repository.generateFromPdf(
           deckId: widget.deckId,
           fileName: _pdfName ?? '',
           bytes: _pdfBytes ?? Uint8List(0),
           quantity: _quantity,
+          onProgress: onProgress,
         ),
       };
 
-      if (mounted) {
-        context.push(
-          RouteConstants.reviewPath(widget.deckId),
-          extra: GeneratedCardsReviewArgs(deckId: widget.deckId, cards: cards),
-        );
+      if (!mounted) {
+        return;
       }
+
+      if (result.isComplete) {
+        _openReview(result.cards);
+        return;
+      }
+
+      final reason = _readableError(result.error!);
+      if (result.isPartial) {
+        await _offerPartialCards(cards: result.cards, reason: reason);
+        return;
+      }
+
+      setState(() => _errorMessage = reason);
     } catch (error) {
       if (mounted) {
         setState(() => _errorMessage = _readableError(error));
       }
     } finally {
       if (mounted) {
-        setState(() => _isGenerating = false);
+        setState(() => _progress = null);
       }
     }
   }
 
+  GenerateProgress _initialProgress() {
+    return GenerateProgress(
+      phase: _mode == _GenerateMode.pdf
+          ? GeneratePhase.extracting
+          : GeneratePhase.generating,
+      batchesDone: 0,
+      batchesTotal: 0,
+      cardsDone: 0,
+      cardsRequested: _quantity,
+    );
+  }
+
+  /// Um lote falhou no meio do caminho, mas os anteriores já foram gerados e
+  /// cobrados. Jogá-los fora sem perguntar faria o usuário pagar de novo pelo
+  /// mesmo material.
+  Future<void> _offerPartialCards({
+    required List<GeneratedCard> cards,
+    required String reason,
+  }) async {
+    final keep = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(GenerateText.partialTitle),
+        content: Text(
+          GenerateText.partialMessage(cards: cards.length, reason: reason),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(GenerateText.discardPartialCards),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(GenerateText.usePartialCards),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (keep ?? false) {
+      _openReview(cards);
+    } else {
+      setState(() => _errorMessage = reason);
+    }
+  }
+
+  void _openReview(List<GeneratedCard> cards) {
+    context.push(
+      RouteConstants.reviewPath(widget.deckId),
+      extra: GeneratedCardsReviewArgs(deckId: widget.deckId, cards: cards),
+    );
+  }
+
   String _readableError(Object error) {
+    if (error is BackendException) {
+      if (error.isQuotaExceeded) {
+        return error.message;
+      }
+      if (error.isRateLimited) {
+        return GenerateText.rateLimited;
+      }
+      if (error.isTimeout) {
+        return GenerateText.aiTimeout;
+      }
+      return error.message;
+    }
+
     final message = error.toString().replaceFirst('BackendException: ', '');
     return message.replaceFirst('Exception: ', '');
+  }
+}
+
+class _GenerateProgressIndicator extends StatelessWidget {
+  const _GenerateProgressIndicator({required this.progress});
+
+  final GenerateProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (progress.phase) {
+      GeneratePhase.extracting => GenerateText.extractingPdf,
+      GeneratePhase.generating when progress.batchesTotal > 1 =>
+        GenerateText.generatingBatch(
+          // No último aviso todos os lotes já terminaram; sem o teto o texto
+          // anunciaria um lote 5 de 4.
+          batch: (progress.batchesDone + 1).clamp(1, progress.batchesTotal),
+          batches: progress.batchesTotal,
+          cards: progress.cardsDone,
+          requested: progress.cardsRequested,
+        ),
+      GeneratePhase.generating => GenerateText.generating,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LinearProgressIndicator(value: progress.fraction),
+        const SizedBox(height: AppDimensions.sm),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
   }
 }
 

@@ -7,9 +7,13 @@ export type GeneratedCard = {
   back: string;
 };
 
+export type GenerateSource = "text" | "pdf";
+
 export type GenerateInput = {
   deckId: string;
   quantity: number;
+  source?: GenerateSource;
+  avoidFronts?: unknown;
 };
 
 type DeckContext = {
@@ -26,9 +30,27 @@ type AuthenticatedSupabaseResult =
     user: { id: string };
   };
 
-const allowedQuantities = [5, 10, 15];
+/// Cards por chamada à IA. O cliente quebra pedidos maiores em vários lotes:
+/// pedir 50 de uma vez estoura `maxTokens.generateCards` e derruba a qualidade.
+export const maxBatchQuantity = 15;
+
+/// Mínimo de material para valer uma geração.
+export const minTextChars = 50;
+
+/// Teto do texto colado pelo usuário na tela.
+export const maxTextChars = 4000;
+
+/// Teto de uma fatia de PDF. Maior que [maxTextChars] porque o cliente fatia
+/// em ~3500 caracteres e a folga absorve variação de quebra de parágrafo.
+export const maxChunkChars = 6000;
+
+/// Frentes já geradas aceitas no prompt anti-duplicação.
+const maxAvoidFronts = 60;
+
 const maxFrontLength = 300;
 const maxBackLength = 600;
+const deepSeekTimeoutMs = 60_000;
+const deepSeekRetryDelayMs = 1000;
 
 /// Origem permitida no CORS. Defina ALLOWED_ORIGIN com o domínio do app web
 /// em produção; `*` só é aceitável em desenvolvimento.
@@ -67,25 +89,55 @@ export function validateGenerateInput(input: GenerateInput): string | null {
     return "Deck inválido.";
   }
 
-  if (!allowedQuantities.includes(input.quantity)) {
+  if (
+    !Number.isInteger(input.quantity) ||
+    input.quantity < 1 ||
+    input.quantity > maxBatchQuantity
+  ) {
     return "Quantidade inválida.";
+  }
+
+  if (
+    input.source !== undefined &&
+    input.source !== "text" &&
+    input.source !== "pdf"
+  ) {
+    return "Origem inválida.";
+  }
+
+  if (input.avoidFronts !== undefined && !Array.isArray(input.avoidFronts)) {
+    return "Lista de cards existentes inválida.";
   }
 
   return null;
 }
 
-export function validateText(text: unknown): string | null {
+/// Normaliza a lista anti-duplicação: entrada do cliente, então trunca em vez
+/// de rejeitar — um prompt grande demais é problema nosso, não erro do usuário.
+export function sanitizeAvoidFronts(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim().slice(0, maxFrontLength))
+    .filter((item) => item.length > 0)
+    .slice(-maxAvoidFronts);
+}
+
+export function validateText(text: unknown, maxChars: number): string | null {
   if (typeof text !== "string" || text.trim().length === 0) {
     return "Texto obrigatório.";
   }
 
   const trimmed = text.trim();
-  if (trimmed.length < 100) {
-    return "Informe um texto com pelo menos 100 caracteres.";
+  if (trimmed.length < minTextChars) {
+    return `Informe um texto com pelo menos ${minTextChars} caracteres.`;
   }
 
-  if (trimmed.length > 4000) {
-    return "O texto deve ter no máximo 4000 caracteres.";
+  if (trimmed.length > maxChars) {
+    return `O texto deve ter no máximo ${maxChars} caracteres.`;
   }
 
   return null;
@@ -174,34 +226,90 @@ export async function fetchDeckContext(
   return data as DeckContext;
 }
 
-export async function generateCardsWithDeepSeek(params: {
+export type GenerateCardsParams = {
   apiKey: string;
   text: string;
   quantity: number;
   deck: DeckContext;
-}): Promise<GeneratedCard[]> {
+  /// Frentes já geradas em lotes anteriores do mesmo pedido.
+  avoidFronts?: string[];
+  /// O material é uma fatia de um documento maior, não o conteúdo completo.
+  isChunk?: boolean;
+};
+
+export async function generateCardsWithDeepSeek(
+  params: GenerateCardsParams,
+): Promise<GeneratedCard[]> {
+  try {
+    return await callDeepSeekOnce(params);
+  } catch (error) {
+    if (!isRetryable(error)) {
+      throw error;
+    }
+    await delay(deepSeekRetryDelayMs);
+    return callDeepSeekOnce(params);
+  }
+}
+
+/// Só vale repetir o que tem chance de ser transitório: falha de rede, erro
+/// 5xx da DeepSeek e resposta que não deu para interpretar (todos mapeados
+/// para 502). Repetir 401/402/429 queima tempo de execução para receber o
+/// mesmo erro, e repetir um timeout dobraria a espera de quem já esperou 60s.
+function isRetryable(error: unknown): boolean {
+  if (!(error instanceof AiGatewayError)) {
+    return true;
+  }
+
+  return error.status >= 500 && error.code !== "deepseek_timeout";
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callDeepSeekOnce(
+  params: GenerateCardsParams,
+): Promise<GeneratedCard[]> {
   const prompt = buildPrompt(params);
-  const response = await fetch("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${params.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      temperature: 0.3,
-      max_tokens: maxTokens.generateCards,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "Você gera flashcards objetivos, claros e fiéis ao material do usuário. Responda somente com JSON válido.",
-        },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), deepSeekTimeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Authorization": `Bearer ${params.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        temperature: 0.3,
+        max_tokens: maxTokens.generateCards,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "Você gera flashcards objetivos, claros e fiéis ao material do usuário. Responda somente com JSON válido.",
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new AiGatewayError(
+        "A IA demorou demais para responder. Tente novamente.",
+        504,
+        "deepseek_timeout",
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new AiGatewayError(
@@ -224,25 +332,35 @@ export async function generateCardsWithDeepSeek(params: {
   return parseGeneratedCards(content, params.quantity);
 }
 
-function buildPrompt(params: {
-  text: string;
-  quantity: number;
-  deck: DeckContext;
-}): string {
+function buildPrompt(params: GenerateCardsParams): string {
+  const avoidFronts = params.avoidFronts ?? [];
+  const materialLabel = params.isChunk
+    ? "Trecho do material (parte de um documento maior)"
+    : "Material";
+
+  const chunkRule = params.isChunk
+    ? "\n- O material é apenas um trecho do documento. Crie cards somente sobre o que está neste trecho."
+    : "";
+
+  const avoidBlock = avoidFronts.length === 0 ? "" : `
+Perguntas que JÁ foram geradas para este deck. NÃO repita nenhuma delas, nem variações com as mesmas palavras ou a mesma resposta. Cubra aspectos ainda não abordados:
+${avoidFronts.map((front) => `- ${front}`).join("\n")}
+`;
+
   return `
 Gere ${params.quantity} flashcards em ${params.deck.agent_language}, nível ${params.deck.agent_level}.
 
 Deck: ${params.deck.title}
 Descrição do deck: ${params.deck.description ?? "Sem descrição"}
 
-Material:
+${materialLabel}:
 ${params.text}
-
+${avoidBlock}
 Regras:
 - Cada card deve ter uma pergunta objetiva em "front".
 - Cada resposta deve ser clara e curta em "back".
 - Não invente fatos fora do material.
-- Evite cards duplicados.
+- Evite cards duplicados.${chunkRule}
 - Responda exclusivamente em JSON válido no formato:
 {
   "cards": [

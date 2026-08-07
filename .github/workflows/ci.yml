@@ -64,10 +64,13 @@ jobs:
       # lado das functions: todo o resto é TypeScript comum sobre
       # Request/Response, então portar para Node ou Workers é reescrever
       # um arquivo só.
+      # Testes ficam de fora: `Deno.test` é o runner, não acoplamento do que
+      # roda em produção, e nada dentro deles é deployado.
       - name: Deno.* só pode aparecer em _shared/runtime.ts
         run: |
           offenders=$(grep -rln 'Deno\.' supabase/functions --include='*.ts' \
-            | grep -v '_shared/runtime.ts' || true)
+            | grep -v '_shared/runtime.ts' \
+            | grep -v '_test\.ts$' || true)
           if [ -n "$offenders" ]; then
             echo "::error::Deno.* fora de supabase/functions/_shared/runtime.ts:"
             echo "$offenders"
@@ -102,3 +105,9 @@ jobs:
             echo "==> $entry"
             deno check "$entry"
           done
+
+      # Validação de entrada é a única lógica das functions que dá para
+      # exercitar sem rede: quantidade do lote, tamanho do material e a lista
+      # anti-duplicação.
+      - name: deno test
+        run: deno test --allow-net --allow-env supabase/functions

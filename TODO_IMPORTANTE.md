@@ -98,10 +98,13 @@ esconder um erro.
 
 - [ ] **Teste em device físico** — Android e iOS. Nada foi testado em device.
 
-- [ ] **PDF grande no limite** (10 páginas / 5 MB)
-      Edge Functions têm teto de **CPU**, mais apertado que o de tempo. O
-      `generate-cards-from-pdf` faz `pdf-parse` + chamada à DeepSeek na mesma
-      invocação. Se estourar, não tem retry nem fila — só falha.
+- [ ] **PDF grande no limite** (100 páginas / 20 MB)
+      Edge Functions têm teto de **CPU**, mais apertado que o de tempo. A
+      extração saiu da geração: `extract-pdf-text` só roda `pdf-parse` e a
+      chamada à DeepSeek acontece em outra invocação, uma por lote. Falta
+      medir um PDF real no limite novo — se o `pdf-parse` estourar sozinho,
+      o plano B é baixar as constantes para 10 MB / 50 páginas
+      (`app_constants.dart` e `extract-pdf-text/index.ts`).
 
 ---
 

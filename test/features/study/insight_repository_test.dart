@@ -10,6 +10,7 @@ import 'package:memora/core/backend/models/backend_deck.dart';
 import 'package:memora/core/backend/models/backend_review.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
+import 'package:memora/core/backend/models/pdf_extraction_result.dart';
 import 'package:memora/core/database/app_database.dart';
 import 'package:memora/core/sync/app_sync_service.dart';
 import 'package:memora/features/cards/card_model.dart';
@@ -181,16 +182,14 @@ class _FakeAiGateway implements AiGateway {
     required String text,
     required int quantity,
     required String deckId,
+    List<String> avoidFronts = const [],
+    bool fromPdf = false,
   }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<List<GeneratedCard>> generateCardsFromPdf({
-    required String pdfPath,
-    required int quantity,
-    required String deckId,
-  }) {
+  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) {
     throw UnimplementedError();
   }
 }
