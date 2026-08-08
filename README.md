@@ -78,8 +78,7 @@ As Edge Functions (só usadas no modo nuvem) têm um job próprio com
   os textos em `*_text.dart`.
 - `supabase/functions/` — Edge Functions do modo nuvem.
 
-Decisões de arquitetura e o porquê delas: `ARCHITECTURE_DECISIONS.md`.
-O que falta para publicar: `TODO_IMPORTANTE.md`.
+O que falta para publicar, na ordem de execução: `LANCAMENTO.md`.
 
 ## Licença
 

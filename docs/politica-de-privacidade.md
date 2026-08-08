@@ -105,8 +105,8 @@ Google (`fonts.gstatic.com`) e a guarda em cache no aparelho. Essa requisição
 expõe ao Google o seu endereço IP e informações básicas do dispositivo, como
 qualquer acesso a um site. Nenhum conteúdo seu é enviado nessa requisição.
 
-> *[REMOVER ESTA SEÇÃO se a fonte for empacotada no aplicativo — ver
-> `TODO_IMPORTANTE.md`. Sem a requisição, ela deixa de ser verdadeira.]*
+> *[REMOVER ESTA SEÇÃO se a fonte for empacotada no aplicativo — ver a Fase 3
+> em `LANCAMENTO.md`. Sem a requisição, ela deixa de ser verdadeira.]*
 
 ### 3.3 Leitura em voz alta
 

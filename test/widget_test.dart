@@ -64,7 +64,7 @@ void main() {
 
     expect(preferences.getBool(AppConstants.kOnboardingKey), isTrue);
     expect(find.text(AuthText.loginTitle), findsOneWidget);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('unauthenticated protected route redirects to login', (
     tester,
@@ -75,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(AuthText.loginTitle), findsOneWidget);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('authenticated user starts on home', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
@@ -101,7 +101,7 @@ void main() {
 
     expect(find.text(DeckText.title), findsOneWidget);
     expect(find.text(AuthText.loginTitle), findsNothing);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('unauthenticated user opening profile redirects to login', (
     tester,
@@ -118,7 +118,7 @@ void main() {
 
     expect(find.text(AuthText.loginTitle), findsOneWidget);
     expect(find.text(ProfileText.title), findsNothing);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('profile icon opens profile without signing out', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
@@ -186,7 +186,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(AuthText.forgotTitle), findsOneWidget);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('login form signs in and navigates to home', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
@@ -205,7 +205,7 @@ void main() {
 
     expect(backend.auth.signInCount, 1);
     expect(find.text(DeckText.title), findsOneWidget);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('register form sends display name and navigates to home', (
     tester,
@@ -233,7 +233,7 @@ void main() {
     expect(backend.auth.signUpCount, 1);
     expect(backend.auth.lastDisplayName, 'Jane Doe');
     expect(find.text(DeckText.title), findsOneWidget);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('register without immediate session asks user to check email', (
     tester,
@@ -261,7 +261,7 @@ void main() {
     expect(backend.auth.signUpCount, 1);
     expect(find.text(AuthText.checkEmail), findsOneWidget);
     expect(find.text(AuthText.goToLogin), findsOneWidget);
-  });
+  }, skip: kIsLocalMode);
 
   testWidgets('social login buttons are visible but disabled', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
@@ -278,7 +278,7 @@ void main() {
 
     expect(googleButton.onPressed, isNull);
     expect(appleButton.onPressed, isNull);
-  });
+  }, skip: kIsLocalMode);
 }
 
 Widget _app({

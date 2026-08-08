@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/config/app_mode.dart';
 import 'core/constants/app_constants.dart';
 import 'core/constants/route_constants.dart';
 import 'core/sync/app_sync_service.dart';
@@ -57,14 +58,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 String? _redirect(GoRouterState state, _RouterRefreshNotifier notifier) {
   final path = state.uri.path;
   final isOnboardingRoute = path == RouteConstants.kRouteOnboarding;
-  final isAuthRoute =
-      path == RouteConstants.kRouteLogin ||
-      path == RouteConstants.kRouteRegister;
-  final isForgotRoute = path == RouteConstants.kRouteForgotPass;
 
   if (!notifier.onboardingCompleted) {
     return isOnboardingRoute ? null : RouteConstants.kRouteOnboarding;
   }
+
+  // No modo local não existe conta para entrar: a identidade nasce no
+  // bootstrap e nunca some. Sem este atalho, o guarda abaixo mandaria o
+  // usuário para uma tela de login que não existe mais neste modo.
+  if (kIsLocalMode) {
+    return isOnboardingRoute ? RouteConstants.kRouteHome : null;
+  }
+
+  final isAuthRoute =
+      path == RouteConstants.kRouteLogin ||
+      path == RouteConstants.kRouteRegister;
+  final isForgotRoute = path == RouteConstants.kRouteForgotPass;
 
   if (isOnboardingRoute) {
     return notifier.isAuthenticated
@@ -88,18 +97,23 @@ final _routes = [
     path: RouteConstants.kRouteOnboarding,
     builder: (context, state) => const OnboardingScreen(),
   ),
-  GoRoute(
-    path: RouteConstants.kRouteLogin,
-    builder: (context, state) => const LoginScreen(),
-  ),
-  GoRoute(
-    path: RouteConstants.kRouteRegister,
-    builder: (context, state) => const RegisterScreen(),
-  ),
-  GoRoute(
-    path: RouteConstants.kRouteForgotPass,
-    builder: (context, state) => const ForgotPasswordScreen(),
-  ),
+  // Entrar, cadastrar e recuperar senha só existem onde existe conta. A
+  // condição é `const`: no build local estas três telas — e os botões de login
+  // social sem handler que moram na primeira — saem do binário.
+  if (kIsCloudMode) ...[
+    GoRoute(
+      path: RouteConstants.kRouteLogin,
+      builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: RouteConstants.kRouteRegister,
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: RouteConstants.kRouteForgotPass,
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+  ],
   GoRoute(
     path: RouteConstants.kRouteProfile,
     builder: (context, state) => const ProfileScreen(),
