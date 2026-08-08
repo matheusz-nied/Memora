@@ -1,5 +1,6 @@
 import 'contracts/ai_gateway.dart';
 import 'contracts/auth_gateway.dart';
+import 'contracts/pdf_text_gateway.dart';
 import 'contracts/remote_database_gateway.dart';
 import 'contracts/storage_gateway.dart';
 
@@ -8,4 +9,5 @@ abstract interface class BackendClient {
   RemoteDatabaseGateway get database;
   StorageGateway get storage;
   AiGateway get ai;
+  PdfTextGateway get pdfText;
 }

@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessária em release. Os manifests de debug/ e profile/ declaram a
+         permissão só para o tooling do Flutter, e nenhum plugin do projeto a
+         declara: sem esta linha o app publicado não fala com a DeepSeek, e a
+         falha não aparece em nenhum teste feito em debug. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="memora"
         android:name="${applicationName}"

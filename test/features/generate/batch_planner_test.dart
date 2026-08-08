@@ -59,7 +59,11 @@ void main() {
 
     test('merges a short tail into the previous chunk', () {
       final body = List.filled(300, 'palavra').join(' ');
-      final chunks = chunkText('$body\n\nfim.', targetChars: 700, minChars: 300);
+      final chunks = chunkText(
+        '$body\n\nfim.',
+        targetChars: 700,
+        minChars: 300,
+      );
 
       expect(chunks.last, endsWith('fim.'));
       expect(chunks.every((chunk) => chunk.length >= 300), isTrue);
@@ -85,8 +89,11 @@ void main() {
     test('spreads batches across a long document', () {
       final indexes = List.generate(
         4,
-        (batch) =>
-            chunkIndexForBatch(batchIndex: batch, batchCount: 4, chunkCount: 70),
+        (batch) => chunkIndexForBatch(
+          batchIndex: batch,
+          batchCount: 4,
+          chunkCount: 70,
+        ),
       );
 
       expect(indexes, [0, 17, 35, 52]);

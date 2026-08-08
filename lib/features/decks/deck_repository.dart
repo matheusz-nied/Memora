@@ -149,6 +149,10 @@ class DeckRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     await _database.cardsDao.markCardsForDeckDeleted(deckId, now);
     await _database.decksDao.markDeckDeleted(deckId, now);
+    // A conversa não participa do sync, então não precisa de tombstone: some
+    // junto com o deck. No modo nuvem a tabela local está vazia e isto é
+    // inofensivo.
+    await _database.chatMessagesDao.deleteMessagesForDeck(deckId);
     _runSyncSilently(syncDecks);
   }
 

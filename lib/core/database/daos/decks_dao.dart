@@ -66,6 +66,17 @@ class DecksDao extends DatabaseAccessor<AppDatabase> with _$DecksDaoMixin {
         .getSingleOrNull();
   }
 
+  /// Inclui o que foi apagado.
+  ///
+  /// Serve a quem precisa saber que a linha existe, e não apenas que ela está
+  /// visível: sem a tombstone, um `id` apagado parece inédito e volta à vida na
+  /// primeira escrita por `id`.
+  Future<LocalDeck?> getDeckByIdIncludingDeleted(String id) {
+    return (select(
+      decksTable,
+    )..where((table) => table.id.equals(id))).getSingleOrNull();
+  }
+
   Future<List<LocalDeck>> getPendingSyncDecks({String? userId}) {
     final query = select(decksTable)
       ..where((table) => table.syncPending.equals(true));
@@ -87,6 +98,10 @@ class DecksDao extends DatabaseAccessor<AppDatabase> with _$DecksDaoMixin {
     return query.get();
   }
 
+  /// Todos os `id` do usuário, **inclusive os apagados**.
+  ///
+  /// É o que a sincronização precisa: sem as tombstones ela não saberia que uma
+  /// linha remota pertence a um deck que este aparelho apagou.
   Future<List<String>> getDeckIdsForUser(String userId) async {
     final rows = await (select(
       decksTable,

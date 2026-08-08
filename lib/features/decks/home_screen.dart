@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_mode.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/connectivity_service.dart';
@@ -44,7 +45,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (!isOnline) const OfflineBanner(message: DeckText.offline),
+            // No modo local, estar offline é o funcionamento normal: nada
+            // depende de rede fora das telas de IA, que têm o próprio aviso.
+            if (kIsCloudMode && !isOnline)
+              const OfflineBanner(message: DeckText.offline),
             Expanded(
               child: IndexedStack(
                 index: _currentTabIndex,
@@ -140,6 +144,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _syncNow() async {
+    // Não há remoto para onde sincronizar neste modo, e o Drift já é a fonte
+    // da verdade: o puxar-para-atualizar não tem o que fazer.
+    if (kIsLocalMode) {
+      return;
+    }
+
     setState(() => _isSyncing = true);
     try {
       await ref.read(deckRepositoryProvider).syncDecks(requireSync: true);

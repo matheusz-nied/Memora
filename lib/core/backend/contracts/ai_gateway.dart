@@ -1,7 +1,6 @@
 import '../models/ai_chat_message.dart';
 import '../models/ai_quota_status.dart';
 import '../models/generated_card.dart';
-import '../models/pdf_extraction_result.dart';
 
 abstract interface class AiGateway {
   /// Consumo de IA do usuário no período corrente.
@@ -20,12 +19,6 @@ abstract interface class AiGateway {
     List<String> avoidFronts,
     bool fromPdf,
   });
-
-  /// Extrai o texto de um PDF já enviado ao storage.
-  ///
-  /// A extração é separada da geração para o PDF ser lido uma única vez,
-  /// independentemente de quantos lotes de cards saírem dele.
-  Future<PdfExtractionResult> extractPdfText({required String pdfPath});
 
   Future<String> chat({
     required String deckId,

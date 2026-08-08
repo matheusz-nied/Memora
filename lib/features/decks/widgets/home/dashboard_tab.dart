@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/app_mode.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -10,6 +11,8 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../auth/auth_repository.dart';
 import '../../../auth/profile_text.dart';
+import '../../../settings/widgets/missing_api_key_card.dart';
+import '../../../stats/widgets/study_stats_card.dart';
 import '../../deck_model.dart';
 import '../../deck_repository.dart';
 import '../../deck_text.dart';
@@ -39,9 +42,14 @@ class DashboardTab extends ConsumerWidget {
       decksPageProvider(AppConstants.kLocalPageSize),
     );
     final session = ref.watch(authStateProvider).value;
-    final userName = session?.user.displayName?.trim().isNotEmpty == true
-        ? session!.user.displayName!
-        : ProfileText.authenticatedUser;
+    // No modo local a "sessão" é o aparelho e o nome sairia como "Perfil
+    // local": saudar sem nome é mais honesto do que cumprimentar um rótulo
+    // interno do app.
+    final userName = kIsCloudMode
+        ? (session?.user.displayName?.trim().isNotEmpty == true
+              ? session!.user.displayName!
+              : ProfileText.authenticatedUser)
+        : null;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -71,6 +79,14 @@ class DashboardTab extends ConsumerWidget {
                       : FocusDeckCard(deck: decks.first, isDark: isDark),
                 ),
                 const SizedBox(height: AppDimensions.xxl),
+                // Sem chave cadastrada, toda a IA falha na primeira tentativa.
+                // O aviso vem antes de qualquer CTA que dependa dela.
+                if (kIsLocalMode) ...[
+                  const MissingApiKeyCard(),
+                  const SizedBox(height: AppDimensions.xxl),
+                ],
+                StudyStatsCard(isDark: isDark),
+                const SizedBox(height: AppDimensions.xxl),
                 _RecentDecksHeader(
                   isDark: isDark,
                   onOpenDecksTab: onOpenDecksTab,
@@ -97,7 +113,7 @@ class _DashboardHeader extends StatelessWidget {
   });
 
   final bool isDark;
-  final String userName;
+  final String? userName;
   final VoidCallback onOpenProfileTab;
 
   @override
@@ -148,15 +164,16 @@ class _DashboardHeader extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  userName,
-                  style: AppTypography.headingLarge.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+                if (userName != null)
+                  Text(
+                    userName!,
+                    style: AppTypography.headingLarge.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
               ],
             ),
           ],

@@ -12,6 +12,7 @@ import 'package:memora/core/backend/backend_client.dart';
 import 'package:memora/core/backend/backend_provider.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
 import 'package:memora/core/backend/contracts/auth_gateway.dart';
+import 'package:memora/core/backend/contracts/pdf_text_gateway.dart';
 import 'package:memora/core/backend/contracts/remote_database_gateway.dart';
 import 'package:memora/core/backend/contracts/storage_gateway.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
@@ -27,6 +28,8 @@ import 'package:memora/core/backend/models/storage_upload_result.dart';
 import 'package:memora/core/constants/app_constants.dart';
 import 'package:memora/core/constants/route_constants.dart';
 import 'package:memora/core/database/app_database.dart';
+import 'package:memora/core/config/app_mode.dart';
+import 'package:memora/core/storage/preferences_provider.dart';
 import 'package:memora/core/sync/app_sync_service.dart';
 import 'package:memora/features/auth/auth_text.dart';
 import 'package:memora/features/auth/profile_text.dart';
@@ -35,7 +38,7 @@ import 'package:memora/features/decks/deck_repository.dart';
 import 'package:memora/features/decks/home_screen.dart';
 import 'package:memora/features/decks/deck_text.dart';
 import 'package:memora/features/onboarding/onboarding_page_model.dart';
-import 'package:memora/features/onboarding/onboarding_state.dart';
+import 'package:memora/features/settings/api_key_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -149,7 +152,27 @@ void main() {
 
     expect(backend.auth.signOutCount, 1);
     expect(find.text(AuthText.loginTitle), findsOneWidget);
-  });
+    // Sem contas no modo local, não há de onde sair: o botão não é construído.
+  }, skip: kIsLocalMode);
+
+  testWidgets(
+    'no modo local o perfil oferece a chave da IA, não o logout',
+    (tester) async {
+      final preferences = await _preferences(onboardingCompleted: true);
+      final backend = _FakeBackendClient(initialSession: _session);
+
+      await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.account_circle_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.text(ProfileText.signOut), findsNothing);
+      expect(find.text(ApiKeyText.title), findsOneWidget);
+      // No modo nuvem quem paga a IA é o backend, e a conta é de verdade.
+    },
+    skip: kIsCloudMode,
+  );
 
   testWidgets('forgot password is available without session after onboarding', (
     tester,
@@ -317,6 +340,19 @@ class _FakeBackendClient implements BackendClient {
 
   @override
   final AiGateway ai = _FakeAiGateway();
+
+  @override
+  final PdfTextGateway pdfText = _FakePdfTextGateway();
+}
+
+class _FakePdfTextGateway implements PdfTextGateway {
+  @override
+  Future<PdfExtractionResult> extractText({
+    required String fileName,
+    required Uint8List bytes,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeAuthGateway implements AuthGateway {
@@ -493,11 +529,6 @@ class _FakeAiGateway implements AiGateway {
     List<String> avoidFronts = const [],
     bool fromPdf = false,
   }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) {
     throw UnimplementedError();
   }
 }

@@ -7,13 +7,11 @@ import '../models/ai_chat_message.dart';
 import '../models/ai_quota_status.dart';
 import '../models/backend_exception.dart';
 import '../models/generated_card.dart';
-import '../models/pdf_extraction_result.dart';
 
 class SupabaseAiGateway implements AiGateway {
   const SupabaseAiGateway(this._client);
 
   static const String _generateCardsFunction = 'generate-cards';
-  static const String _extractPdfTextFunction = 'extract-pdf-text';
   static const String _chatFunction = 'chat';
   static const String _cardInsightFunction = 'card-insight';
   static const String _quotaStatusRpc = 'ai_quota_status';
@@ -22,7 +20,6 @@ class SupabaseAiGateway implements AiGateway {
   /// para sempre. Os valores dão folga sobre o timeout de 60s que a própria
   /// function aplica na chamada à IA.
   static const Duration _generateTimeout = Duration(seconds: 90);
-  static const Duration _extractPdfTimeout = Duration(seconds: 150);
   static const Duration _defaultTimeout = Duration(seconds: 45);
 
   final SupabaseClient _client;
@@ -67,23 +64,6 @@ class SupabaseAiGateway implements AiGateway {
       'avoidFronts': avoidFronts,
     }, timeout: _generateTimeout);
     return _generatedCardsFromData(data);
-  }
-
-  @override
-  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) async {
-    final data = await _invoke(_extractPdfTextFunction, {
-      'pdfPath': pdfPath,
-    }, timeout: _extractPdfTimeout);
-
-    final text = data['text'];
-    if (text is! String) {
-      throw const BackendException('Invalid pdf extraction response.');
-    }
-
-    return PdfExtractionResult(
-      text: text,
-      pages: (data['pages'] as num?)?.toInt() ?? 0,
-    );
   }
 
   List<GeneratedCard> _generatedCardsFromData(Map<String, dynamic> data) {

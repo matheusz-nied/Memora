@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/backend/backend_provider.dart';
 import '../../core/backend/contracts/ai_gateway.dart';
-import '../../core/backend/contracts/auth_gateway.dart';
-import '../../core/backend/contracts/storage_gateway.dart';
+import '../../core/backend/contracts/pdf_text_gateway.dart';
 import '../../core/backend/models/backend_exception.dart';
 import '../../core/backend/models/generated_card.dart';
 import '../../core/constants/app_constants.dart';
@@ -18,8 +17,7 @@ final generateRepositoryProvider = Provider<GenerateRepository>((ref) {
   final backend = ref.watch(backendClientProvider);
   return GenerateRepository(
     aiGateway: backend.ai,
-    authGateway: backend.auth,
-    storageGateway: backend.storage,
+    pdfTextGateway: backend.pdfText,
     isOnline: ref.watch(connectivityServiceProvider).isOnline,
   );
 });
@@ -29,19 +27,16 @@ typedef GenerateProgressCallback = void Function(GenerateProgress progress);
 class GenerateRepository {
   const GenerateRepository({
     required AiGateway aiGateway,
-    required AuthGateway authGateway,
-    required StorageGateway storageGateway,
+    required PdfTextGateway pdfTextGateway,
     required Future<bool> Function() isOnline,
     Future<void> Function(Duration) wait = _defaultWait,
   }) : _aiGateway = aiGateway,
-       _authGateway = authGateway,
-       _storageGateway = storageGateway,
+       _pdfTextGateway = pdfTextGateway,
        _isOnline = isOnline,
        _wait = wait;
 
   final AiGateway _aiGateway;
-  final AuthGateway _authGateway;
-  final StorageGateway _storageGateway;
+  final PdfTextGateway _pdfTextGateway;
   final Future<bool> Function() _isOnline;
   final Future<void> Function(Duration) _wait;
 
@@ -49,6 +44,10 @@ class GenerateRepository {
   /// Serve só para avisar antes de gastar; quem cobra é o backend.
   static const int _textBatchCost = 2;
   static const int _pdfBatchCost = 3;
+
+  /// A extração é uma cobrança à parte dos lotes: ela roda uma vez por PDF, na
+  /// function `extract-pdf-text`, e custa o mesmo que um lote de PDF.
+  static const int _pdfExtractionCost = 3;
 
   /// Espera antes de repetir um lote barrado por excesso de requisições. O
   /// limite do backend é por minuto, então a janela seguinte abre logo.
@@ -89,11 +88,6 @@ class GenerateRepository {
     _validateQuantity(quantity);
     _validatePdf(fileName: fileName, bytes: bytes);
 
-    final session = _authGateway.currentSession;
-    if (session == null) {
-      throw const BackendException(GenerateText.noSession);
-    }
-
     final batches = computeBatchSizes(quantity);
     await _ensureQuotaFor(batches: batches.length, fromPdf: true);
 
@@ -107,15 +101,13 @@ class GenerateRepository {
       ),
     );
 
-    final upload = await _storageGateway.uploadPdf(
-      userId: session.user.id,
+    // A extração acontece uma vez só: o texto alimenta todos os lotes, então
+    // um PDF de 100 páginas é lido uma vez, não uma vez por lote. Onde ela
+    // roda — servidor ou aparelho — é problema do gateway.
+    final extraction = await _pdfTextGateway.extractText(
       fileName: fileName,
       bytes: bytes,
     );
-
-    // A extração acontece uma vez só: o texto alimenta todos os lotes, então
-    // um PDF de 100 páginas é lido uma vez, não uma vez por lote.
-    final extraction = await _aiGateway.extractPdfText(pdfPath: upload.path);
 
     return _runBatches(
       deckId: deckId,
@@ -153,11 +145,12 @@ class GenerateRepository {
         ),
       );
 
-      final chunk = chunks[chunkIndexForBatch(
-        batchIndex: index,
-        batchCount: batches.length,
-        chunkCount: chunks.length,
-      )];
+      final chunk =
+          chunks[chunkIndexForBatch(
+            batchIndex: index,
+            batchCount: batches.length,
+            chunkCount: chunks.length,
+          )];
 
       try {
         final batch = await _generateBatch(
@@ -249,7 +242,9 @@ class GenerateRepository {
     required int batches,
     required bool fromPdf,
   }) async {
-    final needed = batches * (fromPdf ? _pdfBatchCost : _textBatchCost);
+    final needed =
+        batches * (fromPdf ? _pdfBatchCost : _textBatchCost) +
+        (fromPdf ? _pdfExtractionCost : 0);
 
     final int available;
     try {

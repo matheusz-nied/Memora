@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../backend/backend_provider.dart';
 import '../backend/contracts/remote_database_gateway.dart';
+import '../config/app_mode.dart';
 import '../database/app_database.dart';
 import '../database/local_model_mappers.dart';
 import '../utils/connectivity_service.dart';
@@ -256,7 +257,11 @@ final appSyncServiceProvider = Provider<AppSyncService>((ref) {
     database: ref.watch(appDatabaseProvider),
     remoteDatabase: backendClient.database,
     isOnline: ref.watch(connectivityServiceProvider).isOnline,
-    canSync: () async => backendClient.auth.currentSession != null,
+    // No modo local existe sessão (a identidade do aparelho), mas não existe
+    // remoto para onde sincronizar. Sem este corte, cada deck aberto dispara
+    // um fetch que só serve para lançar.
+    canSync: () async =>
+        kIsCloudMode && backendClient.auth.currentSession != null,
     currentUserId: () => backendClient.auth.currentSession?.user.id,
   );
 });

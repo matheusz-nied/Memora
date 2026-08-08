@@ -2,16 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
-import 'package:memora/core/backend/contracts/auth_gateway.dart';
-import 'package:memora/core/backend/contracts/storage_gateway.dart';
+import 'package:memora/core/backend/contracts/pdf_text_gateway.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
 import 'package:memora/core/backend/models/ai_quota_status.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
-import 'package:memora/core/backend/models/backend_session.dart';
-import 'package:memora/core/backend/models/backend_user.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
 import 'package:memora/core/backend/models/pdf_extraction_result.dart';
-import 'package:memora/core/backend/models/storage_upload_result.dart';
 import 'package:memora/features/generate/generate_repository.dart';
 import 'package:memora/features/generate/generate_text.dart';
 import 'package:memora/features/generate/generation_progress.dart';
@@ -214,12 +210,12 @@ void main() {
     expect(ai.calls, isEmpty);
   });
 
-  test('generateFromPdf uploads, extracts once and generates in batches', () async {
-    final ai = _FakeAiGateway(
-      pdfText: List.filled(400, 'texto de estudo. ').join(),
+  test('generateFromPdf extrai uma vez e gera em lotes', () async {
+    final ai = _FakeAiGateway();
+    final pdf = _FakePdfTextGateway(
+      text: List.filled(400, 'texto de estudo. ').join(),
     );
-    final storage = _FakeStorageGateway();
-    final repository = _repository(ai: ai, storage: storage);
+    final repository = _repository(ai: ai, pdf: pdf);
 
     final result = await repository.generateFromPdf(
       deckId: 'deck-1',
@@ -228,21 +224,22 @@ void main() {
       quantity: 25,
     );
 
-    expect(storage.lastUserId, 'user-1');
-    expect(ai.extractedPaths, ['user-1/notes.pdf']);
+    // O PDF é lido uma vez só, por mais lotes que saiam dele.
+    expect(pdf.extractedFiles, ['notes.pdf']);
     expect(ai.calls, hasLength(2));
     expect(ai.calls.every((call) => call.fromPdf), isTrue);
     expect(result.isComplete, isTrue);
   });
 
   test('generateFromPdf sends a different chunk to each batch', () async {
-    final ai = _FakeAiGateway(
-      pdfText: List.generate(
+    final ai = _FakeAiGateway();
+    final pdf = _FakePdfTextGateway(
+      text: List.generate(
         400,
         (index) => 'Fato numero $index sobre o assunto estudado.',
       ).join('\n\n'),
     );
-    final repository = _repository(ai: ai);
+    final repository = _repository(ai: ai, pdf: pdf);
 
     await repository.generateFromPdf(
       deckId: 'deck-1',
@@ -297,71 +294,33 @@ void main() {
 
 GenerateRepository _repository({
   _FakeAiGateway? ai,
-  _FakeStorageGateway? storage,
+  _FakePdfTextGateway? pdf,
   bool isOnline = true,
   Future<void> Function(Duration)? wait,
 }) {
   return GenerateRepository(
     aiGateway: ai ?? _FakeAiGateway(),
-    authGateway: const _FakeAuthGateway(),
-    storageGateway: storage ?? _FakeStorageGateway(),
+    pdfTextGateway: pdf ?? _FakePdfTextGateway(),
     isOnline: () async => isOnline,
     wait: wait ?? (_) async {},
   );
 }
 
-class _FakeAuthGateway implements AuthGateway {
-  const _FakeAuthGateway();
+class _FakePdfTextGateway implements PdfTextGateway {
+  _FakePdfTextGateway({
+    this.text = 'Texto extraido do PDF para gerar cards de estudo.',
+  });
+
+  final String text;
+  final List<String> extractedFiles = [];
 
   @override
-  Future<void> deleteAccount() async {}
-
-  @override
-  Stream<BackendSession?> get authStateChanges => Stream.value(currentSession);
-
-  @override
-  BackendSession? get currentSession => const BackendSession(
-    user: BackendUser(id: 'user-1', email: 'user@example.com'),
-    accessToken: 'token',
-  );
-
-  @override
-  Future<void> resetPasswordForEmail(String email) async {}
-
-  @override
-  Future<BackendSession> signInWithEmail({
-    required String email,
-    required String password,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> signOut() async {}
-
-  @override
-  Future<BackendSession?> signUpWithEmail({
-    required String email,
-    required String password,
-    String? displayName,
-  }) {
-    throw UnimplementedError();
-  }
-}
-
-class _FakeStorageGateway implements StorageGateway {
-  String? lastUserId;
-  String? lastFileName;
-
-  @override
-  Future<StorageUploadResult> uploadPdf({
-    required String userId,
+  Future<PdfExtractionResult> extractText({
     required String fileName,
     required Uint8List bytes,
   }) async {
-    lastUserId = userId;
-    lastFileName = fileName;
-    return StorageUploadResult(path: '$userId/$fileName');
+    extractedFiles.add(fileName);
+    return PdfExtractionResult(text: text, pages: 3);
   }
 }
 
@@ -387,7 +346,6 @@ class _FakeAiGateway implements AiGateway {
     this.failOnCall,
     this.failure,
     this.repeatFronts = false,
-    this.pdfText = 'Texto extraido do PDF para gerar cards de estudo.',
     this.quotaUsed = 0,
   });
 
@@ -401,11 +359,9 @@ class _FakeAiGateway implements AiGateway {
 
   /// Devolve sempre as mesmas frentes, para exercitar a deduplicação.
   final bool repeatFronts;
-  final String pdfText;
   final int quotaUsed;
 
   final List<_GenerateCall> calls = [];
-  final List<String> extractedPaths = [];
   var _generated = 0;
 
   @override
@@ -444,12 +400,6 @@ class _FakeAiGateway implements AiGateway {
       final number = repeatFronts ? index + 1 : ++_generated;
       return GeneratedCard(front: 'Front $number', back: 'Back $number');
     });
-  }
-
-  @override
-  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) async {
-    extractedPaths.add(pdfPath);
-    return PdfExtractionResult(text: pdfText, pages: 3);
   }
 
   @override

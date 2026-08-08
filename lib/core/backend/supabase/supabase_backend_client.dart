@@ -4,11 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../backend_client.dart';
 import '../contracts/ai_gateway.dart';
 import '../contracts/auth_gateway.dart';
+import '../contracts/pdf_text_gateway.dart';
 import '../contracts/remote_database_gateway.dart';
 import '../contracts/storage_gateway.dart';
 import '../models/backend_exception.dart';
 import 'supabase_ai_gateway.dart';
 import 'supabase_auth_gateway.dart';
+import 'supabase_pdf_text_gateway.dart';
 import 'supabase_remote_database_gateway.dart';
 import 'supabase_storage_gateway.dart';
 
@@ -17,7 +19,8 @@ class SupabaseBackendClient implements BackendClient {
     : auth = SupabaseAuthGateway(client),
       database = SupabaseRemoteDatabaseGateway(client),
       storage = SupabaseStorageGateway(client),
-      ai = SupabaseAiGateway(client);
+      ai = SupabaseAiGateway(client),
+      pdfText = SupabasePdfTextGateway(client, SupabaseStorageGateway(client));
 
   static const String _envSupabaseUrl = 'SUPABASE_URL';
   static const String _envSupabaseAnonKey = 'SUPABASE_ANON_KEY';
@@ -61,6 +64,9 @@ class SupabaseBackendClient implements BackendClient {
 
   @override
   final AiGateway ai;
+
+  @override
+  final PdfTextGateway pdfText;
 }
 
 String? _normalizeSupabaseUrl(String? value) {

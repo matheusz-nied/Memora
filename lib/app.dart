@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'features/agent/presentation/agent_config_screen.dart';
 import 'features/agent/presentation/chat_screen.dart';
 import 'features/auth/auth_repository.dart';
+import 'features/backup/backup_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/profile_screen.dart';
@@ -20,6 +21,7 @@ import 'features/generate/import_content_screen.dart';
 import 'features/generate/review_cards_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_state.dart';
+import 'features/settings/api_key_screen.dart';
 import 'features/study/insight_screen.dart';
 import 'features/study/study_screen.dart';
 
@@ -101,6 +103,14 @@ final _routes = [
   GoRoute(
     path: RouteConstants.kRouteProfile,
     builder: (context, state) => const ProfileScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteApiKey,
+    builder: (context, state) => const ApiKeyScreen(),
+  ),
+  GoRoute(
+    path: RouteConstants.kRouteBackup,
+    builder: (context, state) => const BackupScreen(),
   ),
   GoRoute(
     path: RouteConstants.kRouteHome,

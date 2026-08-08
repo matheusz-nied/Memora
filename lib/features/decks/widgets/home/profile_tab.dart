@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/ai/deepseek_key_store.dart';
+import '../../../../core/config/app_mode.dart';
+import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -12,7 +16,9 @@ import '../../../../core/widgets/loading_state.dart';
 import '../../../auth/auth_repository.dart';
 import '../../../auth/profile_text.dart';
 import '../../../auth/widgets/delete_account_button.dart';
+import '../../../backup/backup_text.dart';
 import '../../../quota/widgets/ai_quota_card.dart';
+import '../../../settings/api_key_text.dart';
 import '../../deck_repository.dart';
 
 class ProfileTab extends ConsumerWidget {
@@ -158,8 +164,16 @@ class ProfileTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.xl),
 
-                    // Consumo de IA do mês
-                    AiQuotaCard(isDark: isDark),
+                    // Consumo de IA do mês. No modo local não há quota: quem
+                    // paga é a chave da DeepSeek do próprio usuário, e o que
+                    // importa ali é saber se ela está cadastrada.
+                    if (kIsCloudMode)
+                      AiQuotaCard(isDark: isDark)
+                    else ...[
+                      const _ApiKeyTile(),
+                      const SizedBox(height: AppDimensions.md),
+                      const _BackupTile(),
+                    ],
                     const SizedBox(height: AppDimensions.xl),
 
                     // Detailed account parameters card
@@ -170,18 +184,21 @@ class ProfileTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.xxl),
 
-                    // Sign Out Action Button
-                    AppButton(
-                      label: ProfileText.signOut,
-                      icon: Icons.logout,
-                      isLoading: isSigningOut,
-                      variant: AppButtonVariant.secondary,
-                      onPressed: onSignOut,
-                    ),
-                    const SizedBox(height: AppDimensions.sm),
+                    // Sem conta não há de onde sair nem o que excluir: os
+                    // dados saem com o app, pelo próprio sistema.
+                    if (kIsCloudMode) ...[
+                      AppButton(
+                        label: ProfileText.signOut,
+                        icon: Icons.logout,
+                        isLoading: isSigningOut,
+                        variant: AppButtonVariant.secondary,
+                        onPressed: onSignOut,
+                      ),
+                      const SizedBox(height: AppDimensions.sm),
 
-                    // Exigido pela App Store para app com cadastro de conta.
-                    const DeleteAccountButton(),
+                      // Exigido pela App Store para app com cadastro de conta.
+                      const DeleteAccountButton(),
+                    ],
                     const SizedBox(height: 120), // Spacing for navigation bar
                   ],
                 );
@@ -189,6 +206,63 @@ class ProfileTab extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// COMPONENT: DEEPSEEK API KEY (LOCAL MODE)
+// ==========================================
+class _ApiKeyTile extends ConsumerWidget {
+  const _ApiKeyTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final apiKey = ref.watch(deepSeekKeyProvider);
+    final hasKey = apiKey != null;
+    final theme = Theme.of(context);
+
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          hasKey ? Icons.key : Icons.key_off_outlined,
+          color: hasKey ? AppColors.success : AppColors.warning,
+        ),
+        title: const Text(ApiKeyText.title),
+        subtitle: Text(
+          hasKey
+              ? ApiKeyText.savedKey(maskApiKey(apiKey))
+              : ApiKeyText.emptyTitle,
+          style: theme.textTheme.bodySmall,
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => context.push(RouteConstants.kRouteApiKey),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// COMPONENT: BACKUP (LOCAL MODE)
+// ==========================================
+class _BackupTile extends StatelessWidget {
+  const _BackupTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.save_alt_outlined, color: AppColors.primary),
+        title: const Text(BackupText.title),
+        subtitle: Text(
+          BackupText.profileHint,
+          style: theme.textTheme.bodySmall,
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => context.push(RouteConstants.kRouteBackup),
       ),
     );
   }
@@ -439,12 +513,15 @@ class _ProfileDetailsCard extends StatelessWidget {
               value: displayName,
               isDark: isDark,
             ),
-            const Divider(height: AppDimensions.xxl),
-            _ProfileField(
-              label: ProfileText.email,
-              value: email,
-              isDark: isDark,
-            ),
+            // Sem conta não há e-mail: a linha só mostraria "não informado".
+            if (kIsCloudMode) ...[
+              const Divider(height: AppDimensions.xxl),
+              _ProfileField(
+                label: ProfileText.email,
+                value: email,
+                isDark: isDark,
+              ),
+            ],
           ],
         ),
       ),

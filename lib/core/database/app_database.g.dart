@@ -2169,15 +2169,377 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
   }
 }
 
+class $ChatMessagesTableTable extends ChatMessagesTable
+    with TableInfo<$ChatMessagesTableTable, LocalChatMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatMessagesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deckIdMeta = const VerificationMeta('deckId');
+  @override
+  late final GeneratedColumn<String> deckId = GeneratedColumn<String>(
+    'deck_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, deckId, role, content, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalChatMessage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('deck_id')) {
+      context.handle(
+        _deckIdMeta,
+        deckId.isAcceptableOrUnknown(data['deck_id']!, _deckIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deckIdMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalChatMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalChatMessage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      deckId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deck_id'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ChatMessagesTableTable createAlias(String alias) {
+    return $ChatMessagesTableTable(attachedDatabase, alias);
+  }
+}
+
+class LocalChatMessage extends DataClass
+    implements Insertable<LocalChatMessage> {
+  final String id;
+  final String deckId;
+
+  /// Nome do valor de `BackendChatRole`: `user` ou `assistant`.
+  final String role;
+  final String content;
+
+  /// Epoch ms.
+  final int createdAt;
+  const LocalChatMessage({
+    required this.id,
+    required this.deckId,
+    required this.role,
+    required this.content,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['deck_id'] = Variable<String>(deckId);
+    map['role'] = Variable<String>(role);
+    map['content'] = Variable<String>(content);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  ChatMessagesTableCompanion toCompanion(bool nullToAbsent) {
+    return ChatMessagesTableCompanion(
+      id: Value(id),
+      deckId: Value(deckId),
+      role: Value(role),
+      content: Value(content),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory LocalChatMessage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalChatMessage(
+      id: serializer.fromJson<String>(json['id']),
+      deckId: serializer.fromJson<String>(json['deckId']),
+      role: serializer.fromJson<String>(json['role']),
+      content: serializer.fromJson<String>(json['content']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'deckId': serializer.toJson<String>(deckId),
+      'role': serializer.toJson<String>(role),
+      'content': serializer.toJson<String>(content),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  LocalChatMessage copyWith({
+    String? id,
+    String? deckId,
+    String? role,
+    String? content,
+    int? createdAt,
+  }) => LocalChatMessage(
+    id: id ?? this.id,
+    deckId: deckId ?? this.deckId,
+    role: role ?? this.role,
+    content: content ?? this.content,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  LocalChatMessage copyWithCompanion(ChatMessagesTableCompanion data) {
+    return LocalChatMessage(
+      id: data.id.present ? data.id.value : this.id,
+      deckId: data.deckId.present ? data.deckId.value : this.deckId,
+      role: data.role.present ? data.role.value : this.role,
+      content: data.content.present ? data.content.value : this.content,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChatMessage(')
+          ..write('id: $id, ')
+          ..write('deckId: $deckId, ')
+          ..write('role: $role, ')
+          ..write('content: $content, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, deckId, role, content, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalChatMessage &&
+          other.id == this.id &&
+          other.deckId == this.deckId &&
+          other.role == this.role &&
+          other.content == this.content &&
+          other.createdAt == this.createdAt);
+}
+
+class ChatMessagesTableCompanion extends UpdateCompanion<LocalChatMessage> {
+  final Value<String> id;
+  final Value<String> deckId;
+  final Value<String> role;
+  final Value<String> content;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const ChatMessagesTableCompanion({
+    this.id = const Value.absent(),
+    this.deckId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.content = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatMessagesTableCompanion.insert({
+    required String id,
+    required String deckId,
+    required String role,
+    required String content,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       deckId = Value(deckId),
+       role = Value(role),
+       content = Value(content),
+       createdAt = Value(createdAt);
+  static Insertable<LocalChatMessage> custom({
+    Expression<String>? id,
+    Expression<String>? deckId,
+    Expression<String>? role,
+    Expression<String>? content,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deckId != null) 'deck_id': deckId,
+      if (role != null) 'role': role,
+      if (content != null) 'content': content,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatMessagesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? deckId,
+    Value<String>? role,
+    Value<String>? content,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ChatMessagesTableCompanion(
+      id: id ?? this.id,
+      deckId: deckId ?? this.deckId,
+      role: role ?? this.role,
+      content: content ?? this.content,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (deckId.present) {
+      map['deck_id'] = Variable<String>(deckId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatMessagesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('deckId: $deckId, ')
+          ..write('role: $role, ')
+          ..write('content: $content, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $DecksTableTable decksTable = $DecksTableTable(this);
   late final $CardsTableTable cardsTable = $CardsTableTable(this);
   late final $ReviewsTableTable reviewsTable = $ReviewsTableTable(this);
+  late final $ChatMessagesTableTable chatMessagesTable =
+      $ChatMessagesTableTable(this);
   late final DecksDao decksDao = DecksDao(this as AppDatabase);
   late final CardsDao cardsDao = CardsDao(this as AppDatabase);
   late final ReviewsDao reviewsDao = ReviewsDao(this as AppDatabase);
+  late final ChatMessagesDao chatMessagesDao = ChatMessagesDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2186,6 +2548,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     decksTable,
     cardsTable,
     reviewsTable,
+    chatMessagesTable,
   ];
 }
 
@@ -3212,6 +3575,219 @@ typedef $$ReviewsTableTableProcessedTableManager =
       LocalReview,
       PrefetchHooks Function()
     >;
+typedef $$ChatMessagesTableTableCreateCompanionBuilder =
+    ChatMessagesTableCompanion Function({
+      required String id,
+      required String deckId,
+      required String role,
+      required String content,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$ChatMessagesTableTableUpdateCompanionBuilder =
+    ChatMessagesTableCompanion Function({
+      Value<String> id,
+      Value<String> deckId,
+      Value<String> role,
+      Value<String> content,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$ChatMessagesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatMessagesTableTable> {
+  $$ChatMessagesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deckId => $composableBuilder(
+    column: $table.deckId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChatMessagesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatMessagesTableTable> {
+  $$ChatMessagesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deckId => $composableBuilder(
+    column: $table.deckId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChatMessagesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatMessagesTableTable> {
+  $$ChatMessagesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deckId =>
+      $composableBuilder(column: $table.deckId, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ChatMessagesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChatMessagesTableTable,
+          LocalChatMessage,
+          $$ChatMessagesTableTableFilterComposer,
+          $$ChatMessagesTableTableOrderingComposer,
+          $$ChatMessagesTableTableAnnotationComposer,
+          $$ChatMessagesTableTableCreateCompanionBuilder,
+          $$ChatMessagesTableTableUpdateCompanionBuilder,
+          (
+            LocalChatMessage,
+            BaseReferences<
+              _$AppDatabase,
+              $ChatMessagesTableTable,
+              LocalChatMessage
+            >,
+          ),
+          LocalChatMessage,
+          PrefetchHooks Function()
+        > {
+  $$ChatMessagesTableTableTableManager(
+    _$AppDatabase db,
+    $ChatMessagesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatMessagesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatMessagesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatMessagesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> deckId = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatMessagesTableCompanion(
+                id: id,
+                deckId: deckId,
+                role: role,
+                content: content,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String deckId,
+                required String role,
+                required String content,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ChatMessagesTableCompanion.insert(
+                id: id,
+                deckId: deckId,
+                role: role,
+                content: content,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChatMessagesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChatMessagesTableTable,
+      LocalChatMessage,
+      $$ChatMessagesTableTableFilterComposer,
+      $$ChatMessagesTableTableOrderingComposer,
+      $$ChatMessagesTableTableAnnotationComposer,
+      $$ChatMessagesTableTableCreateCompanionBuilder,
+      $$ChatMessagesTableTableUpdateCompanionBuilder,
+      (
+        LocalChatMessage,
+        BaseReferences<
+          _$AppDatabase,
+          $ChatMessagesTableTable,
+          LocalChatMessage
+        >,
+      ),
+      LocalChatMessage,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3222,4 +3798,6 @@ class $AppDatabaseManager {
       $$CardsTableTableTableManager(_db, _db.cardsTable);
   $$ReviewsTableTableTableManager get reviewsTable =>
       $$ReviewsTableTableTableManager(_db, _db.reviewsTable);
+  $$ChatMessagesTableTableTableManager get chatMessagesTable =>
+      $$ChatMessagesTableTableTableManager(_db, _db.chatMessagesTable);
 }

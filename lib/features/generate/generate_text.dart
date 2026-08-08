@@ -68,6 +68,7 @@ class GenerateText {
   static String partialMessage({required int cards, required String reason}) {
     return 'Geramos $cards cards antes de uma falha: $reason';
   }
+
   static const String reviewTitle = 'Revise os cards';
   static const String reviewSubtitle =
       'Edite ou remova sugestões antes de salvar.';

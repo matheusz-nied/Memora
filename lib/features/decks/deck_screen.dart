@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_mode.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -130,7 +131,8 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (!isOnline) const OfflineBanner(message: DeckText.offline),
+            if (kIsCloudMode && !isOnline)
+              const OfflineBanner(message: DeckText.offline),
             Expanded(
               child: Responsive.constrainedContent(
                 child: Padding(
@@ -513,31 +515,33 @@ class _DeckHeroCard extends StatelessWidget {
             // Horizontal stats and metadata badges
             Row(
               children: [
-                // Sync status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.md,
-                    vertical: AppDimensions.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: deck.syncPending
-                        ? AppColors.warningBg
-                        : AppColors.successBg,
-                    borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusFull,
+                // Sync status badge. Ver deck_card.dart: sem sync o selo não
+                // teria como sair de "Pendente".
+                if (kIsCloudMode)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.md,
+                      vertical: AppDimensions.xs,
                     ),
-                  ),
-                  child: Text(
-                    deck.syncPending ? DeckText.pending : DeckText.synced,
-                    style: AppTypography.labelSmall.copyWith(
+                    decoration: BoxDecoration(
                       color: deck.syncPending
-                          ? AppColors.warning
-                          : AppColors.success,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
+                          ? AppColors.warningBg
+                          : AppColors.successBg,
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusFull,
+                      ),
+                    ),
+                    child: Text(
+                      deck.syncPending ? DeckText.pending : DeckText.synced,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: deck.syncPending
+                            ? AppColors.warning
+                            : AppColors.success,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
-                ),
                 const Spacer(),
 
                 // Total cards count

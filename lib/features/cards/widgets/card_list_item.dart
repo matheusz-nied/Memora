@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/config/app_mode.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../card_model.dart';
@@ -66,7 +67,7 @@ class CardListItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            if (card.syncPending) ...[
+            if (kIsCloudMode && card.syncPending) ...[
               const SizedBox(height: AppDimensions.md),
               const Icon(
                 Icons.cloud_upload_outlined,

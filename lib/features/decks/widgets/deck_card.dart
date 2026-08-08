@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/config/app_mode.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../deck_model.dart';
@@ -77,7 +78,10 @@ class DeckCard extends StatelessWidget {
               const SizedBox(height: AppDimensions.xxl),
               Row(
                 children: [
-                  _SyncPill(syncPending: deck.syncPending),
+                  // Sem sync não há o que estar pendente: neste modo o selo
+                  // ficaria em "Pendente" para sempre, já que quem limpa a
+                  // flag é justamente o sync.
+                  if (kIsCloudMode) _SyncPill(syncPending: deck.syncPending),
                   const Spacer(),
                   Icon(
                     Icons.chevron_right,

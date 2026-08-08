@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/ai/agent_templates.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
@@ -11,7 +12,6 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../decks/deck_repository.dart';
 import '../data/agent_repository.dart';
-import '../data/agent_templates.dart';
 import '../data/agent_text.dart';
 
 class AgentConfigScreen extends ConsumerStatefulWidget {

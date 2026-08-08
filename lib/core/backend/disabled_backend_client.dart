@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'backend_client.dart';
 import 'contracts/ai_gateway.dart';
 import 'contracts/auth_gateway.dart';
+import 'contracts/pdf_text_gateway.dart';
 import 'contracts/remote_database_gateway.dart';
 import 'contracts/storage_gateway.dart';
 import 'models/ai_chat_message.dart';
@@ -31,6 +32,21 @@ class DisabledBackendClient implements BackendClient {
 
   @override
   AiGateway get ai => const DisabledAiGateway();
+
+  @override
+  PdfTextGateway get pdfText => const DisabledPdfTextGateway();
+}
+
+class DisabledPdfTextGateway implements PdfTextGateway {
+  const DisabledPdfTextGateway();
+
+  @override
+  Future<PdfExtractionResult> extractText({
+    required String fileName,
+    required Uint8List bytes,
+  }) {
+    throw _notConfigured();
+  }
 }
 
 class DisabledAuthGateway implements AuthGateway {
@@ -189,11 +205,6 @@ class DisabledAiGateway implements AiGateway {
     List<String> avoidFronts = const [],
     bool fromPdf = false,
   }) {
-    throw _notConfigured();
-  }
-
-  @override
-  Future<PdfExtractionResult> extractPdfText({required String pdfPath}) {
     throw _notConfigured();
   }
 }

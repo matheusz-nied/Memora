@@ -39,11 +39,56 @@ class ReviewsDao extends DatabaseAccessor<AppDatabase> with _$ReviewsDaoMixin {
         .get();
   }
 
-  Stream<List<LocalReview>> watchReviewsSince(int fromEpochMs) {
+  /// Revisões a partir de um instante, opcionalmente restritas a alguns decks.
+  ///
+  /// O filtro por deck existe porque o banco local pode conter dados de mais
+  /// de um usuário — quem trocou de conta no mesmo aparelho. Sem ele, o
+  /// dashboard somaria o histórico de outra pessoa.
+  Stream<List<LocalReview>> watchReviewsSince(
+    int fromEpochMs, {
+    List<String>? deckIds,
+  }) {
+    final query = select(reviewsTable)
+      ..where((table) => table.reviewedAt.isBiggerOrEqualValue(fromEpochMs))
+      ..orderBy([(table) => OrderingTerm.asc(table.reviewedAt)]);
+
+    if (deckIds != null) {
+      query.where((table) => table.deckId.isIn(deckIds));
+    }
+
+    return query.watch();
+  }
+
+  /// Todo o histórico dos decks informados, para exportação.
+  Future<List<LocalReview>> getReviewsForDecks(List<String> deckIds) {
+    if (deckIds.isEmpty) {
+      return Future.value(const []);
+    }
+
     return (select(reviewsTable)
-          ..where((table) => table.reviewedAt.isBiggerOrEqualValue(fromEpochMs))
+          ..where((table) => table.deckId.isIn(deckIds))
           ..orderBy([(table) => OrderingTerm.asc(table.reviewedAt)]))
-        .watch();
+        .get();
+  }
+
+  /// Ids já existentes, para o import não duplicar revisão nem sobrescrever
+  /// uma linha de uma tabela que é append-only.
+  Future<Set<String>> getExistingReviewIds(Iterable<String> ids) async {
+    final idList = ids.toList();
+    if (idList.isEmpty) {
+      return <String>{};
+    }
+
+    final rows =
+        await (selectOnly(reviewsTable)
+              ..addColumns([reviewsTable.id])
+              ..where(reviewsTable.id.isIn(idList)))
+            .get();
+
+    return rows
+        .map((row) => row.read(reviewsTable.id))
+        .whereType<String>()
+        .toSet();
   }
 
   Future<int> countReviewsForDeck(String deckId) async {

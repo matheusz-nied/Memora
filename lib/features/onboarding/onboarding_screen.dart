@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_mode.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -30,16 +31,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _complete() async {
+  Future<void> _complete({bool openApiKey = false}) async {
     await ref.read(onboardingControllerProvider).complete();
-    if (mounted) {
+    if (!mounted) {
+      return;
+    }
+
+    // Sem contas, não há login para onde mandar: o modo local entra direto.
+    if (kIsCloudMode) {
       context.go(RouteConstants.kRouteLogin);
+      return;
+    }
+
+    // A home entra primeiro para o cadastro da chave ter para onde voltar.
+    context.go(RouteConstants.kRouteHome);
+    if (openApiKey) {
+      context.push(RouteConstants.kRouteApiKey);
     }
   }
 
   Future<void> _next() async {
     if (_isLastPage) {
-      await _complete();
+      await _complete(openApiKey: kIsLocalMode);
       return;
     }
 
@@ -98,11 +111,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 const SizedBox(height: AppDimensions.xxl),
                 AppButton(
                   label: _isLastPage
-                      ? OnboardingText.start
+                      ? (kIsLocalMode
+                            ? OnboardingText.setupKey
+                            : OnboardingText.start)
                       : OnboardingText.next,
-                  icon: Icons.arrow_forward,
+                  icon: _isLastPage && kIsLocalMode
+                      ? Icons.key
+                      : Icons.arrow_forward,
                   onPressed: _next,
                 ),
+                // Cadastrar a chave não pode ser obrigatório: criar e estudar
+                // cards à mão funciona sem IA nenhuma, e travar aqui perderia
+                // quem só quer isso.
+                if (_isLastPage && kIsLocalMode) ...[
+                  const SizedBox(height: AppDimensions.sm),
+                  AppButton(
+                    label: OnboardingText.skipKey,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: _complete,
+                  ),
+                ],
               ],
             ),
           ),
@@ -125,29 +153,44 @@ class _OnboardingPage extends StatelessWidget {
         ? AppColors.textSecDark
         : AppColors.textSecondary;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _HeroBadge(icon: page.icon),
-        const SizedBox(height: AppDimensions.huge),
-        Text(
-          AppConstants.appName,
-          style: theme.textTheme.labelLarge?.copyWith(color: AppColors.primary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppDimensions.md),
-        Text(
-          page.title,
-          style: theme.textTheme.displayLarge,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppDimensions.lg),
-        Text(
-          page.description,
-          style: theme.textTheme.bodyLarge?.copyWith(color: secondaryTextColor),
-          textAlign: TextAlign.center,
-        ),
-      ],
+    // Rola quando não couber: a altura útil varia muito entre aparelhos, e
+    // uma descrição um pouco mais longa não pode cortar o conteúdo.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _HeroBadge(icon: page.icon),
+                const SizedBox(height: AppDimensions.huge),
+                Text(
+                  AppConstants.appName,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppDimensions.md),
+                Text(
+                  page.title,
+                  style: theme.textTheme.displayLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppDimensions.lg),
+                Text(
+                  page.description,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: secondaryTextColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

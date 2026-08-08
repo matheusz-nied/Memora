@@ -73,7 +73,35 @@ Contratos mínimos:
 - `StorageGateway` cobre upload remoto de PDF
 - `AiGateway` cobre gerar cards (em lotes), extrair texto de PDF, chat e insight
 
-`backendClientProvider` é o único ponto que escolhe a implementação ativa. Inicialmente retorna `SupabaseBackendClient`. Para migrar para backend próprio, trocar esse provider/factory para `CustomBackendClient`; telas, widgets, DAOs, repositories de feature e regras de domínio não devem saber qual infraestrutura remota está em uso.
+`backendClientProvider` é o único ponto que escolhe a implementação ativa. Telas, widgets, DAOs, repositories de feature e regras de domínio não devem saber qual infraestrutura remota está em uso.
+
+## Modo de build: nuvem ou local
+
+O app compila em dois modos, escolhidos por uma constante em `lib/core/config/app_mode.dart`:
+
+```dart
+const AppMode kAppMode = AppMode.cloud; // troque e recompile
+```
+
+| | `cloud` | `local` |
+|---|---|---|
+| Backend | `SupabaseBackendClient` | `LocalBackendClient` |
+| Identidade | conta Supabase | UUID do aparelho (`LocalAuthGateway`) |
+| IA | Edge Functions, chave do servidor | `DeepSeekAiGateway`, chave do usuário |
+| Sync | ativo | desligado (`canSync` exige `kIsCloudMode`) |
+| Quota | `ai_quota_status` | não existe; a conta DeepSeek é do usuário |
+| PDF | `SupabasePdfTextGateway` (bucket + `extract-pdf-text`) | `LocalPdfTextGateway` (syncfusion no aparelho) |
+| Chat | histórico no Postgres | Drift (`chat_messages`) |
+| Selo de sync / banner offline | exibidos | escondidos: offline é o estado normal |
+| Backup | não existe (o servidor guarda) | exportar/importar JSON |
+
+Sendo `const`, o adaptador do modo não compilado sai do binário por tree-shaking — é por isso que a decisão **não** pode virar flag de runtime nem vir do `.env`.
+
+Ao mexer em qualquer um dos dois modos:
+- rode `flutter test` com a constante nos dois valores; testes exclusivos de um modo usam `skip: kIsCloudMode` / `skip: kIsLocalMode`;
+- **troque o modo editando só a linha do `kAppMode`.** Um localizar-e-substituir sobre `AppMode.cloud` casa também com a definição de `kIsCloudMode` e deixa os dois atalhos iguais — compila, passa no analisador e mostra a UI errada. `test/core/config/app_mode_test.dart` cobra isso;
+- o build local ainda exige um arquivo `.env` (mesmo vazio), porque `pubspec.yaml` o declara como asset;
+- prompts vivem em dois lugares — `lib/core/ai/deepseek_prompts.dart` e `supabase/functions/` — e precisam ser alterados juntos.
 
 ## Constantes
 
@@ -194,7 +222,7 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 | Cards | Drift (`cards` table) | Ao abrir deck com conexão |
 | Progresso de estudo | Drift (`cards.syncPending = true`) | Background ao recuperar conexão |
 | Onboarding flag | `shared_preferences` | Nunca (local only) |
-| Chat messages | Não persiste offline | Online only |
+| Chat messages | Drift (`chat_messages`) no modo local; Postgres no modo nuvem | Não sincroniza |
 | Insights gerados | Drift (`cards.insight`) + backend remoto | Gerado uma vez, persiste para sempre |
 
 ## Banco Drift local — Schema
@@ -202,6 +230,8 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 **DecksTable:** id (TEXT PK), userId (TEXT), title (TEXT), description (TEXT nullable), agentName (TEXT), agentPrompt (TEXT nullable), agentTemplate (TEXT), agentLanguage (TEXT), agentLevel (TEXT), createdAt (INTEGER — epoch ms), updatedAt (INTEGER)
 
 **CardsTable:** id (TEXT PK), deckId (TEXT — FK lógico para DecksTable), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), insight (TEXT nullable), createdAt (INTEGER), updatedAt (INTEGER)
+
+**ChatMessagesTable:** id (TEXT PK), deckId (TEXT), role (TEXT — `user` ou `assistant`), content (TEXT), createdAt (INTEGER). Sem `syncPending`: não participa do sync.
 
 **Regras do banco Drift:**
 - Nunca modificar arquivos `.g.dart` manualmente

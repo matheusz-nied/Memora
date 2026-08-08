@@ -55,6 +55,13 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
         .getSingleOrNull();
   }
 
+  /// Inclui o que foi apagado — ver `DecksDao.getDeckByIdIncludingDeleted`.
+  Future<LocalCard?> getCardByIdIncludingDeleted(String id) {
+    return (select(
+      cardsTable,
+    )..where((table) => table.id.equals(id))).getSingleOrNull();
+  }
+
   Stream<LocalCard?> watchCardById(String id) {
     return (select(cardsTable)
           ..where((table) => table.id.equals(id) & table.deletedAt.isNull()))
@@ -159,6 +166,34 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
       result.add(card);
     }
     return result;
+  }
+
+  /// Vencimentos dos cards dos decks informados até [untilEpochMs].
+  ///
+  /// Devolve só a coluna de vencimento: a carga dos próximos dias é uma
+  /// contagem por dia, e trazer os cards inteiros seria carregar o deck todo
+  /// na memória para depois descartar.
+  Future<List<int>> getUpcomingDueDates({
+    required List<String> deckIds,
+    required int untilEpochMs,
+  }) async {
+    if (deckIds.isEmpty) {
+      return const [];
+    }
+
+    final query = selectOnly(cardsTable)
+      ..addColumns([cardsTable.dueDate])
+      ..where(
+        cardsTable.deckId.isIn(deckIds) &
+            cardsTable.deletedAt.isNull() &
+            cardsTable.dueDate.isSmallerOrEqualValue(untilEpochMs),
+      );
+
+    final rows = await query.get();
+    return rows
+        .map((row) => row.read(cardsTable.dueDate))
+        .whereType<int>()
+        .toList();
   }
 
   Future<int> countDueCards({

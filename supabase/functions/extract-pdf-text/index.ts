@@ -7,6 +7,7 @@ import {
   minTextChars,
   optionsResponse,
 } from "../_shared/generate_cards.ts";
+import { refundQuota, reserveQuota } from "../_shared/quota.ts";
 import { serve } from "../_shared/runtime.ts";
 
 const maxPdfSizeBytes = 20 * 1024 * 1024;
@@ -65,7 +66,7 @@ serve(async (req) => {
     // nada no bucket, e deixá-lo lá acumula storage pago por PDF que o usuário
     // enviou uma vez.
     try {
-      return await extractResponse(bytes);
+      return await meteredExtraction(auth.user.id, bytes);
     } finally {
       await removeStoredPdf(auth.supabase, body.pdfPath);
     }
@@ -73,6 +74,34 @@ serve(async (req) => {
     return errorResponse(error, "Não foi possível ler este PDF.");
   }
 });
+
+/// Cobra a extração antes de rodar o `pdf-parse`.
+///
+/// Sem isto o trecho caro do fluxo de PDF sai de graça: a geração em lotes é
+/// cobrada pela function `generate-cards`, mas nada impediria reenviar o mesmo
+/// arquivo de 100 páginas indefinidamente só para queimar CPU.
+///
+/// O estorno cobre também a resposta de erro — `extractResponse` devolve 4xx em
+/// vez de lançar, e PDF escaneado ou corrompido não é uso, é tentativa.
+async function meteredExtraction(
+  userId: string,
+  bytes: Uint8Array,
+): Promise<Response> {
+  const reservation = await reserveQuota(userId, "generate_pdf");
+
+  let response: Response;
+  try {
+    response = await extractResponse(bytes);
+  } catch (error) {
+    await refundQuota(userId, reservation);
+    throw error;
+  }
+
+  if (!response.ok) {
+    await refundQuota(userId, reservation);
+  }
+  return response;
+}
 
 async function extractResponse(bytes: Uint8Array): Promise<Response> {
   if (bytes.length > maxPdfSizeBytes) {

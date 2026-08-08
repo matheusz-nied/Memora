@@ -4,24 +4,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 
 import 'daos/cards_dao.dart';
+import 'daos/chat_messages_dao.dart';
 import 'daos/decks_dao.dart';
 import 'daos/reviews_dao.dart';
 import 'tables/cards_table.dart';
+import 'tables/chat_messages_table.dart';
 import 'tables/decks_table.dart';
 import 'tables/reviews_table.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [DecksTable, CardsTable, ReviewsTable],
-  daos: [DecksDao, CardsDao, ReviewsDao],
+  tables: [DecksTable, CardsTable, ReviewsTable, ChatMessagesTable],
+  daos: [DecksDao, CardsDao, ReviewsDao, ChatMessagesDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openDatabase());
 
   /// Incrementar a cada mudança de schema, junto com um novo passo em
   /// [migration] e um snapshot em `drift_schemas/`. Ver AGENTS.md.
-  static const int latestSchemaVersion = 2;
+  static const int latestSchemaVersion = 3;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -38,6 +40,11 @@ class AppDatabase extends _$AppDatabase {
           // o valor real.
           await migrator.addColumn(cardsTable, cardsTable.repetitions);
           await migrator.createTable(reviewsTable);
+        }
+        if (from < 3) {
+          // Tabela nova e vazia: no modo nuvem o histórico continua no
+          // Postgres, e no modo local nunca houve histórico para migrar.
+          await migrator.createTable(chatMessagesTable);
         }
       },
     );

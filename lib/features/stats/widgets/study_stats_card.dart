@@ -1,0 +1,287 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_typography.dart';
+import '../stats_text.dart';
+import '../study_stats.dart';
+import '../study_stats_provider.dart';
+
+/// Progresso real do estudo, direto da tabela `reviews`.
+class StudyStatsCard extends ConsumerWidget {
+  const StudyStatsCard({super.key, required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(studyStatsProvider);
+
+    return statsAsync.maybeWhen(
+      data: (stats) => _StatsBody(stats: stats, isDark: isDark),
+      // Estatística é acessório: enquanto carrega ou se falhar, o dashboard
+      // não pode ficar com um erro no meio dele.
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _StatsBody extends StatelessWidget {
+  const _StatsBody({required this.stats, required this.isDark});
+
+  final StudyStats stats;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.textPrimary;
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.xl),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            StatsText.title,
+            style: AppTypography.headingMedium.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.lg),
+          if (!stats.hasHistory)
+            _EmptyStats(isDark: isDark)
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _Metric(
+                    icon: Icons.local_fire_department_outlined,
+                    color: AppColors.warning,
+                    label: StatsText.streak,
+                    value: StatsText.days(stats.streakDays),
+                    isDark: isDark,
+                  ),
+                ),
+                Expanded(
+                  child: _Metric(
+                    icon: Icons.check_circle_outline,
+                    color: AppColors.success,
+                    label: StatsText.accuracy,
+                    value: stats.accuracy == null
+                        ? '—'
+                        : StatsText.percent(stats.accuracy!),
+                    isDark: isDark,
+                  ),
+                ),
+                Expanded(
+                  child: _Metric(
+                    icon: Icons.today_outlined,
+                    color: AppColors.primary,
+                    label: StatsText.reviewsToday,
+                    value: '${stats.reviewsToday}',
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.xl),
+            _DailyBars(
+              title: StatsText.windowTotal,
+              // Trinta colunas não cabem num celular; a última semana é o que
+              // o usuário consegue ler e o que ele age em cima.
+              days: stats.daily.sublist(stats.daily.length - 7),
+              accent: AppColors.primary,
+              isDark: isDark,
+            ),
+          ],
+          const SizedBox(height: AppDimensions.xl),
+          _DailyBars(
+            title: StatsText.upcoming,
+            days: stats.upcoming,
+            accent: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyStats extends StatelessWidget {
+  const _EmptyStats({required this.isDark});
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      StatsText.emptyMessage,
+      style: AppTypography.bodySmall.copyWith(
+        color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
+      ),
+    );
+  }
+}
+
+class _Metric extends StatelessWidget {
+  const _Metric({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+    required this.isDark,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: AppDimensions.xxl),
+        const SizedBox(height: AppDimensions.sm),
+        Text(
+          value,
+          style: AppTypography.headingLarge.copyWith(
+            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        Text(
+          label,
+          style: AppTypography.labelSmall.copyWith(
+            color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Barras proporcionais ao dia mais cheio da série.
+class _DailyBars extends StatelessWidget {
+  const _DailyBars({
+    required this.title,
+    required this.days,
+    required this.accent,
+    required this.isDark,
+  });
+
+  final String title;
+  final List<DailyCount> days;
+  final Color accent;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    if (days.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final peak = days.fold<int>(
+      0,
+      (max, day) => day.count > max ? day.count : max,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTypography.labelSmall.copyWith(
+            color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.sm),
+        SizedBox(
+          height: 72,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final day in days)
+                Expanded(
+                  child: _Bar(
+                    day: day,
+                    // Sem revisão nenhuma na série, todas as barras ficam no
+                    // mínimo em vez de dividir por zero.
+                    fraction: peak == 0 ? 0 : day.count / peak,
+                    accent: accent,
+                    isDark: isDark,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Bar extends StatelessWidget {
+  const _Bar({
+    required this.day,
+    required this.fraction,
+    required this.accent,
+    required this.isDark,
+  });
+
+  static const double _maxHeight = 44;
+  static const double _minHeight = 4;
+
+  final DailyCount day;
+  final double fraction;
+  final Color accent;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          day.count == 0 ? '' : '${day.count}',
+          style: AppTypography.labelSmall.copyWith(
+            color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.xs),
+        Container(
+          height: _minHeight + (_maxHeight - _minHeight) * fraction,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          decoration: BoxDecoration(
+            color: day.count == 0
+                ? (isDark ? AppColors.borderDark : AppColors.border)
+                : accent,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+          ),
+        ),
+        const SizedBox(height: AppDimensions.xs),
+        Text(
+          StatsText.weekdayInitials[day.day.weekday - 1],
+          style: AppTypography.labelSmall.copyWith(
+            color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
+}
