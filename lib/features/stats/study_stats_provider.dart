@@ -31,9 +31,9 @@ final studyStatsProvider = StreamProvider<StudyStats>((ref) async* {
   // assinar, e a janela anda junto com o relógio. A folga cobre um app deixado
   // aberto por dias sem que a virada de meia-noite corte o gráfico; o recorte
   // exato de 30 dias é aplicado a cada emissão, com o `now` de agora.
-  final queryFrom = startOfDay(DateTime.now())
-      .subtract(const Duration(days: kStatsWindowDays * 2))
-      .millisecondsSinceEpoch;
+  final queryFrom = startOfDay(
+    DateTime.now(),
+  ).subtract(const Duration(days: kStatsWindowDays * 2)).millisecondsSinceEpoch;
 
   await for (final reviews in database.reviewsDao.watchReviewsSince(
     queryFrom,

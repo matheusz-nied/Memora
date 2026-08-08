@@ -69,3 +69,8 @@ app.*.map.json
 */*.temp
 # Dumps locais do banco (ver tool/backup/)
 /backups/
+
+# Configuração pessoal de ferramentas que nada têm a ver com o Memora e que
+# acabou aqui uma vez. Repositório público: nada de config de ferramenta com
+# credencial dentro.
+/orbit-config.json

@@ -1,0 +1,20 @@
+# GitHub Pages — páginas públicas do Memora.
+#
+# Fonte: branch principal, pasta /docs (Settings → Pages → Source: Deploy from
+# a branch → main → /docs). Só o que está nesta pasta é publicado; o restante
+# do repositório continua sendo apenas código.
+#
+# URL: https://matheusz-nied.github.io/Memora/
+
+title: Memora
+description: Flashcards com repetição espaçada e IA — seus dados ficam no seu aparelho.
+theme: jekyll-theme-cayman
+
+# Endereço canônico das páginas legais. As lojas exigem uma URL estável: uma
+# vez submetida à Play Store e à App Store, mudá-la significa reenviar o app
+# para revisão.
+url: https://matheusz-nied.github.io
+baseurl: /Memora
+
+exclude:
+  - _config.yml
