@@ -7,15 +7,13 @@ import '../../ai/deepseek_prompts.dart';
 import '../../database/app_database.dart';
 import '../contracts/ai_gateway.dart';
 import '../models/ai_chat_message.dart';
-import '../models/ai_quota_status.dart';
 import '../models/backend_exception.dart';
 import '../models/generated_card.dart';
 
 /// Fala direto com a DeepSeek usando a chave do próprio usuário.
 ///
-/// É o par local do [SupabaseAiGateway]: mesmo contrato, sem Edge Function no
-/// meio. O contexto do deck vem do Drift em vez do Postgres, e não há quota —
-/// quem paga a conta é a chave cadastrada.
+/// Sem intermediário: o contexto do deck vem do Drift do aparelho e a conta é
+/// paga pela chave cadastrada, então não há quota a controlar.
 ///
 /// A orquestração continua fora daqui: lotes, fatiamento do material,
 /// anti-duplicação, progresso e resultado parcial são do `GenerateRepository`.
@@ -35,8 +33,8 @@ class DeepSeekAiGateway implements AiGateway {
 
   static const String _model = 'deepseek-chat';
 
-  /// Tetos de tokens por operação, espelhando `maxTokens` das Edge Functions.
-  /// Sem eles a resposta não tem teto de custo.
+  /// Tetos de tokens por operação. Sem eles a resposta não tem teto de custo —
+  /// e quem paga é a chave do usuário.
   static const int _maxTokensGenerate = 4000;
   static const int _maxTokensChat = 1500;
   static const int _maxTokensInsight = 1200;
@@ -50,25 +48,11 @@ class DeepSeekAiGateway implements AiGateway {
   final String? Function() _readApiKey;
   final http.Client _httpClient;
 
-  /// Devolve o pool de conexões quando o cliente é descartado.
+  /// Devolve o pool de conexões quando o gateway é descartado.
   ///
-  /// Sem isto, cada recriação do `backendClientProvider` deixa um socket keep-
-  /// alive para trás.
+  /// Sem isto, cada recriação do `aiGatewayProvider` deixa um socket keep-alive
+  /// para trás.
   void close() => _httpClient.close();
-
-  /// Não existe quota no modo local: quem limita é o saldo da conta DeepSeek
-  /// do usuário.
-  ///
-  /// Lança de propósito, em vez de devolver um status zerado — o pré-cheque em
-  /// `GenerateRepository._ensureQuotaFor` engole a exceção e segue, mas leria
-  /// um `quota: 0` como "sem créditos" e bloquearia toda geração.
-  @override
-  Future<AiQuotaStatus> fetchQuotaStatus() {
-    throw const BackendException(
-      'Consumo de IA não se aplica neste modo: a chave da DeepSeek é sua.',
-      code: 'quota_not_applicable',
-    );
-  }
 
   @override
   Future<List<GeneratedCard>> generateCards({
@@ -118,8 +102,8 @@ class DeepSeekAiGateway implements AiGateway {
     final deck = await _deckContext(deckId);
     final cards = await _database.cardsDao.getCardsForDeck(deckId);
 
-    // Os 20 mais recentes, do mais novo para o mais antigo — mesma ordem que a
-    // Edge Function usa ao montar o contexto.
+    // Os 20 mais recentes, do mais novo para o mais antigo: o que o usuário
+    // acabou de estudar é o que mais provavelmente motivou a pergunta.
     final recentCards =
         (cards.length <= 20 ? cards : cards.sublist(cards.length - 20)).reversed
             .map((card) => GeneratedCard(front: card.front, back: card.back))
@@ -288,11 +272,11 @@ class DeepSeekAiGateway implements AiGateway {
     return content is String ? content : null;
   }
 
-  /// Repete uma vez o que tem chance de ser transitório.
+  /// Repete uma vez o que tem chance de ser transitório: falha de rede, 5xx e
+  /// resposta que não deu para interpretar.
   ///
-  /// Mesma política da Edge Function: falha de rede, 5xx e resposta que não
-  /// deu para interpretar. Não repete 401/402 (não melhora), 429 nem timeout —
-  /// esses dois o `GenerateRepository` já repete, com espera antes.
+  /// Não repete 401/402 (não melhora), 429 nem timeout — esses dois o
+  /// `GenerateRepository` já repete, com espera antes.
   Future<T> _withOneRetry<T>(Future<T> Function() operation) async {
     try {
       return await operation();

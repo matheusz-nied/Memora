@@ -2,14 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memora/core/ai/agent_templates.dart';
 import 'package:memora/core/ai/deepseek_prompts.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
-import 'package:memora/core/backend/models/backend_chat_message.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
 import 'package:memora/core/constants/app_constants.dart';
 
-/// Espelho em Dart de `supabase/functions/_shared/generate_cards_test.ts`.
-/// Os dois lados montam o mesmo prompt e leem a mesma resposta, então os casos
-/// que cobrem um precisam cobrir o outro.
+/// Cobre a montagem dos prompts e a leitura da resposta da DeepSeek — a parte
+/// que dá para exercitar sem rede, e a que quebra em silêncio: um prompt
+/// malformado não lança, só devolve card ruim.
 void main() {
   const deck = DeckAiContext(
     title: 'Biologia Celular',
@@ -284,7 +283,7 @@ void main() {
 
   group('boundedChatHistory', () {
     AiChatMessage message(String content) =>
-        AiChatMessage(role: BackendChatRole.user, content: content);
+        AiChatMessage(role: ChatRole.user, content: content);
 
     test('mantém apenas as mensagens mais recentes', () {
       final history = List.generate(

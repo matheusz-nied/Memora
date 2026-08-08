@@ -2,12 +2,11 @@ import 'package:drift/drift.dart';
 
 /// Conversas com o agente do deck, guardadas no aparelho.
 ///
-/// Existe para o modo local: sem nuvem, era o único dado do app que sumia ao
-/// fechar a tela. No modo nuvem o histórico continua no Postgres — quem decide
-/// onde ler e gravar é o `RemoteDatabaseGateway` ativo.
+/// Sem ela, a conversa era o único dado do app que sumia ao fechar a tela.
 ///
-/// Sem `syncPending`: esta tabela não participa do sync. Misturar as duas
-/// origens exigiria resolver conflito de conversa, que não paga o custo.
+/// Some junto com o deck, sem tombstone: uma conversa não é conteúdo que o
+/// usuário recupera, e o backup não a exporta — o histórico de estudo é o que
+/// não dá para reconstruir, não o bate-papo.
 @DataClassName('LocalChatMessage')
 class ChatMessagesTable extends Table {
   @override
@@ -16,7 +15,7 @@ class ChatMessagesTable extends Table {
   TextColumn get id => text()();
   TextColumn get deckId => text()();
 
-  /// Nome do valor de `BackendChatRole`: `user` ou `assistant`.
+  /// Nome do valor de `ChatRole`: `user` ou `assistant`.
   TextColumn get role => text()();
 
   TextColumn get content => text()();

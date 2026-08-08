@@ -1,8 +1,8 @@
 # Lançamento do Memora v1 — o que falta
 
-> **Decisão:** o v1 vai para a loja em **modo local** (`kAppMode = AppMode.local`).
-> Sem contas, sem servidor, sem sync. O adaptador Supabase continua no
-> repositório, pronto, reservado para o v2 — ver a seção no fim deste arquivo.
+> **Decisão:** o Memora é um app **local**. Sem contas, sem servidor, sem sync.
+> O caminho de nuvem que existia no repositório foi removido; ele continua no
+> histórico do git se um dia a decisão mudar.
 >
 > **Tudo o que estava na mão do código já foi feito** (lista no fim). O que
 > sobrou aqui exige conta, cartão, aparelho, arte ou uma decisão sua. Está na
@@ -88,13 +88,14 @@ a URL abaixo, no onboarding e no perfil — ela precisa existir.
 
 ---
 
-## 5. Licença da Syncfusion
+## 5. Licenças das dependências
 
-- [ ] Registrar a **Community License** da Syncfusion. O
-      `syncfusion_flutter_pdf` é o extrator de PDF do modo local, portanto
-      obrigatório, e não é open source. Gratuita para receita anual abaixo de
-      US$ 1 mi com menos de 5 desenvolvedores, mas **exige registro**. Publicar
-      sem ela, ou sem a comercial, é uso indevido.
+- [x] **Nada a registrar.** O extrator de PDF é próprio
+      (`lib/core/backend/local/pdf/`), e todas as dependências de runtime são
+      livres. Foi o `syncfusion_flutter_pdf` que criou este item: exigia
+      registro na Community License para publicar. Ao trocá-lo por código
+      próprio, a obrigação deixou de existir — não é preciso registrar nada
+      nem acompanhar mudança de limite de receita.
 
 ---
 
@@ -108,8 +109,8 @@ a URL abaixo, no onboarding e no perfil — ela precisa existir.
       telefone + tablet no Android
 - [ ] Descrição curta, descrição longa, categoria, classificação indicativa
 
-**Conta de teste para os revisores não é mais necessária** — o modo local não
-tem login. Está anotado aqui só para você não procurar por ele.
+**Conta de teste para os revisores não é necessária** — o app não tem login.
+Está anotado aqui só para você não procurar por ele.
 
 Os **termos de uso** também não bloqueiam: o Google exige apenas a política de
 privacidade, e a Apple aplica o EULA padrão dela quando você não fornece um.
@@ -151,7 +152,7 @@ mais coerente com o app seria opt-in, com um botão no perfil.
 ## Depois do v1
 
 - **Notificações locais.** Um app de repetição espaçada sem lembrete é
-  instalado, usado uma vez e esquecido. No modo local não existe e-mail nem
+  instalado, usado uma vez e esquecido. Sem servidor não existe e-mail nem
   push: ou é notificação local, ou não é nada. Não bloqueia publicar; bloqueia
   o lançamento dar em alguma coisa. É o item de maior retorno da lista inteira.
 - **Analytics de produto.** Sem saber quantos completam a primeira sessão de
@@ -165,78 +166,16 @@ mais coerente com o app seria opt-in, com um botão no perfil.
 
 ## Dívidas conhecidas — não bloqueiam
 
-Marcadas com ☁️ as que só existem no modo nuvem.
-
 - **`_ttsLanguage` decide idioma por stopwords.** Uma única palavra como "the"
   num card força `en-US`. Barulhento no uso real.
-- **`fetchChatMessages` não pagina.** Impacto pequeno: o chat é limitado a 40
+- **`fetchChatHistory` não pagina.** Impacto pequeno: o chat é limitado a 40
   mensagens.
-- ☁️ **`updateCardProgress` e `updateCardInsight` do `RemoteDatabaseGateway`
-  são código morto** — o sync usa `upsertCard`. Pior: `updateCardProgress`
-  ignoraria `repetitions` em silêncio se alguém a usasse.
-- ☁️ **Sem tombstones no sync.** Deleção remota ainda é inferida por ausência.
-- ☁️ **Conflito entre dispositivos é last-write-wins implícito.** A tabela
-  `reviews` já dá o material para resolver direito: reproduza as revisões em
-  ordem cronológica em vez de comparar relógios.
-- ☁️ **PDFs no Storage** — a `extract-pdf-text` já remove o arquivo depois de
-  ler; confirmar antes de ligar a nuvem.
-
----
-
-## v2 — quando ligar o modo nuvem
-
-Nada aqui bloqueia o v1.
-
-### Deploy
-
-- [ ] `supabase db push` — 2 migrations (`ai_usage_quota`, `reviews_and_repetitions`)
-- [ ] `supabase functions deploy` — inclui `delete-account` e `extract-pdf-text`
-- [ ] Conferir que `SUPABASE_SERVICE_ROLE_KEY` chega nas functions (o Supabase
-      injeta sozinho, mas sem ela o `withQuota` quebra nas 5 — a
-      `extract-pdf-text` passou a cobrar quota também)
-- [ ] Definir `ALLOWED_ORIGIN` com o domínio do app web
-
-### SMTP
-
-- [ ] **SMTP próprio** (Resend, Postmark, SendGrid). O servidor embutido do
-      Supabase é limitado a poucos e-mails por hora e marcado como "só
-      desenvolvimento" — com 20 pessoas num beta, a maioria não recebe nada.
-
-### Deep link
-
-- [ ] Cadastrar `app.memora.mobile://auth-callback` no Supabase Dashboard
-      (Authentication → URL Configuration). O link de confirmação só funciona
-      para e-mails **gerados depois** dessa configuração.
-- [ ] Testar ponta a ponta em device: cadastro → e-mail → deep link
-
-### Backup do Postgres
-
-- [ ] **Chave privada `age`** (`memora-backup.key`) — perder = backups viram
-      lixo ilegível; vazar = backups viram dado pessoal exposto
-- [ ] `age-keygen -o memora-backup.key`
-- [ ] Secrets no GitHub: `BACKUP_DATABASE_URL` (conexão **direta**, porta 5432,
-      não o pooler) e `BACKUP_AGE_PUBLIC_KEY`
-- [ ] Rodar Actions → backup → Run workflow uma vez, à mão
-- [ ] **Drill de restauração mensal.** Backup que nunca foi restaurado é uma
-      suposição, não um backup. Runbook: `tool/backup/README.md`.
-
-### Edge Functions
-
-- [ ] **`deno check supabase/functions/*/index.ts`** — nunca foram
-      type-checked; o job `edge-functions` na CI está como `continue-on-error`
-      por isso. Rode local, limpe `deno fmt`/`lint`, e torne o job bloqueante.
-- [ ] **Migrations num Supabase real.** Validadas contra um Postgres 16 local
-      com scaffolding equivalente, nunca contra o Supabase de verdade.
-
-### Produto
-
-- [ ] **Monetização** (RevenueCat). Atenção ao vão: o beta vem antes do paywall,
-      então quem estourar a quota fica travado sem saída.
-- [ ] **Plano Supabase.** O free não tem backup nenhum e pausa o projeto após
-      7 dias de inatividade.
-- [ ] **Login social: remover ou implementar.** As telas de conta hoje só são
-      compiladas no modo nuvem. Implementar Google obriga Sign in with Apple
-      junto, que exige conta paga e Services ID.
+- **A chave da DeepSeek fica em texto plano** no `shared_preferences`. É a
+  chave do usuário, contra a conta dele, e o armazenamento é privado do app —
+  o custo de um cofre nativo não se paga. O backup automático do Android já
+  está desligado justamente por causa dela.
+- **Sem fallback de IA.** Se a DeepSeek cair, geração, chat e insight caem
+  juntos.
 
 ---
 
@@ -253,7 +192,7 @@ Registro do que saiu do caminho, para não ser refeito.
   em branco — as duas plataformas aplicam a própria máscara, e os cantos
   desenhados virariam lascas brancas. O fundo do ícone adaptativo é um
   gradiente do azul da arte, e não o branco chapado do config inicial
-- Bundle ID `app.memora.mobile` em Android, iOS e no `kAuthRedirectUrl`
+- Bundle ID `app.memora.mobile` em Android e iOS
 - Assinatura de release por `android/key.properties`; o `bundleRelease` falha
   com instrução quando ele não existe, e o `assembleRelease` segue com a chave
   de debug para teste em aparelho
@@ -275,14 +214,19 @@ Registro do que saiu do caminho, para não ser refeito.
 - Aviso visível na revisão dos cards gerados, no insight e no chat
 - Canal de report por e-mail, no perfil e junto do aviso
 
-**Modo local**
-- Telas de login, cadastro e recuperação de senha saem do binário local, junto
-  com os botões de login social sem handler
+**Local, de vez**
+- Todo o caminho de nuvem removido: SDK do Supabase, adaptador, Edge Functions,
+  migrations SQL, motor de sync, telas de conta, quota de IA, o `.env` que ia
+  embarcado no APK e o deep link `auth-callback` do Android e do iOS
+- Identidade passou a ser um UUID do aparelho (`DeviceUserId`), sem a ficção de
+  sessão em volta
+- Schema do Drift na v4: `sync_pending` derrubada das três tabelas, com
+  migração e teste de integridade de dados
 - Lembrete de backup no dashboard depois de 30 dias sem exportar, ou para quem
   nunca exportou
 
 **Repositório**
-- Licença MIT, com a ressalva do Syncfusion no README
+- Licença MIT, sem ressalva: as dependências de runtime são todas livres
 - README reescrito
 - `orbit-config.json` fora do rastreamento
 
@@ -308,5 +252,5 @@ dart run flutter_launcher_icons
 # Depois de mexer em tabela do Drift
 dart run build_runner build --delete-conflicting-outputs
 dart run drift_dev schema dump lib/core/database/app_database.dart drift_schemas/
-dart run drift_dev schema generate drift_schemas/ test/drift/generated/
+dart run drift_dev schema generate --data-classes --companions drift_schemas/ test/drift/generated/
 ```

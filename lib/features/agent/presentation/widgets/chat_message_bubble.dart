@@ -3,7 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../chat_message_ui.dart';
+import '../../data/chat_message.dart';
 
 /// A single chat message bubble.
 ///
@@ -12,7 +12,7 @@ import '../chat_message_ui.dart';
 class ChatMessageBubble extends StatelessWidget {
   const ChatMessageBubble({super.key, required this.message, this.agentName});
 
-  final ChatMessageUi message;
+  final ChatMessage message;
   final String? agentName;
 
   @override
@@ -40,7 +40,7 @@ class _UserBubble extends StatelessWidget {
     required this.isDark,
   });
 
-  final ChatMessageUi message;
+  final ChatMessage message;
   final ThemeData theme;
   final bool isDark;
 
@@ -115,7 +115,7 @@ class _AssistantBubble extends StatelessWidget {
     required this.isDark,
   });
 
-  final ChatMessageUi message;
+  final ChatMessage message;
   final String agentName;
   final ThemeData theme;
   final bool isDark;

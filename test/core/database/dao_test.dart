@@ -41,10 +41,13 @@ void main() {
 
     expect(await database.decksDao.getAllDecks(), isEmpty);
 
-    final pendingDecks = await database.decksDao.getPendingSyncDecks();
-    expect(pendingDecks, hasLength(1));
-    expect(pendingDecks.single.deletedAt, now + 1);
-    expect(pendingDecks.single.syncPending, isTrue);
+    // A tombstone fica: é ela que impede um backup antigo de ressuscitar o
+    // deck que o usuário apagou depois de exportar.
+    final deleted = await database.decksDao.getDeckByIdIncludingDeleted(
+      'deck-1',
+    );
+    expect(deleted, isNotNull);
+    expect(deleted!.deletedAt, now + 1);
   });
 
   test('decks dao watches a local page and counts visible decks', () async {
@@ -123,7 +126,6 @@ void main() {
     expect(card.intervalDays, 3);
     expect(card.dueDate, dueDate.millisecondsSinceEpoch);
     expect(card.insight, 'ATP stores and transfers energy in cells.');
-    expect(card.syncPending, isTrue);
   });
 
   test('cards dao filters deleted cards but keeps tombstone pending', () async {
@@ -145,12 +147,11 @@ void main() {
 
     expect(await database.cardsDao.getCardsForDeck('deck-1'), isEmpty);
 
-    final pendingCards = await database.cardsDao.getPendingSyncCards(
-      deckId: 'deck-1',
+    final deleted = await database.cardsDao.getCardByIdIncludingDeleted(
+      'card-1',
     );
-    expect(pendingCards, hasLength(1));
-    expect(pendingCards.single.deletedAt, now + 1);
-    expect(pendingCards.single.syncPending, isTrue);
+    expect(deleted, isNotNull);
+    expect(deleted!.deletedAt, now + 1);
   });
 
   test('cards dao watches a local page and counts visible cards', () async {
@@ -230,11 +231,10 @@ void main() {
     expect(await database.cardsDao.getCardsForDeck('deck-1'), isEmpty);
     expect(await database.cardsDao.getCardsForDeck('deck-2'), hasLength(1));
 
-    final pendingCards = await database.cardsDao.getPendingSyncCards(
-      deckId: 'deck-1',
+    final deleted = await database.cardsDao.getCardByIdIncludingDeleted(
+      'card-1',
     );
-    expect(pendingCards, hasLength(1));
-    expect(pendingCards.single.id, 'card-1');
-    expect(pendingCards.single.deletedAt, now + 1);
+    expect(deleted, isNotNull);
+    expect(deleted!.deletedAt, now + 1);
   });
 }

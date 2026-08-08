@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
 import 'package:memora/core/backend/contracts/pdf_text_gateway.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
-import 'package:memora/core/backend/models/ai_quota_status.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
 import 'package:memora/core/backend/models/pdf_extraction_result.dart';
@@ -189,27 +188,6 @@ void main() {
     expect(progress.last.cardsDone, 25);
   });
 
-  test('blocks upfront when credits do not cover the request', () async {
-    final ai = _FakeAiGateway(quotaUsed: 26);
-    final repository = _repository(ai: ai);
-
-    await expectLater(
-      repository.generateFromText(
-        deckId: 'deck-1',
-        text: longText,
-        quantity: 50,
-      ),
-      throwsA(
-        isA<BackendException>().having(
-          (error) => error.isQuotaExceeded,
-          'isQuotaExceeded',
-          isTrue,
-        ),
-      ),
-    );
-    expect(ai.calls, isEmpty);
-  });
-
   test('generateFromPdf extrai uma vez e gera em lotes', () async {
     final ai = _FakeAiGateway();
     final pdf = _FakePdfTextGateway(
@@ -346,7 +324,6 @@ class _FakeAiGateway implements AiGateway {
     this.failOnCall,
     this.failure,
     this.repeatFronts = false,
-    this.quotaUsed = 0,
   });
 
   /// Cards devolvidos por chamada. `null` devolve a quantidade pedida, como
@@ -359,20 +336,9 @@ class _FakeAiGateway implements AiGateway {
 
   /// Devolve sempre as mesmas frentes, para exercitar a deduplicação.
   final bool repeatFronts;
-  final int quotaUsed;
 
   final List<_GenerateCall> calls = [];
   var _generated = 0;
-
-  @override
-  Future<AiQuotaStatus> fetchQuotaStatus() async {
-    return AiQuotaStatus(
-      used: quotaUsed,
-      quota: 30,
-      tier: 'free',
-      periodEnd: DateTime(2026, 8),
-    );
-  }
 
   @override
   Future<List<GeneratedCard>> generateCards({

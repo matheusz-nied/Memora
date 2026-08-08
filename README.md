@@ -55,7 +55,7 @@ Resumo técnico para quem quiser entender o projeto antes de abrir o código.
 
 A IA roda via **DeepSeek** com a chave do próprio usuário; nada passa por servidor nosso. PDFs são lidos no dispositivo; o chat e os insights também saem direto do app para a API.
 
-O backend remoto (Supabase — auth, sync, Edge Functions) já está implementado atrás de contratos internos, mas **o v1 publicado é 100% local**: sem conta, sem sync, sem quota. Trocar para o modo nuvem é recompilar com outra constante — o adaptador já existe no repositório, reservado para uma versão futura.
+**Não há backend.** Sem contas, sem sync, sem telemetria, sem servidor: o Drift é a fonte da verdade, não um cache. A única chamada que sai do aparelho é para a DeepSeek, e por isso existe exportação de backup em JSON — perder o aparelho não pode significar perder meses de histórico. Um teste de arquitetura barra a volta de qualquer SDK de nuvem.
 
 Design system próprio (`AppColors`, `AppTypography`, `AppDimensions`), textos centralizados por feature, CI com testes e análise estática. Código aberto sob licença MIT.
 
@@ -74,6 +74,6 @@ Detalhes de arquitetura, schema do banco e regras de contribuição: [`AGENTS.md
 
 O código do Memora está sob a licença [MIT](LICENSE).
 
-**Ressalva:** a dependência `syncfusion_flutter_pdf` (extração de texto de PDF) **não é open source**. Exige a [Community License da Syncfusion](https://www.syncfusion.com/sales/communitylicense) (gratuita, com registro) ou licença comercial. A MIT deste repositório cobre o código escrito aqui, não as dependências de terceiros.
+Todas as dependências de runtime são livres (MIT, BSD ou Apache-2.0), sem registro nem licença de uso. A extração de texto de PDF é feita por um extrator próprio, em `lib/core/backend/local/pdf/` — Dart puro, sem binário nativo e igual nas três plataformas.
 
 Os mockups em `memora_view_design/` são referência visual gerada no Stitch e não fazem parte do software licenciado acima.

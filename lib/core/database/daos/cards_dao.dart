@@ -68,34 +68,8 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
         .watchSingleOrNull();
   }
 
-  Future<List<LocalCard>> getPendingSyncCards({String? deckId}) {
-    final query = select(cardsTable)
-      ..where((table) => table.syncPending.equals(true));
-    if (deckId != null) {
-      query.where((table) => table.deckId.equals(deckId));
-    }
-    query.orderBy([(table) => OrderingTerm.asc(table.updatedAt)]);
-    return query.get();
-  }
-
-  Future<List<LocalCard>> getSyncedCardsForDeck(String deckId) {
-    return (select(cardsTable)..where(
-          (table) =>
-              table.deckId.equals(deckId) &
-              table.deletedAt.isNull() &
-              table.syncPending.equals(false),
-        ))
-        .get();
-  }
-
   Future<void> upsertCard(CardsTableCompanion card) {
     return into(cardsTable).insertOnConflictUpdate(card);
-  }
-
-  Future<void> upsertCards(Iterable<CardsTableCompanion> cards) async {
-    await batch((batch) {
-      batch.insertAllOnConflictUpdate(cardsTable, cards.toList());
-    });
   }
 
   Future<void> updateProgress({
@@ -114,7 +88,6 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
         intervalDays: Value(intervalDays),
         repetitions: Value(repetitions),
         dueDate: Value(dueDate.millisecondsSinceEpoch),
-        syncPending: const Value(true),
         updatedAt: Value(updatedAt),
       ),
     );
@@ -220,24 +193,13 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
     return (update(
       cardsTable,
     )..where((table) => table.id.equals(cardId))).write(
-      CardsTableCompanion(
-        insight: Value(insight),
-        syncPending: const Value(true),
-        updatedAt: Value(updatedAt),
-      ),
-    );
-  }
-
-  Future<void> clearSyncPending(String id) {
-    return (update(cardsTable)..where((table) => table.id.equals(id))).write(
-      const CardsTableCompanion(syncPending: Value(false)),
+      CardsTableCompanion(insight: Value(insight), updatedAt: Value(updatedAt)),
     );
   }
 
   Future<void> markCardDeleted(String id, int deletedAt) {
     return (update(cardsTable)..where((table) => table.id.equals(id))).write(
       CardsTableCompanion(
-        syncPending: const Value(true),
         deletedAt: Value(deletedAt),
         updatedAt: Value(deletedAt),
       ),
@@ -249,20 +211,9 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
       cardsTable,
     )..where((table) => table.deckId.equals(deckId))).write(
       CardsTableCompanion(
-        syncPending: const Value(true),
         deletedAt: Value(deletedAt),
         updatedAt: Value(deletedAt),
       ),
     );
-  }
-
-  Future<void> deleteCardPermanently(String id) {
-    return (delete(cardsTable)..where((table) => table.id.equals(id))).go();
-  }
-
-  Future<void> deleteCardsForDeckPermanently(String deckId) {
-    return (delete(
-      cardsTable,
-    )..where((table) => table.deckId.equals(deckId))).go();
   }
 }

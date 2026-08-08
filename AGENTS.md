@@ -8,7 +8,7 @@ O app funciona em **web, Android e iOS**. É totalmente responsivo e **offline-f
 
 Memora — plataforma de aprendizado personalizado com IA. Decks de flashcards, geração de cards via IA (texto/PDF), estudo com avaliação de desempenho, insights de IA por card e chat com agente configurável por deck.
 
-**Plataformas:** Web, Android, iOS (Flutter) | **Backend remoto inicial:** Supabase via camada de abstração | **IA:** DeepSeek-chat (fallback: Gemini 1.5 Flash)
+**Plataformas:** Web, Android, iOS (Flutter) | **Backend:** nenhum — tudo no aparelho | **IA:** DeepSeek-chat, chamada direto do app com a chave do próprio usuário
 
 ## Referência visual
 
@@ -16,92 +16,75 @@ Existe um design inicial feito no Stitch em `memora_view_design/`, com imagens e
 
 ## Stack
 
-Flutter, go_router, flutter_riverpod, google_fonts (Inter), flutter_dotenv, flutter_tts, file_picker, pdfx, shimmer, drift, drift_flutter, shared_preferences (somente flag de onboarding), connectivity_plus, Supabase como implementação inicial de backend remoto (Auth, Postgres, Storage, Edge Functions/Deno) por trás de contratos internos em `core/backend/`
+Flutter, go_router, flutter_riverpod, Inter empacotada nos assets, flutter_tts, file_picker, pdfx, shimmer, drift, drift_flutter, shared_preferences, connectivity_plus, http (chamada à DeepSeek), syncfusion_flutter_pdf (extração de texto de PDF no aparelho), url_launcher
+
+**Não há SDK de nuvem.** O app não tem contas, não sincroniza e não fala com servidor nenhum além da API da DeepSeek. `test/architecture/backend_boundary_test.dart` falha se um SDK de nuvem voltar ao projeto.
 
 **Dev dependencies:** drift_dev, build_runner
 
 ## Estrutura de pastas
 
-- `lib/core/constants/` — app_constants, route_constants, backend_constants
-- `lib/core/backend/` — backend_client, backend_provider, contracts/auth_gateway, contracts/remote_database_gateway, contracts/storage_gateway, contracts/ai_gateway, models neutros, supabase/ com implementação inicial
+- `lib/core/constants/` — app_constants, route_constants
+- `lib/core/backend/` — gateway_providers, contracts/ai_gateway, contracts/pdf_text_gateway, models neutros, local/ com as implementações (DeepSeek e extrator de PDF)
+- `lib/core/identity/` — device_user_id (o UUID do aparelho, criado no bootstrap)
 - `lib/core/theme/` — app_theme, app_colors, app_typography, app_dimensions
 - `lib/core/utils/` — responsive, validators, connectivity_service
 - `lib/core/widgets/` — app_button, app_input, app_card, empty_state, error_state, loading_state, offline_banner
 - `lib/core/database/` — app_database, app_database.g (gerado), tables/decks_table, tables/cards_table, daos/decks_dao, daos/cards_dao
 - `lib/features/onboarding/` — onboarding_screen (PageView com 4 páginas), onboarding_page_model
-- `lib/features/auth/` — auth_repository, login/register/forgot_password screens
+- `lib/features/profile/` — profile_text (o perfil em si é a aba `ProfileTab`)
 - `lib/features/decks/` — deck_model, deck_repository, home_screen, deck_screen, deck_card, deck_form_modal
 - `lib/features/cards/` — card_model, card_repository, card_list_item, card_form_modal
 - `lib/features/generate/` — generate_repository, import_content_screen, review_cards_screen
 - `lib/features/agent/` — agent_templates, agent_repository, chat_screen, agent_config_screen
 - `lib/features/study/` — study_screen, card_rating_model, study_session_model, widgets/insight_widget
-- `supabase/functions/` — generate-cards/index.ts, extract-pdf-text/index.ts, chat/index.ts, card-insight/index.ts (implementação inicial do `AiGateway`)
+- `lib/features/backup/` — backup_repository, backup_data, backup_screen (exportar/importar JSON)
 
 ## Regras invioláveis
 
 1. **Nunca hardcodar valores visuais** — usar `AppColors`, `AppTypography`, `AppDimensions`
-2. **Nunca hardcodar strings** — usar `RouteConstants` e constantes neutras de backend; constantes Supabase ficam apenas no adaptador Supabase
+2. **Nunca hardcodar strings** — usar `RouteConstants` e as classes de texto por feature
 3. **Toda tela com dados remotos deve ter 3 estados:** loading → error → data
 4. **Responsividade obrigatória** — conteúdo centralizado com `maxWidth: kContentMaxWidth` acima de 640px; usar `Responsive.isMobile/isTablet/isDesktop`
 5. **Inputs com `fontSize: 16`** (evita zoom no iOS)
 6. **Touch targets mínimos de 48px**
 7. **Widgets > 100 linhas** → extrair para `widgets/` da feature
-8. **Offline-first:** toda escrita vai primeiro no banco Drift local; sync com backend remoto é secundário. Nunca bloquear UX por falta de rede.
+8. **Local-first:** o Drift é a fonte da verdade, não um cache. Nunca bloquear UX por falta de rede — só as três funções de IA (gerar cards, chat, insight) precisam dela, e cada uma avisa por conta própria.
 9. **Nunca gerar código Drift manualmente** — usar `dart run build_runner build --delete-conflicting-outputs` para gerar os arquivos `.g.dart`. Os `.g.dart` de `lib/core/database/` são versionados e a CI falha se estiverem desatualizados.
 9a. **Toda mudança de tabela Drift exige os 4 passos**, na ordem:
    1. incrementar `AppDatabase.latestSchemaVersion`
    2. adicionar o passo incremental em `AppDatabase.migration.onUpgrade`
    3. `dart run drift_dev schema dump lib/core/database/app_database.dart drift_schemas/`
-   4. `dart run drift_dev schema generate drift_schemas/ test/drift/generated/`
+   4. `dart run drift_dev schema generate --data-classes --companions drift_schemas/ test/drift/generated/`
 
-   `test/core/database/migration_test.dart` falha se algum passo for esquecido. A partir do primeiro build distribuído, pular isso corrompe o banco de quem já instalou.
-10. **Backend desacoplado:** nenhuma tela, widget ou repository de feature pode importar `supabase_flutter`; somente `lib/core/backend/supabase/` pode conhecer o SDK Supabase. Além disso, só `main.dart` e `backend_provider.dart` podem importar o adaptador — a escolha da implementação ativa é de um ponto só. `test/architecture/backend_boundary_test.dart` falha se a regra for violada, então ela se sustenta sozinha.
-11. **Fronteira de runtime nas Edge Functions:** `Deno.*` só pode aparecer em `supabase/functions/_shared/runtime.ts`. Todo o resto usa `getEnv()` e `serve()` de lá e é TypeScript comum sobre `Request`/`Response`. Portar as functions para Node, Bun ou Cloudflare Workers deve significar reescrever esse arquivo e nada mais. A CI cobra isso no job `runtime-boundary`. Arquivos `*_test.ts` são exceção: `Deno.test` é o runner, não acoplamento do que roda em produção.
+   `test/core/database/migration_test.dart` falha se algum passo for esquecido. A partir do primeiro build distribuído, pular isso corrompe o banco de quem já instalou. Cada passo em `onUpgrade` é guardado por `from` **e** `to`: sem o `to`, uma migração 1→2 roda também os passos seguintes.
+10. **Serviço externo desacoplado:** nenhuma tela, widget ou repository de feature conhece a DeepSeek. Só `lib/core/backend/local/` implementa os contratos, e só `gateway_providers.dart` escolhe a implementação ativa. `test/architecture/backend_boundary_test.dart` falha se a regra for violada, então ela se sustenta sozinha.
+11. **Sem nuvem:** o app não tem contas, sync, telemetria nem servidor. Voltar a depender de um backend é decisão de produto, não consequência de um import — o mesmo teste de arquitetura barra SDKs de nuvem.
 
-## Backend desacoplado
+## Serviços externos desacoplados
 
-Supabase é a implementação remota inicial, não uma dependência direta do app. O restante do Flutter depende de contratos internos:
+A DeepSeek é a implementação atual, não uma dependência direta do app. As features dependem de contratos internos:
 
 ```text
-UI → Feature Repository → Core Backend Contracts → BackendClient atual → SDK/API remota
+UI → Feature Repository → Core Backend Contracts → Gateway concreto → API externa
 ```
 
-Contratos mínimos:
-- `BackendClient` agrega `AuthGateway`, `RemoteDatabaseGateway`, `StorageGateway` e `AiGateway`
-- `AuthGateway` cobre sessão, login, cadastro, recuperação de senha e logout
-- `RemoteDatabaseGateway` cobre fetch/upsert/delete remoto de decks/cards, progresso e insight
-- `StorageGateway` cobre upload remoto de PDF
-- `AiGateway` cobre gerar cards (em lotes), extrair texto de PDF, chat e insight
+Contratos:
+- `AiGateway` cobre gerar cards (em lotes), chat e insight
+- `PdfTextGateway` cobre extrair texto de um PDF, a partir dos bytes
 
-`backendClientProvider` é o único ponto que escolhe a implementação ativa. Telas, widgets, DAOs, repositories de feature e regras de domínio não devem saber qual infraestrutura remota está em uso.
+`aiGatewayProvider` e `pdfTextGatewayProvider`, em `lib/core/backend/gateway_providers.dart`, são o único ponto que escolhe a implementação. Telas, widgets, DAOs e repositories não devem saber qual fornecedor está em uso — é o que permite trocar a DeepSeek por outro provedor mexendo num arquivo.
 
-## Modo de build: nuvem ou local
+Tudo o mais é local:
 
-O app compila em dois modos, escolhidos por uma constante em `lib/core/config/app_mode.dart`:
+| | Onde vive |
+|---|---|
+| Identidade | UUID do aparelho (`DeviceUserId`), criado no bootstrap e guardado em `shared_preferences` |
+| Decks, cards, revisões, conversas | Drift, no aparelho |
+| Chave da IA | `shared_preferences`, cadastrada pelo usuário (`DeepSeekKeyNotifier`) |
+| Sobrevivência a perder o aparelho | exportar/importar JSON (`BackupRepository`) |
 
-```dart
-const AppMode kAppMode = AppMode.cloud; // troque e recompile
-```
-
-| | `cloud` | `local` |
-|---|---|---|
-| Backend | `SupabaseBackendClient` | `LocalBackendClient` |
-| Identidade | conta Supabase | UUID do aparelho (`LocalAuthGateway`) |
-| IA | Edge Functions, chave do servidor | `DeepSeekAiGateway`, chave do usuário |
-| Sync | ativo | desligado (`canSync` exige `kIsCloudMode`) |
-| Quota | `ai_quota_status` | não existe; a conta DeepSeek é do usuário |
-| PDF | `SupabasePdfTextGateway` (bucket + `extract-pdf-text`) | `LocalPdfTextGateway` (syncfusion no aparelho) |
-| Chat | histórico no Postgres | Drift (`chat_messages`) |
-| Selo de sync / banner offline | exibidos | escondidos: offline é o estado normal |
-| Backup | não existe (o servidor guarda) | exportar/importar JSON |
-
-Sendo `const`, o adaptador do modo não compilado sai do binário por tree-shaking — é por isso que a decisão **não** pode virar flag de runtime nem vir do `.env`.
-
-Ao mexer em qualquer um dos dois modos:
-- rode `flutter test` com a constante nos dois valores; testes exclusivos de um modo usam `skip: kIsCloudMode` / `skip: kIsLocalMode`;
-- **troque o modo editando só a linha do `kAppMode`.** Um localizar-e-substituir sobre `AppMode.cloud` casa também com a definição de `kIsCloudMode` e deixa os dois atalhos iguais — compila, passa no analisador e mostra a UI errada. `test/core/config/app_mode_test.dart` cobra isso;
-- o build local ainda exige um arquivo `.env` (mesmo vazio), porque `pubspec.yaml` o declara como asset;
-- prompts vivem em dois lugares — `lib/core/ai/deepseek_prompts.dart` e `supabase/functions/` — e precisam ser alterados juntos.
+O `userId` continua em `decks` mesmo sem contas: é ele que impede um backup importado de outra instalação de se misturar aos decks de quem importou.
 
 ## Constantes
 
@@ -132,44 +115,29 @@ Ao mexer em qualquer um dos dois modos:
 
 **Breakpoints:** mobile <600, tablet 600-1023, desktop ≥1024
 
-## Banco de dados
+## Chamadas de IA
 
-**decks:** id uuid PK, user_id FK→auth.users, title NOT NULL, description, agent_name DEFAULT 'Tutor', agent_prompt, agent_template DEFAULT 'general', agent_language DEFAULT 'português', agent_level DEFAULT 'intermediário', created_at, updated_at
+Não há servidor no meio: o `DeepSeekAiGateway` fala direto com `https://api.deepseek.com/chat/completions`, com a chave que o usuário cadastrou. Os prompts vivem num lugar só, `lib/core/ai/deepseek_prompts.dart`.
 
-**cards:** id uuid PK, deck_id FK→decks(cascade), front NOT NULL, back NOT NULL, ease_factor REAL DEFAULT 2.5, interval_days INT DEFAULT 1, due_date DATE DEFAULT now(), created_at, updated_at
+**Nunca chamar a DeepSeek sem `max_tokens`** e sem teto no tamanho da entrada. O histórico de chat é limitado por `boundedChatHistory` antes de virar prompt.
 
-**chat_messages:** id uuid PK, deck_id FK→decks(cascade), user_id FK→auth.users(cascade), role CHECK('user'|'assistant'), content NOT NULL, created_at
+**Geração de cards:** o gateway resolve **um lote**. Quem pede 25 ou 50 cards é o `GenerateRepository`, que quebra o pedido em lotes de no máximo `kMaxCardsPerBatch`, chama o gateway uma vez por lote e manda em `avoidFronts` as frentes já geradas para o lote seguinte não repeti-las. Um lote que falha não perde o que já saiu: o resultado é parcial e a tela mostra o que veio. Timeout de 90s para geração e 45s para chat e insight, com uma retentativa para falha de rede, 5xx e resposta ilegível — nunca para 401/402/429 nem para o próprio timeout.
 
-**RLS ativo em todas as tabelas na implementação Supabase.** Acesso restrito a `user_id = auth.uid()`. Para cards/chat_messages, via join com decks. Nunca desativar RLS. Em backend próprio futuro, manter isolamento equivalente por usuário no servidor.
+**Extração de PDF:** roda no aparelho, num isolate (`LocalPdfTextGateway`). Limites: `kMaxPdfSizeMb`, `kMaxPdfPages`, mínimo de 50 chars extraídos. Códigos de erro distintos (`pdf_no_text`, `pdf_parse_failed`, `pdf_too_large`, `pdf_too_many_pages`) porque "não foi possível extrair texto" para todos os casos mandava o usuário procurar arquivo maior quando o problema era PDF escaneado. **Nunca rejeitar PDF por ter texto demais** — texto excedente é truncado. A extração acontece uma vez por PDF e alimenta todos os lotes.
 
-## Edge Functions
+**Insight:** gerado uma vez e salvo na coluna `insight` do card, para nunca mais ser pedido. Requer conexão.
 
-As Edge Functions são a implementação inicial do `AiGateway` no adaptador Supabase. Telas e repositories de feature não chamam Edge Functions diretamente; eles chamam `AiGateway`.
-
-**generate-cards:** entrada `{text, quantity, deckId, source?, avoidFronts?}` | validações: text 50-4000 chars (6000 quando `source: "pdf"`), quantity inteiro 1-15, JWT válido | saída `{cards: [{front, back}]}` ou `{error, code}`
-
-Gera **um lote**. Quem pede 25 ou 50 cards é o app, que quebra o pedido em lotes de no máximo `kMaxCardsPerBatch` e chama a function uma vez por lote, mandando em `avoidFronts` as frentes já geradas para o lote seguinte não repeti-las. Cada lote é uma reserva de quota independente, então uma falha no meio não cobra nem perde o que já saiu. A chamada à DeepSeek tem timeout de 60s (`AbortController`) e uma retentativa para falha de rede/5xx — nunca para 401/402/429 nem para o próprio timeout.
-
-**extract-pdf-text:** entrada `{pdfPath}` | validações: path começa com `${userId}/`, 20 MB, 100 páginas, ≥50 chars extraídos | saída `{text, pages}` ou `{error, code}`
-
-Só extrai; não chama IA e não consome quota. Existe separada porque `pdf-parse` é trabalho de CPU e a Edge Function tem teto de CPU mais apertado que o de tempo — junto com a chamada à DeepSeek, PDF grande estourava. O app extrai uma vez, fatia o texto e alimenta os lotes por `generate-cards`. O objeto é **removido do bucket** ao fim da invocação, em sucesso ou falha. Códigos de erro distintos (`pdf_no_text`, `pdf_parse_failed`, `pdf_too_large`, `pdf_too_many_pages`) porque "não foi possível extrair texto" para todos os casos mandava o usuário procurar arquivo maior quando o problema era PDF escaneado. **Nunca rejeitar PDF por ter texto demais** — texto excedente é truncado.
-
-**chat:** entrada `{deckId, messages, userMessage}` | busca deck + últimos 20 cards → substitui `{name}`, `{deck_title}`, `{deck_context}`, `{language}`, `{level}` no agent_prompt → chama IA → retorna `{reply}`
-
-**Quota de IA (obrigatória em toda função que chama a DeepSeek):** as 4 funções reservam crédito via `withQuota(userId, operation, run)` de `_shared/quota.ts` imediatamente antes da chamada paga. A reserva é atômica no Postgres (`consume_ai_quota`, com advisory lock por usuário) e é estornada se a IA falhar. Custos: `chat` e `insight` = 1, `generate_cards` = 2, `generate_pdf` = 3. Tetos por tier em `ai_quota_limit` (free: 30/mês) e por minuto em `ai_rate_limit`. `consume_ai_quota`/`refund_ai_quota` só podem ser executadas pelo `service_role` — se o cliente pudesse chamar o estorno, bastaria consumir, usar a IA e estornar. O app lê o consumo por `ai_quota_status()` (somente leitura, `authenticated`).
-
-**Nunca chamar a DeepSeek sem `max_tokens`** e sem teto no tamanho da entrada. O histórico de chat é limitado no servidor (`boundedHistory`), não só no cliente.
-
-**card-insight:** entrada `{front, back, deckId}` | busca configurações do agente do deck → gera explicação aprofundada sobre o card → retorna `{insight}`. Requer conectividade. O insight retornado é salvo imediatamente na coluna `insight` da tabela `cards` (Drift local + sync remoto via `RemoteDatabaseGateway`) para nunca ser gerado novamente.
+**Sem quota.** Quem limita é o saldo da conta DeepSeek do usuário; o app não conta nem cobra nada.
 
 ## Rotas
 
-`/onboarding`, `/login`, `/register`, `/forgot-password`, `/home`, `/deck/:deckId`, `/deck/:deckId/study`, `/deck/:deckId/generate`, `/deck/:deckId/generate/review`, `/deck/:deckId/chat`, `/deck/:deckId/agent-config`
+`/onboarding`, `/home`, `/settings/api-key`, `/settings/backup`, `/deck/:deckId`, `/deck/:deckId/study`, `/deck/:deckId/card/:cardId/insight`, `/deck/:deckId/generate`, `/deck/:deckId/generate/review`, `/deck/:deckId/chat`, `/deck/:deckId/agent-config`
 
-**Redirecionamento:**
+**Redirecionamento:** o onboarding é o único portão.
 - Primeiro acesso (sem flag `onboarding_complete`) → `/onboarding`
-- Não autenticado → rota protegida → `/login`
-- Autenticado → `/login` ou `/register` → `/home`
+- Onboarding concluído abrindo `/onboarding` → `/home`
+
+Não há login: a identidade nasce no bootstrap e nunca some.
 
 ## Templates de agente
 
@@ -177,9 +145,10 @@ Definidos em `agent_templates.dart`: `general` (Tutor Geral), `english` (Profess
 
 ## Comportamento por feature
 
-- **Onboarding:** 4 páginas em PageView (proposta de valor + features); controlado por flag `kOnboardingKey` no `shared_preferences` (único uso de shared_preferences no app); skip disponível na página 1-3; último slide tem botão "Começar" → `/login`
-- **Auth:** sessão persiste, erros legíveis, logout → `/login`
-- **Decks:** lista atualiza via Stream do Drift (`watchAllDecks()`); sync via `RemoteDatabaseGateway` quando online; delete em cascade; grid 2 colunas ≥600px
+- **Onboarding:** 4 páginas em PageView; controlado por flag `kOnboardingKey` no `shared_preferences`; skip disponível na página 1-3; o último slide leva ao cadastro da chave da DeepSeek, com saída ("Depois, quero só criar cards") — cadastrar a chave não pode ser obrigatório, porque criar e estudar cards à mão funciona sem IA nenhuma
+- **Perfil:** é a terceira aba da home (`ProfileTab`), não uma rota. Mostra o que existe sem conta: quantos decks, se está online, a chave da IA, o backup e a política de privacidade
+- **Decks:** lista atualiza via Stream do Drift (`watchAllDecks()`); delete por tombstone (`deletedAt`); grid 2 colunas ≥600px
+- **Backup:** exportar/importar JSON. Existe porque não há nuvem: perder o aparelho apagaria meses de histórico. Importar **soma**, nunca apaga; em conflito de `id` vence o `updatedAt` mais recente, e a comparação enxerga tombstones para não ressuscitar o que foi apagado
 - **Geração:** cards só salvos após revisão; erros de PDF específicos; requer conexão (aviso explícito offline)
 - **Chat:** máximo `kMaxChatMessages` por sessão, aviso + "Nova conversa" no limite, indicador de digitação; requer conexão (aviso explícito offline)
 - **Estudo (offline-first):**
@@ -193,7 +162,7 @@ Definidos em `agent_templates.dart`: `general` (Tutor Geral), `english` (Profess
   - **Insight inline:** após revelar o verso, a área de insight aparece na mesma tela (`insight_widget`)
     - Se `card.insight != null` → exibe o insight imediatamente (sem chamada à IA)
     - Se `card.insight == null` → exibe botão "Gerar Insight" (desabilitado com tooltip se offline)
-    - Ao gerar: mostra shimmer/loading → salva o insight na coluna `insight` do card (Drift local + sync remoto via `RemoteDatabaseGateway`) → exibe o conteúdo
+    - Ao gerar: mostra shimmer/loading → salva o insight na coluna `insight` do card → exibe o conteúdo
     - O insight gerado persiste para sempre; o usuário nunca precisa gerá-lo novamente
 - **Insights:** exibidos inline na tela de resposta do flashcard via `insight_widget.dart`; sem rota separada; persistidos na coluna `insight` do card
 
@@ -209,29 +178,35 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 | **Fácil** | `interval_days = round(interval_days * ease_factor * 1.3)`, `ease_factor += 0.1` |
 
 - `due_date = today + interval_days`
-- Salvar no banco Drift local imediatamente via `cardsDao.updateProgress(cardId, easeFactor, intervalDays, dueDate)`
-- Marcar o card com `syncPending = true` no Drift
-- Sincronizar com backend remoto (`cards.ease_factor`, `cards.interval_days`, `cards.due_date`) quando online via `RemoteDatabaseGateway`; após sync, setar `syncPending = false`
-- Colunas `ease_factor`, `interval_days`, `due_date` devem existir tanto na tabela Drift quanto na tabela remota inicial `cards`
+- Salvar no Drift imediatamente via `cardsDao.updateProgress(...)`
+- A revisão vai para `reviews` na **mesma transação** do card: sem isso o histórico diverge do agendamento se o app morrer entre as duas escritas
 
-## Offline-first — Estratégia geral
+## Onde cada dado vive
 
-| Dado | Armazenamento local | Sync |
-|---|---|---|
-| Decks | Drift (`decks` table) | Ao abrir app com conexão |
-| Cards | Drift (`cards` table) | Ao abrir deck com conexão |
-| Progresso de estudo | Drift (`cards.syncPending = true`) | Background ao recuperar conexão |
-| Onboarding flag | `shared_preferences` | Nunca (local only) |
-| Chat messages | Drift (`chat_messages`) no modo local; Postgres no modo nuvem | Não sincroniza |
-| Insights gerados | Drift (`cards.insight`) + backend remoto | Gerado uma vez, persiste para sempre |
+Tudo no aparelho. Não há sync: o Drift é a fonte da verdade, não um cache.
+
+| Dado | Armazenamento |
+|---|---|
+| Decks, cards | Drift (`decks`, `cards`) |
+| Histórico de estudo | Drift (`reviews`), append-only |
+| Conversas com o agente | Drift (`chat_messages`) |
+| Insights gerados | Drift (`cards.insight`) — gerado uma vez, persiste para sempre |
+| Identidade do aparelho | `shared_preferences` (`local_user_id`) |
+| Chave da DeepSeek | `shared_preferences` (`deepseek_api_key`), em texto plano |
+| Flag de onboarding, consentimento, lembrete de backup | `shared_preferences` |
+| Cópia fora do aparelho | só o JSON que o usuário exportar |
 
 ## Banco Drift local — Schema
 
 **DecksTable:** id (TEXT PK), userId (TEXT), title (TEXT), description (TEXT nullable), agentName (TEXT), agentPrompt (TEXT nullable), agentTemplate (TEXT), agentLanguage (TEXT), agentLevel (TEXT), createdAt (INTEGER — epoch ms), updatedAt (INTEGER)
 
-**CardsTable:** id (TEXT PK), deckId (TEXT — FK lógico para DecksTable), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), dueDate (INTEGER — epoch ms), syncPending (BOOLEAN DEFAULT false), insight (TEXT nullable), createdAt (INTEGER), updatedAt (INTEGER)
+**CardsTable:** id (TEXT PK), deckId (TEXT — FK lógico para DecksTable), front (TEXT), back (TEXT), easeFactor (REAL DEFAULT 2.5), intervalDays (INTEGER DEFAULT 1), repetitions (INTEGER DEFAULT 0), dueDate (INTEGER — epoch ms), insight (TEXT nullable), deletedAt (INTEGER nullable), createdAt (INTEGER), updatedAt (INTEGER)
 
-**ChatMessagesTable:** id (TEXT PK), deckId (TEXT), role (TEXT — `user` ou `assistant`), content (TEXT), createdAt (INTEGER). Sem `syncPending`: não participa do sync.
+**ReviewsTable:** id (TEXT PK), cardId (TEXT), deckId (TEXT), rating (INTEGER), easeBefore/easeAfter (REAL), intervalBefore/intervalAfter (INTEGER), reviewedAt (INTEGER). Append-only: reescrever uma revisão falsificaria o histórico.
+
+**ChatMessagesTable:** id (TEXT PK), deckId (TEXT), role (TEXT — `user` ou `assistant`), content (TEXT), createdAt (INTEGER). Some junto com o deck, sem tombstone: o backup não exporta conversa.
+
+`deletedAt` em `decks` e `cards` é soft-delete de verdade, não resto de sync: é ele que impede um backup antigo de ressuscitar o que o usuário apagou depois de exportar.
 
 **Regras do banco Drift:**
 - Nunca modificar arquivos `.g.dart` manualmente
@@ -246,11 +221,11 @@ Não implementar SRS completo. Usar lógica simples baseada em 4 botões:
 
 ## O que não fazer
 
-- Não salve API keys no código Flutter (ficam no backend remoto ou nas Edge Functions da implementação Supabase)
+- Não coloque API key no código nem em asset: a única chave que existe é a da DeepSeek, cadastrada pelo usuário e guardada em `shared_preferences`
 - Não crie arquivos de tema fora de `core/theme/`
 - Não use `BuildContext` fora da árvore de widgets
 - Não chame SDK de backend diretamente nas telas — use repositórios
-- Não importe `supabase_flutter` fora de `lib/core/backend/supabase/`
+- Não traga SDK de nuvem, telemetria ou analytics de volta — o teste de arquitetura barra, e a política de privacidade promete o contrário
 - Não crie providers globais para estado local de tela
 - Não avance sem checkpoint aprovado pelo desenvolvedor
 - Não bloqueie a tela de estudo por falta de conexão

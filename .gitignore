@@ -44,10 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment files (API keys, secrets)
+# Environment files. O app não lê nenhum: a única chave que existe é a da
+# DeepSeek, cadastrada pelo usuário e guardada no aparelho. A regra fica como
+# guarda — este repositório é público.
 .env
 .env.*
-!.env.example
 
 # Code generation
 *.freezed.dart
@@ -66,9 +67,6 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
-*/*.temp
-# Dumps locais do banco (ver tool/backup/)
-/backups/
 
 # Configuração pessoal de ferramentas que nada têm a ver com o Memora e que
 # acabou aqui uma vez. Repositório público: nada de config de ferramenta com

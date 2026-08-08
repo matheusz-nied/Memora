@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config/app_mode.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -39,12 +38,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
 
-    // Sem contas, não há login para onde mandar: o modo local entra direto.
-    if (kIsCloudMode) {
-      context.go(RouteConstants.kRouteLogin);
-      return;
-    }
-
     // A home entra primeiro para o cadastro da chave ter para onde voltar.
     context.go(RouteConstants.kRouteHome);
     if (openApiKey) {
@@ -54,7 +47,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _next() async {
     if (_isLastPage) {
-      await _complete(openApiKey: kIsLocalMode);
+      await _complete(openApiKey: true);
       return;
     }
 
@@ -113,19 +106,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 const SizedBox(height: AppDimensions.xxl),
                 AppButton(
                   label: _isLastPage
-                      ? (kIsLocalMode
-                            ? OnboardingText.setupKey
-                            : OnboardingText.start)
+                      ? OnboardingText.setupKey
                       : OnboardingText.next,
-                  icon: _isLastPage && kIsLocalMode
-                      ? Icons.key
-                      : Icons.arrow_forward,
+                  icon: _isLastPage ? Icons.key : Icons.arrow_forward,
                   onPressed: _next,
                 ),
                 // Cadastrar a chave não pode ser obrigatório: criar e estudar
                 // cards à mão funciona sem IA nenhuma, e travar aqui perderia
                 // quem só quer isso.
-                if (_isLastPage && kIsLocalMode) ...[
+                if (_isLastPage) ...[
                   const SizedBox(height: AppDimensions.sm),
                   AppButton(
                     label: OnboardingText.skipKey,

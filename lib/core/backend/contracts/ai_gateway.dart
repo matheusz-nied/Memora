@@ -1,11 +1,7 @@
 import '../models/ai_chat_message.dart';
-import '../models/ai_quota_status.dart';
 import '../models/generated_card.dart';
 
 abstract interface class AiGateway {
-  /// Consumo de IA do usuário no período corrente.
-  Future<AiQuotaStatus> fetchQuotaStatus();
-
   /// Gera um lote de cards a partir de um trecho de material.
   ///
   /// Pedidos maiores que um lote são quebrados por quem chama: [avoidFronts]

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:memora/core/backend/local/local_pdf_text_gateway.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
 import 'package:memora/core/constants/app_constants.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:pdf/pdf.dart';
 
 void main() {
   // Roda o parse no mesmo isolate: `compute` em flutter_test é lento e
@@ -13,22 +13,27 @@ void main() {
     parse: (bytes) async => parsePdfBytes(bytes),
   );
 
-  /// Gera um PDF de verdade — o mesmo pacote que lê também escreve, então o
-  /// teste exercita o parser contra um arquivo real em vez de um mock.
+  /// Gera um PDF de verdade.
+  ///
+  /// Quem escreve é o pacote `pdf` e quem lê é o extrator do app — são códigos
+  /// independentes, então o teste vale como prova de que a leitura funciona
+  /// contra um arquivo que não foi feito sob medida para ela. O `pdf` grava na
+  /// versão 1.5, que usa xref stream e object stream: o caminho moderno é o
+  /// exercitado aqui.
   Future<Uint8List> buildPdf({required List<String> pagesText}) async {
     final document = PdfDocument();
-    final font = PdfStandardFont(PdfFontFamily.helvetica, 12);
+    final font = PdfFont.helvetica(document);
 
     for (final text in pagesText) {
-      final page = document.pages.add();
+      final page = PdfPage(document, pageFormat: PdfPageFormat.a4);
+      // Página sem `drawString` sai sem conteúdo nenhum — que é justamente o
+      // que um PDF escaneado parece para quem procura texto.
       if (text.isNotEmpty) {
-        page.graphics.drawString(text, font);
+        page.getGraphics().drawString(font, 12, text, 50, 700);
       }
     }
 
-    final bytes = Uint8List.fromList(await document.save());
-    document.dispose();
-    return bytes;
+    return document.save();
   }
 
   test('extrai o texto e conta as páginas', () async {
@@ -47,6 +52,39 @@ void main() {
     expect(result.pages, 2);
     expect(result.text, contains('Mitocondria'));
     expect(result.text, contains('Ribossomos'));
+  });
+
+  test('preserva as palavras separadas dentro da frase', () async {
+    const frase =
+        'A membrana plasmatica regula o transporte de substancias na celula.';
+    final bytes = await buildPdf(pagesText: const [frase]);
+
+    final result = await gateway.extractText(
+      fileName: 'citologia.pdf',
+      bytes: bytes,
+    );
+
+    // O risco real do extrator geométrico é grudar palavra ("amembrana") ou
+    // partir palavra ("mem brana"). A frase inteira cobre os dois casos.
+    expect(result.text, contains(frase));
+  });
+
+  test('lê acentuação sem trocar caractere', () async {
+    final bytes = await buildPdf(
+      pagesText: const [
+        'Ação, célula e função não podem sair corrompidas na leitura.',
+      ],
+    );
+
+    final result = await gateway.extractText(
+      fileName: 'acentos.pdf',
+      bytes: bytes,
+    );
+
+    expect(result.text, contains('Ação'));
+    expect(result.text, contains('célula'));
+    expect(result.text, contains('função'));
+    expect(result.text, contains('não'));
   });
 
   test('PDF sem texto selecionável avisa que pode ser escaneado', () async {

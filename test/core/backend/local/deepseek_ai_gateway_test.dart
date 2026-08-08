@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:memora/core/backend/local/deepseek_ai_gateway.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
-import 'package:memora/core/backend/models/backend_chat_message.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
 import 'package:memora/core/database/app_database.dart';
 
@@ -200,17 +199,6 @@ void main() {
     expect(calls, 0);
   });
 
-  test('quota não se aplica e lança em vez de devolver zeros', () async {
-    // Um status zerado faria `GenerateRepository._ensureQuotaFor` ler
-    // "sem créditos" e bloquear toda geração. A exceção ele engole.
-    final client = MockClient((request) async => http.Response('{}', 200));
-
-    expect(
-      () => gateway(client).fetchQuotaStatus(),
-      throwsA(isA<BackendException>()),
-    );
-  });
-
   test('o chat monta o prompt de sistema com o agente do deck', () async {
     late http.Request sent;
     final client = MockClient((request) async {
@@ -221,8 +209,8 @@ void main() {
     final reply = await gateway(client).chat(
       deckId: 'deck-1',
       messages: const [
-        AiChatMessage(role: BackendChatRole.user, content: 'oi'),
-        AiChatMessage(role: BackendChatRole.assistant, content: 'olá'),
+        AiChatMessage(role: ChatRole.user, content: 'oi'),
+        AiChatMessage(role: ChatRole.assistant, content: 'olá'),
       ],
       userMessage: 'me explique organelas',
     );

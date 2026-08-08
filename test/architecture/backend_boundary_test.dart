@@ -2,27 +2,29 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Trava a regra 10 do AGENTS.md: só o adaptador conhece o backend concreto.
+/// Trava as regras de dependência do AGENTS.md.
 ///
-/// A regra existia apenas escrita, e regra escrita apodrece — um import
-/// acidental numa tela passa despercebido até o dia em que trocar de backend
-/// deixa de ser trocar um provider. Este teste roda no `flutter test`, então
-/// vale localmente e na CI sem configuração extra.
+/// Regra escrita apodrece: um import acidental numa tela passa despercebido até
+/// o dia em que trocar de provedor de IA deixa de ser trocar um provider. Este
+/// teste roda no `flutter test`, então vale localmente e na CI sem configuração
+/// extra.
 void main() {
-  /// Os únicos lugares que podem conhecer um backend concreto. Cada modo de
-  /// build (ver `lib/core/config/app_mode.dart`) tem o seu.
-  const adapterDirectories = [
-    'lib/core/backend/supabase/',
-    'lib/core/backend/local/',
-  ];
+  /// O único lugar que pode conhecer um serviço externo concreto.
+  const adapterDirectory = 'lib/core/backend/local/';
 
-  /// Quem pode escolher a implementação ativa: o bootstrap e o provider.
-  /// Qualquer outro arquivo alcançando um adaptador significa que a troca de
-  /// backend deixou de ser um ponto só.
-  const allowedAdapterConsumers = {
-    'lib/main.dart',
-    'lib/core/backend/backend_provider.dart',
-  };
+  /// Quem pode escolher a implementação ativa. Qualquer outro arquivo
+  /// alcançando um adaptador significa que a troca deixou de ser um ponto só.
+  const allowedAdapterConsumers = {'lib/core/backend/gateway_providers.dart'};
+
+  /// SDKs de nuvem que o app não usa mais e não deve voltar a usar sem uma
+  /// decisão explícita. O app é local: sem contas, sem sync, sem servidor.
+  const forbiddenPackages = [
+    'supabase_flutter',
+    'supabase',
+    'flutter_dotenv',
+    'firebase',
+    'cloud_firestore',
+  ];
 
   final dartFiles = Directory('lib')
       .listSync(recursive: true)
@@ -31,8 +33,6 @@ void main() {
       .toList();
 
   String normalize(String path) => path.replaceAll(r'\', '/');
-
-  bool isInsideAdapter(String path) => adapterDirectories.any(path.startsWith);
 
   /// Os alvos de `import`/`export` do arquivo.
   ///
@@ -53,18 +53,15 @@ void main() {
     expect(dartFiles.length, greaterThan(50));
   });
 
-  test('somente o adaptador importa o SDK do Supabase', () {
+  test('nenhum SDK de nuvem voltou para o projeto', () {
     final offenders = <String>[];
 
     for (final file in dartFiles) {
-      final path = normalize(file.path);
-      if (isInsideAdapter(path)) {
-        continue;
-      }
-      if (importsOf(
-        file,
-      ).any((target) => target.contains('supabase_flutter'))) {
-        offenders.add(path);
+      final imports = importsOf(file);
+      for (final package in forbiddenPackages) {
+        if (imports.any((target) => target.startsWith('package:$package/'))) {
+          offenders.add('${normalize(file.path)} -> $package');
+        }
       }
     }
 
@@ -72,31 +69,26 @@ void main() {
       offenders,
       isEmpty,
       reason:
-          'Estes arquivos importam supabase_flutter fora de '
-          '${adapterDirectories.first}:\n  ${offenders.join('\n  ')}\n\n'
-          'Telas, widgets e repositories de feature devem depender dos '
-          'contratos em lib/core/backend/contracts/. Ver AGENTS.md, regra 10.',
+          'Estes arquivos importam um SDK de nuvem:\n  '
+          '${offenders.join('\n  ')}\n\n'
+          'O Memora é local: decks, cards e histórico ficam no aparelho, e a '
+          'única chamada que sai é para a DeepSeek, com a chave do usuário. '
+          'Voltar a depender de um backend é decisão de produto, não '
+          'consequência de um import.',
     );
   });
 
-  test('somente o bootstrap e o provider alcançam os adaptadores', () {
+  test('somente o provider alcança os adaptadores', () {
     final offenders = <String>[];
 
     for (final file in dartFiles) {
       final path = normalize(file.path);
-      if (isInsideAdapter(path) || allowedAdapterConsumers.contains(path)) {
+      if (path.startsWith(adapterDirectory) ||
+          allowedAdapterConsumers.contains(path)) {
         continue;
       }
 
-      final importsAdapter = importsOf(file).any(
-        (target) =>
-            target.contains('backend/supabase/') ||
-            target.contains('backend/local/') ||
-            target.startsWith('supabase/') ||
-            target.startsWith('local/'),
-      );
-
-      if (importsAdapter) {
+      if (importsOf(file).any((target) => target.contains('backend/local/'))) {
         offenders.add(path);
       }
     }
@@ -105,15 +97,15 @@ void main() {
       offenders,
       isEmpty,
       reason:
-          'Estes arquivos importam uma implementação de backend diretamente:\n'
+          'Estes arquivos importam uma implementação diretamente:\n'
           '  ${offenders.join('\n  ')}\n\n'
-          'A escolha da implementação ativa é de backendClientProvider. '
-          'Qualquer outro ponto de acoplamento transforma a migração de '
-          'backend em refactor.',
+          'A escolha da implementação ativa é de gateway_providers.dart. '
+          'Telas e repositories dependem dos contratos em '
+          'lib/core/backend/contracts/.',
     );
   });
 
-  test('os contratos não conhecem nenhuma infraestrutura remota', () {
+  test('os contratos não conhecem nenhum fornecedor', () {
     final contractFiles = dartFiles.where(
       (file) => normalize(file.path).startsWith('lib/core/backend/contracts/'),
     );
@@ -122,23 +114,23 @@ void main() {
 
     for (final file in contractFiles) {
       final source = file.readAsStringSync().toLowerCase();
-      for (final vendor in const ['supabase', 'deepseek']) {
+      for (final vendor in const ['supabase', 'deepseek', 'syncfusion']) {
         expect(
           source.contains(vendor),
           isFalse,
           reason:
               '${normalize(file.path)} menciona $vendor. Contratos são '
-              'neutros: é o que permite escrever um CustomBackendClient sem '
-              'tocar em feature nenhuma.',
+              'neutros: é o que permite trocar o provedor de IA — ou o '
+              'extrator de PDF — sem tocar em feature nenhuma.',
         );
       }
     }
   });
 
   test('core não depende de features', () {
-    // `core/` é importado pelos dois adaptadores e por toda feature. Se ele
-    // puder importar `features/`, um provider de tela vira dependência de
-    // infraestrutura e o grafo passa a ter ciclo.
+    // `core/` é importado por toda feature. Se ele puder importar `features/`,
+    // um provider de tela vira dependência de infraestrutura e o grafo passa a
+    // ter ciclo.
     final offenders = <String>[];
 
     for (final file in dartFiles) {

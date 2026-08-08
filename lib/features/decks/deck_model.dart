@@ -11,7 +11,6 @@ class DeckModel {
     required this.agentTemplate,
     required this.agentLanguage,
     required this.agentLevel,
-    required this.syncPending,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -25,7 +24,6 @@ class DeckModel {
   final String agentTemplate;
   final String agentLanguage;
   final String agentLevel;
-  final bool syncPending;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -40,7 +38,6 @@ class DeckModel {
       agentTemplate: deck.agentTemplate,
       agentLanguage: deck.agentLanguage,
       agentLevel: deck.agentLevel,
-      syncPending: deck.syncPending,
       createdAt: DateTime.fromMillisecondsSinceEpoch(deck.createdAt),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(deck.updatedAt),
     );

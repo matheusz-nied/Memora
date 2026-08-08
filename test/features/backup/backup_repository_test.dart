@@ -23,7 +23,7 @@ void main() {
   final createdAt = DateTime(2026, 8, 1).millisecondsSinceEpoch;
 
   BackupRepository repositoryFor(AppDatabase database, String userId) {
-    return BackupRepository(database: database, currentUserId: () => userId);
+    return BackupRepository(database: database, userId: userId);
   }
 
   Future<void> seedDeck(

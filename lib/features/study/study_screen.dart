@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config/app_mode.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -237,11 +236,7 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
       _sessionCards = [
         for (final card in cards)
           if (card.id == currentCard.id)
-            card.copyWith(
-              insight: insight,
-              syncPending: true,
-              updatedAt: DateTime.now(),
-            )
+            card.copyWith(insight: insight, updatedAt: DateTime.now())
           else
             card,
       ];
@@ -542,8 +537,6 @@ class _StudyContent extends StatelessWidget {
           ),
         ),
         if (freeStudy) const OfflineBanner(message: StudyText.freeStudyBanner),
-        if (kIsCloudMode && !isOnline)
-          const OfflineBanner(message: StudyText.offline),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xl),

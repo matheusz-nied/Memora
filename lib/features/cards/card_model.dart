@@ -10,7 +10,6 @@ class CardModel {
     required this.intervalDays,
     required this.repetitions,
     required this.dueDate,
-    required this.syncPending,
     this.insight,
     required this.createdAt,
     required this.updatedAt,
@@ -24,7 +23,6 @@ class CardModel {
   final int intervalDays;
   final int repetitions;
   final DateTime dueDate;
-  final bool syncPending;
   final String? insight;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -39,7 +37,6 @@ class CardModel {
       intervalDays: card.intervalDays,
       repetitions: card.repetitions,
       dueDate: DateTime.fromMillisecondsSinceEpoch(card.dueDate),
-      syncPending: card.syncPending,
       insight: card.insight,
       createdAt: DateTime.fromMillisecondsSinceEpoch(card.createdAt),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(card.updatedAt),
@@ -51,7 +48,6 @@ class CardModel {
     int? intervalDays,
     int? repetitions,
     DateTime? dueDate,
-    bool? syncPending,
     String? insight,
     DateTime? updatedAt,
   }) {
@@ -64,7 +60,6 @@ class CardModel {
       intervalDays: intervalDays ?? this.intervalDays,
       repetitions: repetitions ?? this.repetitions,
       dueDate: dueDate ?? this.dueDate,
-      syncPending: syncPending ?? this.syncPending,
       insight: insight ?? this.insight,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

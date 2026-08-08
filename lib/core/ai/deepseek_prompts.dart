@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import '../backend/models/ai_chat_message.dart';
-import '../backend/models/backend_chat_message.dart';
 import '../backend/models/backend_exception.dart';
 import '../backend/models/generated_card.dart';
 import '../constants/app_constants.dart';
@@ -9,11 +8,9 @@ import 'agent_templates.dart';
 
 /// Prompts e parsing da DeepSeek, sem nenhum I/O.
 ///
-/// É a porta em Dart do que as Edge Functions fazem em TypeScript
-/// (`supabase/functions/_shared/generate_cards.ts`, `chat/index.ts` e
-/// `card-insight/index.ts`). As duas cópias precisam andar juntas: mexeu em um
-/// prompt de um lado, replique no outro. Não há gerador — são três prompts, e
-/// um gerador custaria mais do que a duplicação.
+/// Fica separado do gateway porque montar prompt e ler resposta é a parte que
+/// merece teste unitário — e a única que precisa mudar junto se um dia o
+/// provedor de IA mudar.
 ///
 /// Separado do gateway de propósito: aqui tudo é função pura, então dá para
 /// testar a montagem do prompt e a leitura da resposta sem rede.
@@ -210,8 +207,7 @@ Regras:
 
 /// Monta o prompt de sistema do agente do deck.
 ///
-/// Os templates vêm de [AgentTemplate], que é a fonte original — a cópia em
-/// `supabase/functions/chat/index.ts` é que segue este arquivo.
+/// Os templates vêm de [AgentTemplate], a fonte original.
 String buildChatSystemPrompt({
   required DeckAiContext deck,
   required List<GeneratedCard> cards,
@@ -287,7 +283,7 @@ List<AiChatMessage> boundedChatHistory(List<AiChatMessage> messages) {
   return kept;
 }
 
-String chatRoleName(BackendChatRole role) => role.name;
+String chatRoleName(ChatRole role) => role.name;
 
 // ---------------------------------------------------------------------------
 // Erros da API

@@ -2,14 +2,13 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
-import '../auth/auth_repository.dart';
+import '../../core/identity/device_user_id.dart';
 import 'backup_data.dart';
 
 final backupRepositoryProvider = Provider<BackupRepository>((ref) {
   return BackupRepository(
     database: ref.watch(appDatabaseProvider),
-    currentUserId: () =>
-        ref.read(authRepositoryProvider).currentSession?.user.id,
+    userId: ref.watch(deviceUserIdProvider),
   );
 });
 
@@ -36,17 +35,15 @@ class BackupSummary {
 class BackupRepository {
   const BackupRepository({
     required AppDatabase database,
-    required String? Function() currentUserId,
+    required String userId,
   }) : _database = database,
-       _currentUserId = currentUserId;
+       _userId = userId;
 
   final AppDatabase _database;
-  final String? Function() _currentUserId;
+  final String _userId;
 
   Future<String> buildExport({DateTime? exportedAt}) async {
-    final userId = _requireUserId();
-
-    final decks = await _database.decksDao.getAllDecks(userId: userId);
+    final decks = await _database.decksDao.getAllDecks(userId: _userId);
     final deckIds = decks.map((deck) => deck.id).toList();
 
     final cards = <LocalCard>[];
@@ -73,7 +70,6 @@ class BackupRepository {
   /// 3. Os decks são re-atribuídos ao usuário atual: o `userId` do arquivo é
   ///    de outra instalação, e mantê-lo deixaria os decks invisíveis.
   Future<BackupSummary> applyImport(String source) async {
-    final userId = _requireUserId();
     final backup = decodeBackup(source);
 
     var importedDecks = 0;
@@ -88,7 +84,7 @@ class BackupRepository {
       await _database.decksDao.upsertDeck(
         DecksTableCompanion.insert(
           id: deck.id,
-          userId: userId,
+          userId: _userId,
           title: deck.title,
           description: Value(deck.description),
           agentName: Value(deck.agentName),
@@ -96,7 +92,6 @@ class BackupRepository {
           agentTemplate: Value(deck.agentTemplate),
           agentLanguage: Value(deck.agentLanguage),
           agentLevel: Value(deck.agentLevel),
-          syncPending: const Value(true),
           deletedAt: Value(deck.deletedAt),
           createdAt: deck.createdAt,
           updatedAt: deck.updatedAt,
@@ -124,7 +119,6 @@ class BackupRepository {
           intervalDays: Value(card.intervalDays),
           repetitions: Value(card.repetitions),
           dueDate: card.dueDate,
-          syncPending: const Value(true),
           insight: Value(card.insight),
           deletedAt: Value(card.deletedAt),
           createdAt: card.createdAt,
@@ -157,7 +151,6 @@ class BackupRepository {
           intervalBefore: review.intervalBefore,
           intervalAfter: review.intervalAfter,
           reviewedAt: review.reviewedAt,
-          syncPending: const Value(true),
         ),
       );
       importedReviews += 1;
@@ -168,13 +161,5 @@ class BackupRepository {
       cards: importedCards,
       reviews: importedReviews,
     );
-  }
-
-  String _requireUserId() {
-    final userId = _currentUserId();
-    if (userId == null) {
-      throw const BackupException('Sessão não encontrada.');
-    }
-    return userId;
   }
 }

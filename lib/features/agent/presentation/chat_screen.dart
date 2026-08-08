@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/backend/models/ai_chat_message.dart';
-import '../../../core/backend/models/backend_chat_message.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/route_constants.dart';
 import '../../../core/theme/app_colors.dart';
@@ -18,7 +17,7 @@ import '../../../core/widgets/offline_banner.dart';
 import '../../decks/deck_repository.dart';
 import '../data/agent_repository.dart';
 import '../data/agent_text.dart';
-import 'chat_message_ui.dart';
+import '../data/chat_message.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_bubble.dart';
 import 'widgets/typing_indicator.dart';
@@ -38,7 +37,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   final _uuid = const Uuid();
 
-  List<ChatMessageUi> _messages = [];
+  List<ChatMessage> _messages = [];
   var _isLoadingHistory = true;
   var _isSending = false;
   var _hasHistoryError = false;
@@ -228,11 +227,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final history = await repository.fetchChatHistory(widget.deckId);
       if (mounted) {
         setState(() {
-          _messages = history
-              .map(ChatMessageUi.fromBackend)
-              .toList()
-              .reversed
-              .toList();
+          _messages = history.reversed.toList();
           _isLoadingHistory = false;
         });
         _scrollToBottom();
@@ -258,9 +253,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
 
     // Add user message to UI immediately
-    final userMessage = ChatMessageUi(
+    final userMessage = ChatMessage(
       id: _uuid.v4(),
-      role: BackendChatRole.user,
+      role: ChatRole.user,
       content: text,
       createdAt: DateTime.now(),
     );
@@ -273,7 +268,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // Save user message to backend
       await repository.saveChatMessage(
         deckId: widget.deckId,
-        role: BackendChatRole.user,
+        role: ChatRole.user,
         content: text,
       );
 
@@ -292,15 +287,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // Save assistant reply to backend
       await repository.saveChatMessage(
         deckId: widget.deckId,
-        role: BackendChatRole.assistant,
+        role: ChatRole.assistant,
         content: reply,
       );
 
       // Add assistant message to UI
       if (mounted) {
-        final assistantMessage = ChatMessageUi(
+        final assistantMessage = ChatMessage(
           id: _uuid.v4(),
-          role: BackendChatRole.assistant,
+          role: ChatRole.assistant,
           content: reply,
           createdAt: DateTime.now(),
         );

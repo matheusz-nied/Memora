@@ -21,11 +21,6 @@ jobs:
           flutter-version-file: .fvmrc
           cache: true
 
-      # O pubspec declara `.env` como asset, então `flutter test` falha sem ele.
-      # Os valores não importam aqui: nenhum teste toca a rede.
-      - name: Preparar .env
-        run: cp .env.example .env
-
       - run: flutter pub get
 
       # Os .g.dart do Drift são versionados (ver .gitignore). Se o gerado
@@ -52,62 +47,3 @@ jobs:
           name: coverage
           path: coverage/lcov.info
           if-no-files-found: ignore
-
-  runtime-boundary:
-    name: fronteira de runtime das edge functions
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # A fronteira do lado Flutter é coberta por
-      # test/architecture/backend_boundary_test.dart. Esta é a equivalente do
-      # lado das functions: todo o resto é TypeScript comum sobre
-      # Request/Response, então portar para Node ou Workers é reescrever
-      # um arquivo só.
-      # Testes ficam de fora: `Deno.test` é o runner, não acoplamento do que
-      # roda em produção, e nada dentro deles é deployado.
-      - name: Deno.* só pode aparecer em _shared/runtime.ts
-        run: |
-          offenders=$(grep -rln 'Deno\.' supabase/functions --include='*.ts' \
-            | grep -v '_shared/runtime.ts' \
-            | grep -v '_test\.ts$' || true)
-          if [ -n "$offenders" ]; then
-            echo "::error::Deno.* fora de supabase/functions/_shared/runtime.ts:"
-            echo "$offenders"
-            echo "Use getEnv() / serve() de _shared/runtime.ts."
-            exit 1
-          fi
-
-  edge-functions:
-    name: supabase edge functions (deno)
-    runs-on: ubuntu-latest
-    # Advisory: as functions nunca passaram por deno fmt/lint/check, então a
-    # primeira execução provavelmente acusa dívida antiga. Rode localmente,
-    # limpe o que aparecer e então remova este continue-on-error para tornar
-    # o job bloqueante.
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: deno fmt
-        run: deno fmt --check supabase/functions
-
-      - name: deno lint
-        run: deno lint supabase/functions
-
-      - name: deno check
-        run: |
-          for entry in supabase/functions/*/index.ts; do
-            echo "==> $entry"
-            deno check "$entry"
-          done
-
-      # Validação de entrada é a única lógica das functions que dá para
-      # exercitar sem rede: quantidade do lote, tamanho do material e a lista
-      # anti-duplicação.
-      - name: deno test
-        run: deno test --allow-net --allow-env supabase/functions

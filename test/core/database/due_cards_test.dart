@@ -200,14 +200,12 @@ void main() {
     final card = await database.cardsDao.getCardById('card-1');
     expect(card!.repetitions, 2);
     expect(card.intervalDays, 3);
-    expect(card.syncPending, isTrue);
 
-    final pending = await database.reviewsDao.getPendingSyncReviews();
-    expect(pending, hasLength(1));
-    expect(pending.single.rating, 1);
-    expect(pending.single.easeBefore, closeTo(2.5, 0.0001));
-
-    await database.reviewsDao.markSynced(['review-1']);
-    expect(await database.reviewsDao.getPendingSyncReviews(), isEmpty);
+    // A revisão é gravada na mesma transação do card: sem isso o histórico
+    // pode divergir do agendamento se o app morrer entre as duas escritas.
+    final reviews = await database.reviewsDao.getReviewsForDecks(['deck-1']);
+    expect(reviews, hasLength(1));
+    expect(reviews.single.rating, 1);
+    expect(reviews.single.easeBefore, closeTo(2.5, 0.0001));
   });
 }

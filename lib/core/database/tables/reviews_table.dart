@@ -3,9 +3,8 @@ import 'package:drift/drift.dart';
 /// Histórico de revisões, append-only.
 ///
 /// Sem ele não existe streak real, curva de retenção, heatmap nem caminho de
-/// migração para FSRS — e o histórico não pode ser reconstruído depois.
-///
-/// Por ser append-only o sync é só push: nunca há conflito para resolver.
+/// migração para FSRS — e o histórico não pode ser reconstruído depois. É
+/// também o dado mais caro de perder, e por isso o que o backup mais protege.
 @DataClassName('LocalReview')
 class ReviewsTable extends Table {
   @override
@@ -28,8 +27,6 @@ class ReviewsTable extends Table {
 
   /// Epoch ms.
   IntColumn get reviewedAt => integer()();
-
-  BoolColumn get syncPending => boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

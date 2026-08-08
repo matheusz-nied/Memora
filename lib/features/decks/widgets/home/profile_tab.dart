@@ -3,41 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/ai/deepseek_key_store.dart';
-import '../../../../core/config/app_mode.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/connectivity_service.dart';
 import '../../../../core/utils/responsive.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/error_state.dart';
-import '../../../../core/widgets/loading_state.dart';
-import '../../../auth/auth_repository.dart';
-import '../../../auth/profile_text.dart';
-import '../../../auth/widgets/delete_account_button.dart';
+import '../../../../core/identity/device_user_id.dart';
 import '../../../backup/backup_text.dart';
 import '../../../legal/legal_links.dart';
 import '../../../legal/legal_text.dart';
-import '../../../quota/widgets/ai_quota_card.dart';
+import '../../../profile/profile_text.dart';
 import '../../../settings/api_key_text.dart';
 import '../../deck_repository.dart';
 
 class ProfileTab extends ConsumerWidget {
-  const ProfileTab({
-    super.key,
-    required this.isDark,
-    required this.isSigningOut,
-    required this.onSignOut,
-  });
+  const ProfileTab({super.key, required this.isDark});
 
   final bool isDark;
-  final bool isSigningOut;
-  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionState = ref.watch(authStateProvider);
     final decksAsync = ref.watch(decksStreamProvider);
     final isOnline = ref
         .watch(onlineStatusProvider)
@@ -49,29 +35,10 @@ class ProfileTab extends ConsumerWidget {
         child: Responsive.constrainedContent(
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.xl),
-            child: sessionState.when(
-              loading: () => const LoadingState(),
-              error: (_, __) =>
-                  const ErrorState(message: ProfileText.sessionUnavailable),
-              data: (session) {
-                if (session == null) {
-                  return const ErrorState(
-                    message: ProfileText.sessionUnavailable,
-                  );
-                }
-
-                final user = session.user;
-                final displayName = user.displayName?.trim().isNotEmpty == true
-                    ? user.displayName!
-                    : ProfileText.authenticatedUser;
-                final email = user.email?.trim().isNotEmpty == true
-                    ? user.email!
-                    : ProfileText.noEmail;
-
-                // Extract name initials
-                final initial = displayName.isNotEmpty
-                    ? displayName[0].toUpperCase()
-                    : 'A';
+            child: Builder(
+              builder: (context) {
+                const displayName = DeviceUserId.displayName;
+                final initial = displayName[0].toUpperCase();
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,7 +48,6 @@ class ProfileTab extends ConsumerWidget {
                     // Premium Frosted Header Card
                     _ProfileHeaderCard(
                       displayName: displayName,
-                      email: email,
                       initial: initial,
                       isDark: isDark,
                     ),
@@ -166,16 +132,12 @@ class ProfileTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppDimensions.xl),
 
-                    // Consumo de IA do mês. No modo local não há quota: quem
-                    // paga é a chave da DeepSeek do próprio usuário, e o que
-                    // importa ali é saber se ela está cadastrada.
-                    if (kIsCloudMode)
-                      AiQuotaCard(isDark: isDark)
-                    else ...[
-                      const _ApiKeyTile(),
-                      const SizedBox(height: AppDimensions.md),
-                      const _BackupTile(),
-                    ],
+                    // Não há quota a mostrar: quem paga a IA é a chave da
+                    // DeepSeek do próprio usuário, e o que importa é saber se
+                    // ela está cadastrada.
+                    const _ApiKeyTile(),
+                    const SizedBox(height: AppDimensions.md),
+                    const _BackupTile(),
                     const SizedBox(height: AppDimensions.md),
                     const _PrivacyTile(),
                     const SizedBox(height: AppDimensions.xl),
@@ -184,25 +146,9 @@ class ProfileTab extends ConsumerWidget {
                     _ProfileDetailsCard(
                       isDark: isDark,
                       displayName: displayName,
-                      email: email,
                     ),
-                    const SizedBox(height: AppDimensions.xxl),
-
-                    // Sem conta não há de onde sair nem o que excluir: os
-                    // dados saem com o app, pelo próprio sistema.
-                    if (kIsCloudMode) ...[
-                      AppButton(
-                        label: ProfileText.signOut,
-                        icon: Icons.logout,
-                        isLoading: isSigningOut,
-                        variant: AppButtonVariant.secondary,
-                        onPressed: onSignOut,
-                      ),
-                      const SizedBox(height: AppDimensions.sm),
-
-                      // Exigido pela App Store para app com cadastro de conta.
-                      const DeleteAccountButton(),
-                    ],
+                    // Não há de onde sair nem conta a excluir: os dados vão
+                    // embora com o app, pelo próprio sistema.
                     const SizedBox(height: 120), // Spacing for navigation bar
                   ],
                 );
@@ -326,13 +272,11 @@ class _PrivacyTile extends StatelessWidget {
 class _ProfileHeaderCard extends StatelessWidget {
   const _ProfileHeaderCard({
     required this.displayName,
-    required this.email,
     required this.initial,
     required this.isDark,
   });
 
   final String displayName;
-  final String email;
   final String initial;
   final bool isDark;
 
@@ -412,7 +356,7 @@ class _ProfileHeaderCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    email,
+                    ProfileText.onThisDevice,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodyMedium.copyWith(
@@ -420,28 +364,6 @@ class _ProfileHeaderCard extends StatelessWidget {
                           ? AppColors.textSecDark
                           : AppColors.textSecondary,
                       fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Session badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      'SESSÃO ATIVA',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 8,
-                        letterSpacing: 1.1,
-                      ),
                     ),
                   ),
                 ],
@@ -523,15 +445,10 @@ class _StatBlock extends StatelessWidget {
 // COMPONENT: DETAILED ACCOUNT PARAMETERS
 // ==========================================
 class _ProfileDetailsCard extends StatelessWidget {
-  const _ProfileDetailsCard({
-    required this.isDark,
-    required this.displayName,
-    required this.email,
-  });
+  const _ProfileDetailsCard({required this.isDark, required this.displayName});
 
   final bool isDark;
   final String displayName;
-  final String email;
 
   @override
   Widget build(BuildContext context) {
@@ -565,15 +482,6 @@ class _ProfileDetailsCard extends StatelessWidget {
               value: displayName,
               isDark: isDark,
             ),
-            // Sem conta não há e-mail: a linha só mostraria "não informado".
-            if (kIsCloudMode) ...[
-              const Divider(height: AppDimensions.xxl),
-              _ProfileField(
-                label: ProfileText.email,
-                value: email,
-                isDark: isDark,
-              ),
-            ],
           ],
         ),
       ),

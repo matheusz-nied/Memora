@@ -21,7 +21,6 @@ void main() {
       intervalBefore: 1,
       intervalAfter: 6,
       reviewedAt: at.millisecondsSinceEpoch,
-      syncPending: false,
     );
   }
 

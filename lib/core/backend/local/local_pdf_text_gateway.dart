@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../../constants/app_constants.dart';
 import '../contracts/pdf_text_gateway.dart';
 import '../models/backend_exception.dart';
 import '../models/pdf_extraction_result.dart';
+import 'pdf/pdf_extractor.dart';
 
 /// Texto cru saído do parser, antes de qualquer regra de negócio.
 @immutable
@@ -21,9 +21,8 @@ typedef PdfParser = Future<PdfRawText> Function(Uint8List bytes);
 
 /// Extrai o texto do PDF no próprio aparelho, sem servidor nem storage.
 ///
-/// Os limites são os mesmos da Edge Function equivalente
-/// (`supabase/functions/extract-pdf-text/index.ts`), para o usuário receber a
-/// mesma resposta nos dois modos.
+/// Roda num isolate: um PDF de 100 páginas é trabalho de CPU suficiente para
+/// travar a UI se rodar na thread principal.
 class LocalPdfTextGateway implements PdfTextGateway {
   const LocalPdfTextGateway({PdfParser parse = _parseInIsolate})
     : _parse = parse;
@@ -98,18 +97,6 @@ Future<PdfRawText> _parseInIsolate(Uint8List bytes) {
 /// Devolve texto vazio quando o PDF passa do limite de páginas: extrair tudo
 /// para depois descartar seria desperdício, e quem decide é [LocalPdfTextGateway].
 PdfRawText parsePdfBytes(Uint8List bytes) {
-  final document = PdfDocument(inputBytes: bytes);
-  try {
-    final pages = document.pages.count;
-    if (pages > AppConstants.kMaxPdfPages) {
-      return PdfRawText(text: '', pages: pages);
-    }
-
-    return PdfRawText(
-      text: PdfTextExtractor(document).extractText(),
-      pages: pages,
-    );
-  } finally {
-    document.dispose();
-  }
+  final result = extractPdfText(bytes, maxPages: AppConstants.kMaxPdfPages);
+  return PdfRawText(text: result.text, pages: result.pages);
 }

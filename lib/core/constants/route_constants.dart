@@ -2,13 +2,7 @@ class RouteConstants {
   const RouteConstants._();
 
   static const String kRouteOnboarding = '/onboarding';
-  static const String kRouteLogin = '/login';
-  static const String kRouteRegister = '/register';
-  static const String kRouteForgotPass = '/forgot-password';
   static const String kRouteHome = '/home';
-  static const String kRouteProfile = '/profile';
-
-  /// Só existe no modo local, onde a chave da DeepSeek é do usuário.
   static const String kRouteApiKey = '/settings/api-key';
 
   static const String kRouteBackup = '/settings/backup';

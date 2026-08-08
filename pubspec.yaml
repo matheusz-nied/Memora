@@ -38,7 +38,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.3.1
   go_router: ^17.0.0
-  flutter_dotenv: ^6.0.1
   flutter_tts: ^4.2.5
   file_picker: ^11.0.2
   pdfx: ^2.9.2
@@ -46,17 +45,18 @@ dependencies:
   drift: ^2.31.0
   drift_flutter: ^0.2.8
   shared_preferences: ^2.5.3
+  # A IA é a única coisa que precisa de rede. Serve para avisar antes de
+  # tentar, em vez de deixar a chamada estourar em timeout.
   connectivity_plus: ^7.1.1
-  supabase_flutter: ^2.12.4
   uuid: ^4.5.3
   flutter_markdown: ^0.7.7+1
   # Chamada direta à DeepSeek no modo local. `dart:io` não serve: quebraria o
   # build web, que o app ainda suporta.
   http: ^1.5.0
-  # Extração de texto de PDF no aparelho. `pdfx` só renderiza páginas — não
-  # expõe o texto. Licença Community da Syncfusion (gratuita abaixo de US$1M
-  # de receita e até 5 devs); confira o texto vigente antes de publicar.
-  syncfusion_flutter_pdf: ^31.1.17
+  # Inflate puro em Dart, para descomprimir os streams do PDF. `dart:io` tem
+  # zlib nativo, mas quebraria o build web; `archive` escolhe sozinho entre o
+  # nativo e a implementação Dart conforme a plataforma.
+  archive: ^4.0.9
   url_launcher: ^6.3.2
 
 dev_dependencies:
@@ -69,6 +69,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  # Só para gerar os PDFs dos testes do extrator. É escritor, não leitor — o
+  # que lê é `lib/core/backend/local/pdf/`, escrito aqui. Fica em
+  # dev_dependencies de propósito: nada disso vai para o binário publicado.
+  pdf: ^3.11.1
   drift_dev: ^2.31.0
   build_runner: ^2.15.0
   flutter_launcher_icons: ^0.14.4
@@ -86,7 +90,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env
     - web/sqlite3.wasm
 
   # Inter empacotada, e não baixada em tempo de execução pelo `google_fonts`:

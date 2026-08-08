@@ -20,7 +20,6 @@ class CardsTable extends Table {
   IntColumn get repetitions => integer().withDefault(const Constant(0))();
 
   IntColumn get dueDate => integer()();
-  BoolColumn get syncPending => boolean().withDefault(const Constant(false))();
   TextColumn get insight => text().nullable()();
   IntColumn get deletedAt => integer().nullable()();
   IntColumn get createdAt => integer()();

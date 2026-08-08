@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/backend/backend_provider.dart';
 import '../../core/backend/contracts/ai_gateway.dart';
 import '../../core/backend/contracts/pdf_text_gateway.dart';
+import '../../core/backend/gateway_providers.dart';
 import '../../core/backend/models/backend_exception.dart';
 import '../../core/backend/models/generated_card.dart';
 import '../../core/constants/app_constants.dart';
@@ -14,10 +14,9 @@ import 'generate_text.dart';
 import 'generation_progress.dart';
 
 final generateRepositoryProvider = Provider<GenerateRepository>((ref) {
-  final backend = ref.watch(backendClientProvider);
   return GenerateRepository(
-    aiGateway: backend.ai,
-    pdfTextGateway: backend.pdfText,
+    aiGateway: ref.watch(aiGatewayProvider),
+    pdfTextGateway: ref.watch(pdfTextGatewayProvider),
     isOnline: ref.watch(connectivityServiceProvider).isOnline,
   );
 });
@@ -40,17 +39,8 @@ class GenerateRepository {
   final Future<bool> Function() _isOnline;
   final Future<void> Function(Duration) _wait;
 
-  /// Custo de quota por lote, espelhando `operationCost` das Edge Functions.
-  /// Serve só para avisar antes de gastar; quem cobra é o backend.
-  static const int _textBatchCost = 2;
-  static const int _pdfBatchCost = 3;
-
-  /// A extração é uma cobrança à parte dos lotes: ela roda uma vez por PDF, na
-  /// function `extract-pdf-text`, e custa o mesmo que um lote de PDF.
-  static const int _pdfExtractionCost = 3;
-
   /// Espera antes de repetir um lote barrado por excesso de requisições. O
-  /// limite do backend é por minuto, então a janela seguinte abre logo.
+  /// limite da DeepSeek é por minuto, então a janela seguinte abre logo.
   static const Duration _rateLimitBackoff = Duration(seconds: 11);
 
   Future<GenerationResult> generateFromText({
@@ -65,7 +55,6 @@ class GenerateRepository {
     _validateText(trimmed);
 
     final batches = computeBatchSizes(quantity);
-    await _ensureQuotaFor(batches: batches.length, fromPdf: false);
 
     return _runBatches(
       deckId: deckId,
@@ -89,7 +78,6 @@ class GenerateRepository {
     _validatePdf(fileName: fileName, bytes: bytes);
 
     final batches = computeBatchSizes(quantity);
-    await _ensureQuotaFor(batches: batches.length, fromPdf: true);
 
     onProgress?.call(
       GenerateProgress(
@@ -102,8 +90,7 @@ class GenerateRepository {
     );
 
     // A extração acontece uma vez só: o texto alimenta todos os lotes, então
-    // um PDF de 100 páginas é lido uma vez, não uma vez por lote. Onde ela
-    // roda — servidor ou aparelho — é problema do gateway.
+    // um PDF de 100 páginas é lido uma vez, não uma vez por lote.
     final extraction = await _pdfTextGateway.extractText(
       fileName: fileName,
       bytes: bytes,
@@ -233,39 +220,6 @@ class GenerateRepository {
 
   String _normalizeFront(String front) =>
       front.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
-
-  /// Avisa antes de começar quando os créditos não cobrem o pedido inteiro.
-  ///
-  /// Sem isto o usuário descobre no meio: paga os primeiros lotes e recebe
-  /// metade dos cards que pediu.
-  Future<void> _ensureQuotaFor({
-    required int batches,
-    required bool fromPdf,
-  }) async {
-    final needed =
-        batches * (fromPdf ? _pdfBatchCost : _textBatchCost) +
-        (fromPdf ? _pdfExtractionCost : 0);
-
-    final int available;
-    try {
-      final status = await _aiGateway.fetchQuotaStatus();
-      available = status.quota - status.used;
-    } catch (_) {
-      // A checagem é cortesia: quem cobra de verdade é o backend, então uma
-      // falha aqui não pode impedir uma geração que ia funcionar.
-      return;
-    }
-
-    if (available < needed) {
-      throw BackendException(
-        GenerateText.insufficientCredits(
-          needed: needed,
-          available: available < 0 ? 0 : available,
-        ),
-        code: BackendException.codeQuotaExceeded,
-      );
-    }
-  }
 
   Future<void> _ensureOnline() async {
     if (!await _isOnline()) {

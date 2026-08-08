@@ -106,21 +106,6 @@ class $DecksTableTable extends DecksTable
     requiredDuringInsert: false,
     defaultValue: const Constant('intermediário'),
   );
-  static const VerificationMeta _syncPendingMeta = const VerificationMeta(
-    'syncPending',
-  );
-  @override
-  late final GeneratedColumn<bool> syncPending = GeneratedColumn<bool>(
-    'sync_pending',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("sync_pending" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
   );
@@ -165,7 +150,6 @@ class $DecksTableTable extends DecksTable
     agentTemplate,
     agentLanguage,
     agentLevel,
-    syncPending,
     deletedAt,
     createdAt,
     updatedAt,
@@ -251,15 +235,6 @@ class $DecksTableTable extends DecksTable
         agentLevel.isAcceptableOrUnknown(data['agent_level']!, _agentLevelMeta),
       );
     }
-    if (data.containsKey('sync_pending')) {
-      context.handle(
-        _syncPendingMeta,
-        syncPending.isAcceptableOrUnknown(
-          data['sync_pending']!,
-          _syncPendingMeta,
-        ),
-      );
-    }
     if (data.containsKey('deleted_at')) {
       context.handle(
         _deletedAtMeta,
@@ -327,10 +302,6 @@ class $DecksTableTable extends DecksTable
         DriftSqlType.string,
         data['${effectivePrefix}agent_level'],
       )!,
-      syncPending: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}sync_pending'],
-      )!,
       deletedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}deleted_at'],
@@ -362,7 +333,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
   final String agentTemplate;
   final String agentLanguage;
   final String agentLevel;
-  final bool syncPending;
   final int? deletedAt;
   final int createdAt;
   final int updatedAt;
@@ -376,7 +346,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
     required this.agentTemplate,
     required this.agentLanguage,
     required this.agentLevel,
-    required this.syncPending,
     this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -397,7 +366,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
     map['agent_template'] = Variable<String>(agentTemplate);
     map['agent_language'] = Variable<String>(agentLanguage);
     map['agent_level'] = Variable<String>(agentLevel);
-    map['sync_pending'] = Variable<bool>(syncPending);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<int>(deletedAt);
     }
@@ -421,7 +389,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
       agentTemplate: Value(agentTemplate),
       agentLanguage: Value(agentLanguage),
       agentLevel: Value(agentLevel),
-      syncPending: Value(syncPending),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
@@ -445,7 +412,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
       agentTemplate: serializer.fromJson<String>(json['agentTemplate']),
       agentLanguage: serializer.fromJson<String>(json['agentLanguage']),
       agentLevel: serializer.fromJson<String>(json['agentLevel']),
-      syncPending: serializer.fromJson<bool>(json['syncPending']),
       deletedAt: serializer.fromJson<int?>(json['deletedAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
@@ -464,7 +430,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
       'agentTemplate': serializer.toJson<String>(agentTemplate),
       'agentLanguage': serializer.toJson<String>(agentLanguage),
       'agentLevel': serializer.toJson<String>(agentLevel),
-      'syncPending': serializer.toJson<bool>(syncPending),
       'deletedAt': serializer.toJson<int?>(deletedAt),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
@@ -481,7 +446,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
     String? agentTemplate,
     String? agentLanguage,
     String? agentLevel,
-    bool? syncPending,
     Value<int?> deletedAt = const Value.absent(),
     int? createdAt,
     int? updatedAt,
@@ -495,7 +459,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
     agentTemplate: agentTemplate ?? this.agentTemplate,
     agentLanguage: agentLanguage ?? this.agentLanguage,
     agentLevel: agentLevel ?? this.agentLevel,
-    syncPending: syncPending ?? this.syncPending,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -521,9 +484,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
       agentLevel: data.agentLevel.present
           ? data.agentLevel.value
           : this.agentLevel,
-      syncPending: data.syncPending.present
-          ? data.syncPending.value
-          : this.syncPending,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -542,7 +502,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
           ..write('agentTemplate: $agentTemplate, ')
           ..write('agentLanguage: $agentLanguage, ')
           ..write('agentLevel: $agentLevel, ')
-          ..write('syncPending: $syncPending, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -561,7 +520,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
     agentTemplate,
     agentLanguage,
     agentLevel,
-    syncPending,
     deletedAt,
     createdAt,
     updatedAt,
@@ -579,7 +537,6 @@ class LocalDeck extends DataClass implements Insertable<LocalDeck> {
           other.agentTemplate == this.agentTemplate &&
           other.agentLanguage == this.agentLanguage &&
           other.agentLevel == this.agentLevel &&
-          other.syncPending == this.syncPending &&
           other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -595,7 +552,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
   final Value<String> agentTemplate;
   final Value<String> agentLanguage;
   final Value<String> agentLevel;
-  final Value<bool> syncPending;
   final Value<int?> deletedAt;
   final Value<int> createdAt;
   final Value<int> updatedAt;
@@ -610,7 +566,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
     this.agentTemplate = const Value.absent(),
     this.agentLanguage = const Value.absent(),
     this.agentLevel = const Value.absent(),
-    this.syncPending = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -626,7 +581,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
     this.agentTemplate = const Value.absent(),
     this.agentLanguage = const Value.absent(),
     this.agentLevel = const Value.absent(),
-    this.syncPending = const Value.absent(),
     this.deletedAt = const Value.absent(),
     required int createdAt,
     required int updatedAt,
@@ -646,7 +600,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
     Expression<String>? agentTemplate,
     Expression<String>? agentLanguage,
     Expression<String>? agentLevel,
-    Expression<bool>? syncPending,
     Expression<int>? deletedAt,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -662,7 +615,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
       if (agentTemplate != null) 'agent_template': agentTemplate,
       if (agentLanguage != null) 'agent_language': agentLanguage,
       if (agentLevel != null) 'agent_level': agentLevel,
-      if (syncPending != null) 'sync_pending': syncPending,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -680,7 +632,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
     Value<String>? agentTemplate,
     Value<String>? agentLanguage,
     Value<String>? agentLevel,
-    Value<bool>? syncPending,
     Value<int?>? deletedAt,
     Value<int>? createdAt,
     Value<int>? updatedAt,
@@ -696,7 +647,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
       agentTemplate: agentTemplate ?? this.agentTemplate,
       agentLanguage: agentLanguage ?? this.agentLanguage,
       agentLevel: agentLevel ?? this.agentLevel,
-      syncPending: syncPending ?? this.syncPending,
       deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -734,9 +684,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
     if (agentLevel.present) {
       map['agent_level'] = Variable<String>(agentLevel.value);
     }
-    if (syncPending.present) {
-      map['sync_pending'] = Variable<bool>(syncPending.value);
-    }
     if (deletedAt.present) {
       map['deleted_at'] = Variable<int>(deletedAt.value);
     }
@@ -764,7 +711,6 @@ class DecksTableCompanion extends UpdateCompanion<LocalDeck> {
           ..write('agentTemplate: $agentTemplate, ')
           ..write('agentLanguage: $agentLanguage, ')
           ..write('agentLevel: $agentLevel, ')
-          ..write('syncPending: $syncPending, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -863,21 +809,6 @@ class $CardsTableTable extends CardsTable
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _syncPendingMeta = const VerificationMeta(
-    'syncPending',
-  );
-  @override
-  late final GeneratedColumn<bool> syncPending = GeneratedColumn<bool>(
-    'sync_pending',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("sync_pending" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _insightMeta = const VerificationMeta(
     'insight',
   );
@@ -932,7 +863,6 @@ class $CardsTableTable extends CardsTable
     intervalDays,
     repetitions,
     dueDate,
-    syncPending,
     insight,
     deletedAt,
     createdAt,
@@ -1011,15 +941,6 @@ class $CardsTableTable extends CardsTable
     } else if (isInserting) {
       context.missing(_dueDateMeta);
     }
-    if (data.containsKey('sync_pending')) {
-      context.handle(
-        _syncPendingMeta,
-        syncPending.isAcceptableOrUnknown(
-          data['sync_pending']!,
-          _syncPendingMeta,
-        ),
-      );
-    }
     if (data.containsKey('insight')) {
       context.handle(
         _insightMeta,
@@ -1089,10 +1010,6 @@ class $CardsTableTable extends CardsTable
         DriftSqlType.int,
         data['${effectivePrefix}due_date'],
       )!,
-      syncPending: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}sync_pending'],
-      )!,
       insight: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}insight'],
@@ -1133,7 +1050,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
   /// `repetitions == 0`.
   final int repetitions;
   final int dueDate;
-  final bool syncPending;
   final String? insight;
   final int? deletedAt;
   final int createdAt;
@@ -1147,7 +1063,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     required this.intervalDays,
     required this.repetitions,
     required this.dueDate,
-    required this.syncPending,
     this.insight,
     this.deletedAt,
     required this.createdAt,
@@ -1164,7 +1079,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     map['interval_days'] = Variable<int>(intervalDays);
     map['repetitions'] = Variable<int>(repetitions);
     map['due_date'] = Variable<int>(dueDate);
-    map['sync_pending'] = Variable<bool>(syncPending);
     if (!nullToAbsent || insight != null) {
       map['insight'] = Variable<String>(insight);
     }
@@ -1186,7 +1100,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       intervalDays: Value(intervalDays),
       repetitions: Value(repetitions),
       dueDate: Value(dueDate),
-      syncPending: Value(syncPending),
       insight: insight == null && nullToAbsent
           ? const Value.absent()
           : Value(insight),
@@ -1212,7 +1125,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       intervalDays: serializer.fromJson<int>(json['intervalDays']),
       repetitions: serializer.fromJson<int>(json['repetitions']),
       dueDate: serializer.fromJson<int>(json['dueDate']),
-      syncPending: serializer.fromJson<bool>(json['syncPending']),
       insight: serializer.fromJson<String?>(json['insight']),
       deletedAt: serializer.fromJson<int?>(json['deletedAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -1231,7 +1143,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       'intervalDays': serializer.toJson<int>(intervalDays),
       'repetitions': serializer.toJson<int>(repetitions),
       'dueDate': serializer.toJson<int>(dueDate),
-      'syncPending': serializer.toJson<bool>(syncPending),
       'insight': serializer.toJson<String?>(insight),
       'deletedAt': serializer.toJson<int?>(deletedAt),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -1248,7 +1159,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     int? intervalDays,
     int? repetitions,
     int? dueDate,
-    bool? syncPending,
     Value<String?> insight = const Value.absent(),
     Value<int?> deletedAt = const Value.absent(),
     int? createdAt,
@@ -1262,7 +1172,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     intervalDays: intervalDays ?? this.intervalDays,
     repetitions: repetitions ?? this.repetitions,
     dueDate: dueDate ?? this.dueDate,
-    syncPending: syncPending ?? this.syncPending,
     insight: insight.present ? insight.value : this.insight,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     createdAt: createdAt ?? this.createdAt,
@@ -1284,9 +1193,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           ? data.repetitions.value
           : this.repetitions,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
-      syncPending: data.syncPending.present
-          ? data.syncPending.value
-          : this.syncPending,
       insight: data.insight.present ? data.insight.value : this.insight,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1305,7 +1211,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           ..write('intervalDays: $intervalDays, ')
           ..write('repetitions: $repetitions, ')
           ..write('dueDate: $dueDate, ')
-          ..write('syncPending: $syncPending, ')
           ..write('insight: $insight, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
@@ -1324,7 +1229,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     intervalDays,
     repetitions,
     dueDate,
-    syncPending,
     insight,
     deletedAt,
     createdAt,
@@ -1342,7 +1246,6 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           other.intervalDays == this.intervalDays &&
           other.repetitions == this.repetitions &&
           other.dueDate == this.dueDate &&
-          other.syncPending == this.syncPending &&
           other.insight == this.insight &&
           other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
@@ -1358,7 +1261,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
   final Value<int> intervalDays;
   final Value<int> repetitions;
   final Value<int> dueDate;
-  final Value<bool> syncPending;
   final Value<String?> insight;
   final Value<int?> deletedAt;
   final Value<int> createdAt;
@@ -1373,7 +1275,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     this.intervalDays = const Value.absent(),
     this.repetitions = const Value.absent(),
     this.dueDate = const Value.absent(),
-    this.syncPending = const Value.absent(),
     this.insight = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1389,7 +1290,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     this.intervalDays = const Value.absent(),
     this.repetitions = const Value.absent(),
     required int dueDate,
-    this.syncPending = const Value.absent(),
     this.insight = const Value.absent(),
     this.deletedAt = const Value.absent(),
     required int createdAt,
@@ -1411,7 +1311,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     Expression<int>? intervalDays,
     Expression<int>? repetitions,
     Expression<int>? dueDate,
-    Expression<bool>? syncPending,
     Expression<String>? insight,
     Expression<int>? deletedAt,
     Expression<int>? createdAt,
@@ -1427,7 +1326,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
       if (intervalDays != null) 'interval_days': intervalDays,
       if (repetitions != null) 'repetitions': repetitions,
       if (dueDate != null) 'due_date': dueDate,
-      if (syncPending != null) 'sync_pending': syncPending,
       if (insight != null) 'insight': insight,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -1445,7 +1343,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     Value<int>? intervalDays,
     Value<int>? repetitions,
     Value<int>? dueDate,
-    Value<bool>? syncPending,
     Value<String?>? insight,
     Value<int?>? deletedAt,
     Value<int>? createdAt,
@@ -1461,7 +1358,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
       intervalDays: intervalDays ?? this.intervalDays,
       repetitions: repetitions ?? this.repetitions,
       dueDate: dueDate ?? this.dueDate,
-      syncPending: syncPending ?? this.syncPending,
       insight: insight ?? this.insight,
       deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
@@ -1497,9 +1393,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     if (dueDate.present) {
       map['due_date'] = Variable<int>(dueDate.value);
     }
-    if (syncPending.present) {
-      map['sync_pending'] = Variable<bool>(syncPending.value);
-    }
     if (insight.present) {
       map['insight'] = Variable<String>(insight.value);
     }
@@ -1529,7 +1422,6 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
           ..write('intervalDays: $intervalDays, ')
           ..write('repetitions: $repetitions, ')
           ..write('dueDate: $dueDate, ')
-          ..write('syncPending: $syncPending, ')
           ..write('insight: $insight, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
@@ -1637,21 +1529,6 @@ class $ReviewsTableTable extends ReviewsTable
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _syncPendingMeta = const VerificationMeta(
-    'syncPending',
-  );
-  @override
-  late final GeneratedColumn<bool> syncPending = GeneratedColumn<bool>(
-    'sync_pending',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("sync_pending" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1663,7 +1540,6 @@ class $ReviewsTableTable extends ReviewsTable
     intervalBefore,
     intervalAfter,
     reviewedAt,
-    syncPending,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1752,15 +1628,6 @@ class $ReviewsTableTable extends ReviewsTable
     } else if (isInserting) {
       context.missing(_reviewedAtMeta);
     }
-    if (data.containsKey('sync_pending')) {
-      context.handle(
-        _syncPendingMeta,
-        syncPending.isAcceptableOrUnknown(
-          data['sync_pending']!,
-          _syncPendingMeta,
-        ),
-      );
-    }
     return context;
   }
 
@@ -1806,10 +1673,6 @@ class $ReviewsTableTable extends ReviewsTable
         DriftSqlType.int,
         data['${effectivePrefix}reviewed_at'],
       )!,
-      syncPending: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}sync_pending'],
-      )!,
     );
   }
 
@@ -1836,7 +1699,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
 
   /// Epoch ms.
   final int reviewedAt;
-  final bool syncPending;
   const LocalReview({
     required this.id,
     required this.cardId,
@@ -1847,7 +1709,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     required this.intervalBefore,
     required this.intervalAfter,
     required this.reviewedAt,
-    required this.syncPending,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1861,7 +1722,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     map['interval_before'] = Variable<int>(intervalBefore);
     map['interval_after'] = Variable<int>(intervalAfter);
     map['reviewed_at'] = Variable<int>(reviewedAt);
-    map['sync_pending'] = Variable<bool>(syncPending);
     return map;
   }
 
@@ -1876,7 +1736,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       intervalBefore: Value(intervalBefore),
       intervalAfter: Value(intervalAfter),
       reviewedAt: Value(reviewedAt),
-      syncPending: Value(syncPending),
     );
   }
 
@@ -1895,7 +1754,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       intervalBefore: serializer.fromJson<int>(json['intervalBefore']),
       intervalAfter: serializer.fromJson<int>(json['intervalAfter']),
       reviewedAt: serializer.fromJson<int>(json['reviewedAt']),
-      syncPending: serializer.fromJson<bool>(json['syncPending']),
     );
   }
   @override
@@ -1911,7 +1769,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       'intervalBefore': serializer.toJson<int>(intervalBefore),
       'intervalAfter': serializer.toJson<int>(intervalAfter),
       'reviewedAt': serializer.toJson<int>(reviewedAt),
-      'syncPending': serializer.toJson<bool>(syncPending),
     };
   }
 
@@ -1925,7 +1782,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     int? intervalBefore,
     int? intervalAfter,
     int? reviewedAt,
-    bool? syncPending,
   }) => LocalReview(
     id: id ?? this.id,
     cardId: cardId ?? this.cardId,
@@ -1936,7 +1792,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     intervalBefore: intervalBefore ?? this.intervalBefore,
     intervalAfter: intervalAfter ?? this.intervalAfter,
     reviewedAt: reviewedAt ?? this.reviewedAt,
-    syncPending: syncPending ?? this.syncPending,
   );
   LocalReview copyWithCompanion(ReviewsTableCompanion data) {
     return LocalReview(
@@ -1957,9 +1812,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       reviewedAt: data.reviewedAt.present
           ? data.reviewedAt.value
           : this.reviewedAt,
-      syncPending: data.syncPending.present
-          ? data.syncPending.value
-          : this.syncPending,
     );
   }
 
@@ -1974,8 +1826,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
           ..write('easeAfter: $easeAfter, ')
           ..write('intervalBefore: $intervalBefore, ')
           ..write('intervalAfter: $intervalAfter, ')
-          ..write('reviewedAt: $reviewedAt, ')
-          ..write('syncPending: $syncPending')
+          ..write('reviewedAt: $reviewedAt')
           ..write(')'))
         .toString();
   }
@@ -1991,7 +1842,6 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     intervalBefore,
     intervalAfter,
     reviewedAt,
-    syncPending,
   );
   @override
   bool operator ==(Object other) =>
@@ -2005,8 +1855,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
           other.easeAfter == this.easeAfter &&
           other.intervalBefore == this.intervalBefore &&
           other.intervalAfter == this.intervalAfter &&
-          other.reviewedAt == this.reviewedAt &&
-          other.syncPending == this.syncPending);
+          other.reviewedAt == this.reviewedAt);
 }
 
 class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
@@ -2019,7 +1868,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
   final Value<int> intervalBefore;
   final Value<int> intervalAfter;
   final Value<int> reviewedAt;
-  final Value<bool> syncPending;
   final Value<int> rowid;
   const ReviewsTableCompanion({
     this.id = const Value.absent(),
@@ -2031,7 +1879,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     this.intervalBefore = const Value.absent(),
     this.intervalAfter = const Value.absent(),
     this.reviewedAt = const Value.absent(),
-    this.syncPending = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ReviewsTableCompanion.insert({
@@ -2044,7 +1891,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     required int intervalBefore,
     required int intervalAfter,
     required int reviewedAt,
-    this.syncPending = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        cardId = Value(cardId),
@@ -2065,7 +1911,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     Expression<int>? intervalBefore,
     Expression<int>? intervalAfter,
     Expression<int>? reviewedAt,
-    Expression<bool>? syncPending,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2078,7 +1923,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
       if (intervalBefore != null) 'interval_before': intervalBefore,
       if (intervalAfter != null) 'interval_after': intervalAfter,
       if (reviewedAt != null) 'reviewed_at': reviewedAt,
-      if (syncPending != null) 'sync_pending': syncPending,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2093,7 +1937,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     Value<int>? intervalBefore,
     Value<int>? intervalAfter,
     Value<int>? reviewedAt,
-    Value<bool>? syncPending,
     Value<int>? rowid,
   }) {
     return ReviewsTableCompanion(
@@ -2106,7 +1949,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
       intervalBefore: intervalBefore ?? this.intervalBefore,
       intervalAfter: intervalAfter ?? this.intervalAfter,
       reviewedAt: reviewedAt ?? this.reviewedAt,
-      syncPending: syncPending ?? this.syncPending,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2141,9 +1983,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     if (reviewedAt.present) {
       map['reviewed_at'] = Variable<int>(reviewedAt.value);
     }
-    if (syncPending.present) {
-      map['sync_pending'] = Variable<bool>(syncPending.value);
-    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2162,7 +2001,6 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
           ..write('intervalBefore: $intervalBefore, ')
           ..write('intervalAfter: $intervalAfter, ')
           ..write('reviewedAt: $reviewedAt, ')
-          ..write('syncPending: $syncPending, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2318,7 +2156,7 @@ class LocalChatMessage extends DataClass
   final String id;
   final String deckId;
 
-  /// Nome do valor de `BackendChatRole`: `user` ou `assistant`.
+  /// Nome do valor de `ChatRole`: `user` ou `assistant`.
   final String role;
   final String content;
 
@@ -2563,7 +2401,6 @@ typedef $$DecksTableTableCreateCompanionBuilder =
       Value<String> agentTemplate,
       Value<String> agentLanguage,
       Value<String> agentLevel,
-      Value<bool> syncPending,
       Value<int?> deletedAt,
       required int createdAt,
       required int updatedAt,
@@ -2580,7 +2417,6 @@ typedef $$DecksTableTableUpdateCompanionBuilder =
       Value<String> agentTemplate,
       Value<String> agentLanguage,
       Value<String> agentLevel,
-      Value<bool> syncPending,
       Value<int?> deletedAt,
       Value<int> createdAt,
       Value<int> updatedAt,
@@ -2638,11 +2474,6 @@ class $$DecksTableTableFilterComposer
 
   ColumnFilters<String> get agentLevel => $composableBuilder(
     column: $table.agentLevel,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2716,11 +2547,6 @@ class $$DecksTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<int> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2783,11 +2609,6 @@ class $$DecksTableTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<int> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
@@ -2838,7 +2659,6 @@ class $$DecksTableTableTableManager
                 Value<String> agentTemplate = const Value.absent(),
                 Value<String> agentLanguage = const Value.absent(),
                 Value<String> agentLevel = const Value.absent(),
-                Value<bool> syncPending = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -2853,7 +2673,6 @@ class $$DecksTableTableTableManager
                 agentTemplate: agentTemplate,
                 agentLanguage: agentLanguage,
                 agentLevel: agentLevel,
-                syncPending: syncPending,
                 deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -2870,7 +2689,6 @@ class $$DecksTableTableTableManager
                 Value<String> agentTemplate = const Value.absent(),
                 Value<String> agentLanguage = const Value.absent(),
                 Value<String> agentLevel = const Value.absent(),
-                Value<bool> syncPending = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
@@ -2885,7 +2703,6 @@ class $$DecksTableTableTableManager
                 agentTemplate: agentTemplate,
                 agentLanguage: agentLanguage,
                 agentLevel: agentLevel,
-                syncPending: syncPending,
                 deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -2923,7 +2740,6 @@ typedef $$CardsTableTableCreateCompanionBuilder =
       Value<int> intervalDays,
       Value<int> repetitions,
       required int dueDate,
-      Value<bool> syncPending,
       Value<String?> insight,
       Value<int?> deletedAt,
       required int createdAt,
@@ -2940,7 +2756,6 @@ typedef $$CardsTableTableUpdateCompanionBuilder =
       Value<int> intervalDays,
       Value<int> repetitions,
       Value<int> dueDate,
-      Value<bool> syncPending,
       Value<String?> insight,
       Value<int?> deletedAt,
       Value<int> createdAt,
@@ -2994,11 +2809,6 @@ class $$CardsTableTableFilterComposer
 
   ColumnFilters<int> get dueDate => $composableBuilder(
     column: $table.dueDate,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3072,11 +2882,6 @@ class $$CardsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get insight => $composableBuilder(
     column: $table.insight,
     builder: (column) => ColumnOrderings(column),
@@ -3137,11 +2942,6 @@ class $$CardsTableTableAnnotationComposer
   GeneratedColumn<int> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
-  GeneratedColumn<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get insight =>
       $composableBuilder(column: $table.insight, builder: (column) => column);
 
@@ -3194,7 +2994,6 @@ class $$CardsTableTableTableManager
                 Value<int> intervalDays = const Value.absent(),
                 Value<int> repetitions = const Value.absent(),
                 Value<int> dueDate = const Value.absent(),
-                Value<bool> syncPending = const Value.absent(),
                 Value<String?> insight = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -3209,7 +3008,6 @@ class $$CardsTableTableTableManager
                 intervalDays: intervalDays,
                 repetitions: repetitions,
                 dueDate: dueDate,
-                syncPending: syncPending,
                 insight: insight,
                 deletedAt: deletedAt,
                 createdAt: createdAt,
@@ -3226,7 +3024,6 @@ class $$CardsTableTableTableManager
                 Value<int> intervalDays = const Value.absent(),
                 Value<int> repetitions = const Value.absent(),
                 required int dueDate,
-                Value<bool> syncPending = const Value.absent(),
                 Value<String?> insight = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
                 required int createdAt,
@@ -3241,7 +3038,6 @@ class $$CardsTableTableTableManager
                 intervalDays: intervalDays,
                 repetitions: repetitions,
                 dueDate: dueDate,
-                syncPending: syncPending,
                 insight: insight,
                 deletedAt: deletedAt,
                 createdAt: createdAt,
@@ -3281,7 +3077,6 @@ typedef $$ReviewsTableTableCreateCompanionBuilder =
       required int intervalBefore,
       required int intervalAfter,
       required int reviewedAt,
-      Value<bool> syncPending,
       Value<int> rowid,
     });
 typedef $$ReviewsTableTableUpdateCompanionBuilder =
@@ -3295,7 +3090,6 @@ typedef $$ReviewsTableTableUpdateCompanionBuilder =
       Value<int> intervalBefore,
       Value<int> intervalAfter,
       Value<int> reviewedAt,
-      Value<bool> syncPending,
       Value<int> rowid,
     });
 
@@ -3350,11 +3144,6 @@ class $$ReviewsTableTableFilterComposer
 
   ColumnFilters<int> get reviewedAt => $composableBuilder(
     column: $table.reviewedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3412,11 +3201,6 @@ class $$ReviewsTableTableOrderingComposer
     column: $table.reviewedAt,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$ReviewsTableTableAnnotationComposer
@@ -3462,11 +3246,6 @@ class $$ReviewsTableTableAnnotationComposer
     column: $table.reviewedAt,
     builder: (column) => column,
   );
-
-  GeneratedColumn<bool> get syncPending => $composableBuilder(
-    column: $table.syncPending,
-    builder: (column) => column,
-  );
 }
 
 class $$ReviewsTableTableTableManager
@@ -3509,7 +3288,6 @@ class $$ReviewsTableTableTableManager
                 Value<int> intervalBefore = const Value.absent(),
                 Value<int> intervalAfter = const Value.absent(),
                 Value<int> reviewedAt = const Value.absent(),
-                Value<bool> syncPending = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ReviewsTableCompanion(
                 id: id,
@@ -3521,7 +3299,6 @@ class $$ReviewsTableTableTableManager
                 intervalBefore: intervalBefore,
                 intervalAfter: intervalAfter,
                 reviewedAt: reviewedAt,
-                syncPending: syncPending,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3535,7 +3312,6 @@ class $$ReviewsTableTableTableManager
                 required int intervalBefore,
                 required int intervalAfter,
                 required int reviewedAt,
-                Value<bool> syncPending = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ReviewsTableCompanion.insert(
                 id: id,
@@ -3547,7 +3323,6 @@ class $$ReviewsTableTableTableManager
                 intervalBefore: intervalBefore,
                 intervalAfter: intervalAfter,
                 reviewedAt: reviewedAt,
-                syncPending: syncPending,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

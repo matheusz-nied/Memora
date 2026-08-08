@@ -301,9 +301,6 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
 
   String _readableError(Object error) {
     if (error is BackendException) {
-      if (error.isQuotaExceeded) {
-        return error.message;
-      }
       if (error.isRateLimited) {
         return GenerateText.rateLimited;
       }
