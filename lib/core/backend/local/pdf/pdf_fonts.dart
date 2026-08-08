@@ -404,12 +404,29 @@ class PdfFont {
 
       // Destino único: incrementa a última unidade a cada código, que é o que
       // a especificação define.
-      final units = _utf16Units(target.bytes);
+      //
+      // A base é lida **sem** descartar `U+0000`, diferente de [_utf16Units]:
+      // aqui o zero não é um glifo sem correspondente, é o começo de uma
+      // contagem. `<0000> <FFFF> <0000>` é a faixa identidade — o dompdf gera
+      // exatamente isso — e só o primeiro código dela é NUL; os outros 65.535
+      // são texto legítimo. Descartar a base pelo zero jogava fora o documento
+      // inteiro.
+      final units = _rawUtf16Units(target.bytes);
       if (units.isEmpty) continue;
 
       for (var code = from; code <= to; code++) {
         final shifted = List<int>.of(units);
-        shifted[shifted.length - 1] += code - from;
+        final last = shifted.length - 1;
+        shifted[last] += code - from;
+
+        // O incremento é da última unidade, então estourar 16 bits significa
+        // faixa maior do que a base comporta: o resto dela não é confiável.
+        if (shifted[last] > 0xFFFF) break;
+
+        // `U+0000` continua sem significar nada — mas agora sai um código de
+        // cada vez, não a faixa toda.
+        if (shifted.length == 1 && shifted.first == 0) continue;
+
         into.map[code] = String.fromCharCodes(shifted);
       }
     }
@@ -426,14 +443,21 @@ class PdfFont {
   ///
   /// Descarta `U+0000`: fonte com subconjunto mal gerado mapeia glifo sem
   /// correspondente para zero, e deixar isso passar enche o texto de NUL.
+  ///
+  /// Use [_rawUtf16Units] onde o zero é um valor, e não um glifo faltando —
+  /// é o caso da base de um `bfrange`.
   static List<int> _utf16Units(Uint8List bytes) {
+    return _rawUtf16Units(bytes).where((unit) => unit != 0).toList();
+  }
+
+  /// O mesmo, preservando `U+0000`.
+  static List<int> _rawUtf16Units(Uint8List bytes) {
     final units = <int>[];
     for (var i = 0; i + 1 < bytes.length; i += 2) {
-      final unit = (bytes[i] << 8) | bytes[i + 1];
-      if (unit != 0) units.add(unit);
+      units.add((bytes[i] << 8) | bytes[i + 1]);
     }
     // Byte solto no fim: destino de um byte só, que alguns geradores emitem.
-    if (bytes.length == 1 && bytes[0] != 0) units.add(bytes[0]);
+    if (bytes.length == 1) units.add(bytes[0]);
     return units;
   }
 

@@ -156,6 +156,47 @@ void main() {
     expect(result.text, 'CAS');
   });
 
+  test('aceita /ToUnicode com a faixa identidade completa', () {
+    // O dompdf (e outros geradores PHP) mapeia a fonte inteira com uma única
+    // faixa `<0000> <FFFF> <0000>`, e escreve os códigos como string literal,
+    // não hexadecimal. A base `<0000>` é o começo de uma contagem, não um
+    // glifo sem correspondente: descartá-la pelo zero apagava o documento
+    // inteiro em silêncio, devolvendo "PDF sem texto selecionável".
+    const cmap =
+        '/CIDInit /ProcSet findresource begin\n'
+        '12 dict begin\nbegincmap\n'
+        '1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n'
+        '1 beginbfrange\n<0000> <FFFF> <0000>\nendbfrange\n'
+        'endcmap\nend\nend';
+
+    // Os códigos são UTF-16BE. Mantidos em ASCII de propósito: o byte alto
+    // fica em zero e o baixo abaixo de 0x80, então o `utf8.encode` do
+    // montador não altera nenhum byte.
+    final literal = StringBuffer('(');
+    for (final unit in 'Declaracao'.codeUnits) {
+      literal
+        ..writeCharCode(unit >> 8)
+        ..writeCharCode(unit & 0xFF);
+    }
+    literal.write(')');
+
+    final result = extractPdfText(
+      onePage(
+        'BT /F1 12 Tf 72 720 Td [$literal] TJ ET',
+        font:
+            '<< /Type /Font /Subtype /Type0 /BaseFont /DejaVuSans '
+            '/Encoding /Identity-H /ToUnicode 6 0 R '
+            '/DescendantFonts [<< /Type /Font /Subtype /CIDFontType2 '
+            '/BaseFont /DejaVuSans /DW 500 '
+            '/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) '
+            '/Supplement 0 >> >>] >>',
+        extraObjects: [streamObject('', cmap)],
+      ),
+    );
+
+    expect(result.text, 'Declaracao');
+  });
+
   test('aplica /Differences sobre a codificação base', () {
     final result = extractPdfText(
       onePage(
@@ -168,6 +209,23 @@ void main() {
     );
 
     expect(result.text, '•é');
+  });
+
+  test('conhece as ligaduras longas e a Latin Extended-A', () {
+    // Nome de glifo desconhecido não falha: cai na codificação base e devolve
+    // a letra errada. Sem `ffi`, "difficult" vira "di cult"; sem `rcaron`, um
+    // texto tcheco troca `ř` por `ł` sem que nada acuse.
+    final result = extractPdfText(
+      onePage(
+        'BT /F1 12 Tf 72 720 Td (ABCD) Tj ET',
+        font:
+            '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica '
+            '/Encoding << /BaseEncoding /WinAnsiEncoding '
+            '/Differences [65 /ffi /ffl /rcaron /uring] >> >>',
+      ),
+    );
+
+    expect(result.text, 'ﬃﬄřů');
   });
 
   test('lê o texto que está dentro de um form XObject', () {

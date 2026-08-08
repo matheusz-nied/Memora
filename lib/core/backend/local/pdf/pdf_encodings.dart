@@ -52,12 +52,47 @@ const String _glyphList =
     'scaron:161 Ydieresis:178 Zcaron:17D zcaron:17E florin:192 '
     'circumflex:2C6 caron:2C7 breve:2D8 dotaccent:2D9 ring:2DA ogonek:2DB '
     'tilde:2DC hungarumlaut:2DD '
+    // Latin Extended-A completo. Não é exagero: sem estes nomes, um PDF em
+    // tcheco, polonês, húngaro, turco ou romeno não falha — ele cai na
+    // codificação base e devolve a letra errada em silêncio (`ř` vira `ł`),
+    // que é o pior resultado possível para quem vai gerar cards.
+    'Amacron:100 amacron:101 Abreve:102 abreve:103 Aogonek:104 aogonek:105 '
+    'Cacute:106 cacute:107 Ccircumflex:108 ccircumflex:109 '
+    'Cdotaccent:10A cdotaccent:10B Ccaron:10C ccaron:10D '
+    'Dcaron:10E dcaron:10F Dcroat:110 dcroat:111 '
+    'Emacron:112 emacron:113 Ebreve:114 ebreve:115 '
+    'Edotaccent:116 edotaccent:117 Eogonek:118 eogonek:119 '
+    'Ecaron:11A ecaron:11B Gcircumflex:11C gcircumflex:11D '
+    'Gbreve:11E gbreve:11F Gdotaccent:120 gdotaccent:121 '
+    'Gcommaaccent:122 gcommaaccent:123 Hcircumflex:124 hcircumflex:125 '
+    'Hbar:126 hbar:127 Itilde:128 itilde:129 Imacron:12A imacron:12B '
+    'Ibreve:12C ibreve:12D Iogonek:12E iogonek:12F Idotaccent:130 '
+    'IJ:132 ij:133 Jcircumflex:134 jcircumflex:135 '
+    'Kcommaaccent:136 kcommaaccent:137 kgreenlandic:138 '
+    'Lacute:139 lacute:13A Lcommaaccent:13B lcommaaccent:13C '
+    'Lcaron:13D lcaron:13E Ldot:13F ldot:140 '
+    'Nacute:143 nacute:144 Ncommaaccent:145 ncommaaccent:146 '
+    'Ncaron:147 ncaron:148 napostrophe:149 Eng:14A eng:14B '
+    'Omacron:14C omacron:14D Obreve:14E obreve:14F '
+    'Ohungarumlaut:150 ohungarumlaut:151 '
+    'Racute:154 racute:155 Rcommaaccent:156 rcommaaccent:157 '
+    'Rcaron:158 rcaron:159 Sacute:15A sacute:15B '
+    'Scircumflex:15C scircumflex:15D Scedilla:15E scedilla:15F '
+    'Tcommaaccent:162 tcommaaccent:163 Tcaron:164 tcaron:165 '
+    'Tbar:166 tbar:167 Utilde:168 utilde:169 Umacron:16A umacron:16B '
+    'Ubreve:16C ubreve:16D Uring:16E uring:16F '
+    'Uhungarumlaut:170 uhungarumlaut:171 Uogonek:172 uogonek:173 '
+    'Wcircumflex:174 wcircumflex:175 Ycircumflex:176 ycircumflex:177 '
+    'Zacute:179 zacute:17A Zdotaccent:17B zdotaccent:17C '
     // pontuação tipográfica
     'endash:2013 emdash:2014 quoteleft:2018 quoteright:2019 '
     'quotesinglbase:201A quotedblleft:201C quotedblright:201D '
     'quotedblbase:201E dagger:2020 daggerdbl:2021 bullet:2022 '
     'ellipsis:2026 perthousand:2030 guilsinglleft:2039 guilsinglright:203A '
-    'fraction:2044 Euro:20AC trademark:2122 minus:2212 fi:FB01 fl:FB02 '
+    'fraction:2044 Euro:20AC trademark:2122 minus:2212 '
+    // Ligaduras. O LaTeX nomeia as três longas por extenso, e sem elas
+    // "difficult" sai "di cult" — o buraco não aparece como erro.
+    'ff:FB00 fi:FB01 fl:FB02 ffi:FB03 ffl:FB04 '
     // símbolos que aparecem em texto técnico
     'Delta:394 Omega:3A9 pi:3C0 partialdiff:2202 product:220F '
     'summation:2211 radical:221A infinity:221E integral:222B '
