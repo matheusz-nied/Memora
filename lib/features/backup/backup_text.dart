@@ -10,6 +10,11 @@ class BackupText {
   static const String profileHint =
       'Exporte ou restaure seus decks, cards e histórico.';
 
+  static const String reminderTitle = 'Faça um backup';
+  static const String reminderMessage =
+      'Seu histórico de estudo existe só neste aparelho. Exportar leva alguns '
+      'segundos e é o que permite recuperar tudo se você trocar de celular.';
+
   static const String exportTitle = 'Exportar';
   static const String exportDescription =
       'Gera um arquivo .json com tudo o que você tem hoje.';

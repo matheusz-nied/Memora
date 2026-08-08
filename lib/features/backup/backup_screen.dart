@@ -8,6 +8,7 @@ import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/widgets/app_button.dart';
 import 'backup_data.dart';
+import 'backup_reminder.dart';
 import 'backup_repository.dart';
 import 'backup_text.dart';
 
@@ -79,6 +80,12 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         // isto ele devolve um caminho e não escreve nada.
         bytes: utf8.encode(content),
       );
+
+      if (path != null) {
+        // Só conta como backup feito quando o arquivo foi realmente gravado:
+        // cancelar o seletor não pode zerar o lembrete.
+        await ref.read(backupReminderProvider.notifier).markExported(at: now);
+      }
 
       _report(
         path == null

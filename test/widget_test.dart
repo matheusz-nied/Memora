@@ -37,6 +37,8 @@ import 'package:memora/features/decks/deck_model.dart';
 import 'package:memora/features/decks/deck_repository.dart';
 import 'package:memora/features/decks/home_screen.dart';
 import 'package:memora/features/decks/deck_text.dart';
+import 'package:memora/features/legal/legal_text.dart';
+import 'package:memora/features/legal/privacy_consent.dart';
 import 'package:memora/features/onboarding/onboarding_page_model.dart';
 import 'package:memora/features/settings/api_key_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,6 +52,50 @@ void main() {
 
     expect(find.text(OnboardingText.pages.first.title), findsOneWidget);
   });
+
+  testWidgets(
+    'no modo local concluir o onboarding registra o aceite da política e '
+    'abre o app, sem passar por login',
+    (tester) async {
+      final preferences = await _preferences(onboardingCompleted: false);
+
+      await tester.pumpWidget(_app(preferences: preferences));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(OnboardingText.skip));
+      await tester.pumpAndSettle();
+
+      expect(preferences.getBool(AppConstants.kOnboardingKey), isTrue);
+      // O aceite é registrado, não só exibido: é o que as lojas cobram e o
+      // que permite reapresentar o aviso quando a política mudar.
+      expect(
+        preferences.getInt(PrivacyConsentNotifier.storageKey),
+        LegalText.acceptedVersion,
+      );
+      expect(find.text(AuthText.loginTitle), findsNothing);
+      expect(find.text(DeckText.title), findsOneWidget);
+    },
+    skip: kIsCloudMode,
+  );
+
+  testWidgets(
+    'no modo local a rota de login não existe e não derruba o app',
+    (tester) async {
+      final preferences = await _preferences(onboardingCompleted: true);
+      final backend = _FakeBackendClient(initialSession: _session);
+
+      await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+      await tester.pumpAndSettle();
+
+      // Um deep link antigo, ou qualquer navegação herdada, não pode abrir
+      // uma tela de conta num app que não tem conta.
+      tester.element(find.byType(HomeScreen)).go(RouteConstants.kRouteLogin);
+      await tester.pumpAndSettle();
+
+      expect(find.text(AuthText.loginTitle), findsNothing);
+    },
+    skip: kIsCloudMode,
+  );
 
   testWidgets('completing onboarding stores flag and opens login', (
     tester,
@@ -174,19 +220,21 @@ void main() {
     skip: kIsCloudMode,
   );
 
-  testWidgets('forgot password is available without session after onboarding', (
-    tester,
-  ) async {
-    final preferences = await _preferences(onboardingCompleted: true);
+  testWidgets(
+    'forgot password is available without session after onboarding',
+    (tester) async {
+      final preferences = await _preferences(onboardingCompleted: true);
 
-    await tester.pumpWidget(_app(preferences: preferences));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_app(preferences: preferences));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AuthText.forgotPassword));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text(AuthText.forgotPassword));
+      await tester.pumpAndSettle();
 
-    expect(find.text(AuthText.forgotTitle), findsOneWidget);
-  }, skip: kIsLocalMode);
+      expect(find.text(AuthText.forgotTitle), findsOneWidget);
+    },
+    skip: kIsLocalMode,
+  );
 
   testWidgets('login form signs in and navigates to home', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
@@ -235,33 +283,35 @@ void main() {
     expect(find.text(DeckText.title), findsOneWidget);
   }, skip: kIsLocalMode);
 
-  testWidgets('register without immediate session asks user to check email', (
-    tester,
-  ) async {
-    final preferences = await _preferences(onboardingCompleted: true);
-    final backend = _FakeBackendClient(signUpReturnsSession: false);
+  testWidgets(
+    'register without immediate session asks user to check email',
+    (tester) async {
+      final preferences = await _preferences(onboardingCompleted: true);
+      final backend = _FakeBackendClient(signUpReturnsSession: false);
 
-    await tester.pumpWidget(_app(preferences: preferences, backend: backend));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_app(preferences: preferences, backend: backend));
+      await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text(AuthText.createAccount));
-    await tester.tap(find.text(AuthText.createAccount));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).at(0), 'Jane Doe');
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      'jane@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(2), '123456');
-    await tester.enterText(find.byType(TextFormField).at(3), '123456');
-    await tester.ensureVisible(find.text(AuthText.registerAction));
-    await tester.tap(find.text(AuthText.registerAction));
-    await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(AuthText.createAccount));
+      await tester.tap(find.text(AuthText.createAccount));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), 'Jane Doe');
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'jane@example.com',
+      );
+      await tester.enterText(find.byType(TextFormField).at(2), '123456');
+      await tester.enterText(find.byType(TextFormField).at(3), '123456');
+      await tester.ensureVisible(find.text(AuthText.registerAction));
+      await tester.tap(find.text(AuthText.registerAction));
+      await tester.pumpAndSettle();
 
-    expect(backend.auth.signUpCount, 1);
-    expect(find.text(AuthText.checkEmail), findsOneWidget);
-    expect(find.text(AuthText.goToLogin), findsOneWidget);
-  }, skip: kIsLocalMode);
+      expect(backend.auth.signUpCount, 1);
+      expect(find.text(AuthText.checkEmail), findsOneWidget);
+      expect(find.text(AuthText.goToLogin), findsOneWidget);
+    },
+    skip: kIsLocalMode,
+  );
 
   testWidgets('social login buttons are visible but disabled', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);

@@ -11,6 +11,7 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../auth/auth_repository.dart';
 import '../../../auth/profile_text.dart';
+import '../../../backup/widgets/backup_reminder_card.dart';
 import '../../../settings/widgets/missing_api_key_card.dart';
 import '../../../stats/widgets/study_stats_card.dart';
 import '../../deck_model.dart';
@@ -84,6 +85,9 @@ class DashboardTab extends ConsumerWidget {
                 if (kIsLocalMode) ...[
                   const MissingApiKeyCard(),
                   const SizedBox(height: AppDimensions.xxl),
+                  // Sem nuvem, exportar é a única forma de sobreviver à perda
+                  // do aparelho.
+                  const BackupReminderCard(),
                 ],
                 StudyStatsCard(isDark: isDark),
                 const SizedBox(height: AppDimensions.xxl),

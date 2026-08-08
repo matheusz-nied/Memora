@@ -11,6 +11,7 @@ import '../cards/card_repository.dart';
 import 'generate_text.dart';
 import 'generated_cards_review_args.dart';
 import 'widgets/generated_card_editor.dart';
+import '../legal/widgets/ai_disclaimer_note.dart';
 
 class ReviewCardsScreen extends ConsumerStatefulWidget {
   const ReviewCardsScreen({super.key, required this.args});
@@ -86,7 +87,13 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
                           const SizedBox(height: AppDimensions.lg),
                       itemBuilder: (context, index) {
                         if (index == 0) {
-                          return _ReviewHeader(count: _cards.length);
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _ReviewHeader(count: _cards.length),
+                              const AiDisclaimerNote(),
+                            ],
+                          );
                         }
 
                         final cardIndex = index - 1;

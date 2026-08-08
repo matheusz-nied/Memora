@@ -67,20 +67,29 @@ android {
 }
 
 // Assinar o release com a chave de debug é o padrão do template do Flutter, e
-// falha só no upload para a Play Store — tarde demais. O aviso traz a
-// descoberta para o momento do build.
-tasks.matching { it.name.contains("Release") && it.name.startsWith("assemble") || it.name.startsWith("bundleRelease") }
-    .configureEach {
-        doFirst {
-            if (!hasReleaseKeystore) {
-                logger.warn(
-                    "AVISO: android/key.properties não encontrado — este artefato " +
-                        "foi assinado com a chave de DEBUG e a Play Store vai recusá-lo. " +
-                        "Ver android/key.properties.example.",
-                )
-            }
+// falha só no upload para a Play Store — tarde demais.
+//
+// A trava fica no `bundleRelease`, que é o que gera o .aab de publicação:
+// sem keystore ele para aqui, com a instrução do que fazer. O `assembleRelease`
+// continua passando com a chave de debug, porque é o que `flutter run --release`
+// e o APK de teste em aparelho usam — e esses não vão para loja nenhuma.
+//
+// Um `logger.warn` não serve: o `flutter build` filtra a saída do Gradle e
+// engole o aviso. Só a falha atravessa.
+tasks.matching { it.name.startsWith("bundleRelease") }.configureEach {
+    doFirst {
+        if (!hasReleaseKeystore) {
+            throw GradleException(
+                "android/key.properties não encontrado: este .aab seria assinado " +
+                    "com a chave de DEBUG e a Play Store vai recusá-lo.\n" +
+                    "Gere o keystore e copie android/key.properties.example para " +
+                    "android/key.properties.\n" +
+                    "Para um APK de teste em aparelho, use `flutter build apk --release`, " +
+                    "que segue funcionando com a chave de debug.",
+            )
         }
     }
+}
 
 flutter {
     source = "../.."

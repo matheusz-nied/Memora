@@ -98,17 +98,7 @@ permite ou não que o conteúdo enviado seja usado para treinar modelos.
 saúde, dados de terceiros, material sigiloso profissional ou qualquer
 informação sob obrigação de confidencialidade.
 
-### 3.2 Fontes tipográficas (Google)
-
-Na primeira execução, o aplicativo baixa a fonte *Inter* dos servidores do
-Google (`fonts.gstatic.com`) e a guarda em cache no aparelho. Essa requisição
-expõe ao Google o seu endereço IP e informações básicas do dispositivo, como
-qualquer acesso a um site. Nenhum conteúdo seu é enviado nessa requisição.
-
-> *[REMOVER ESTA SEÇÃO se a fonte for empacotada no aplicativo — ver a Fase 3
-> em `LANCAMENTO.md`. Sem a requisição, ela deixa de ser verdadeira.]*
-
-### 3.3 Leitura em voz alta
+### 3.2 Leitura em voz alta
 
 A função de ouvir o card usa o mecanismo de síntese de voz **do seu próprio
 sistema operacional**. O texto do card é entregue a esse mecanismo. O que ele
@@ -116,10 +106,18 @@ faz com o texto — processar localmente ou enviar aos servidores do fabricante 
 depende do mecanismo que você tem instalado e configurado, e é regido pela
 política de privacidade dele (Google, Apple, Samsung ou outro).
 
-### 3.4 Verificação de conectividade
+### 3.3 Verificação de conectividade
 
 O aplicativo consulta o sistema operacional para saber se há conexão. É uma
 consulta local ao aparelho, sem requisição de rede e sem envio de dados.
+
+### 3.4 E nada além disso
+
+A DeepSeek é o **único** destino de rede do aplicativo. Não há servidor de
+analytics, de anúncios, de configuração remota nem de fontes: a tipografia
+usada na interface vem empacotada dentro do aplicativo, justamente para não
+haver uma conexão a mais. Instalado e sem a chave de IA cadastrada, o Memora
+não faz uma única requisição à internet.
 
 ---
 

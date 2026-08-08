@@ -22,6 +22,7 @@ import 'chat_message_ui.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_bubble.dart';
 import 'widgets/typing_indicator.dart';
+import '../../legal/widgets/ai_disclaimer_note.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.deckId});
@@ -137,6 +138,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             // Messages area
             Expanded(child: _buildBody(agentName)),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+              child: const AiDisclaimerNote(showReport: false),
+            ),
 
             // Message limit warning
             if (_isAtLimit)

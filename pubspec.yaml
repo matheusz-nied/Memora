@@ -38,7 +38,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.3.1
   go_router: ^17.0.0
-  google_fonts: ^6.3.2
   flutter_dotenv: ^6.0.1
   flutter_tts: ^4.2.5
   file_picker: ^11.0.2
@@ -58,6 +57,7 @@ dependencies:
   # expõe o texto. Licença Community da Syncfusion (gratuita abaixo de US$1M
   # de receita e até 5 devs); confira o texto vigente antes de publicar.
   syncfusion_flutter_pdf: ^31.1.17
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +71,8 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   drift_dev: ^2.31.0
   build_runner: ^2.15.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -86,6 +88,24 @@ flutter:
   assets:
     - .env
     - web/sqlite3.wasm
+
+  # Inter empacotada, e não baixada em tempo de execução pelo `google_fonts`:
+  # o download entregava o IP do usuário ao Google no primeiro launch e
+  # deixava sem tipografia quem abrisse o app offline. Licença SIL Open Font
+  # em `assets/fonts/Inter-LICENSE.txt`.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -117,3 +137,50 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Gera todas as densidades de ícone (Android, ícone adaptativo incluído, e iOS)
+# a partir de um PNG 1024×1024. Rode depois de colocar as imagens em
+# `assets/icon/`:
+#
+#   dart run flutter_launcher_icons
+#
+# O `adaptive_icon_foreground` precisa ter margem: o Android recorta o ícone em
+# círculo, quadrado ou gota conforme o launcher, e arte que encosta na borda é
+# cortada em algum desses formatos.
+flutter_launcher_icons:
+  image_path: assets/icon/icon.png
+  android: true
+  adaptive_icon_background: assets/icon/icon_background.png
+  adaptive_icon_foreground: assets/icon/icon_foreground.png
+  ios: true
+  remove_alpha_ios: true
+
+# Tela de abertura, gerada nos recursos nativos por:
+#
+#   dart run flutter_native_splash:create
+#
+# As cores são as mesmas do `AppTheme` (`AppColors.background` e
+# `backgroundDark`), para não haver um salto de cor entre a splash e a primeira
+# tela — que é exatamente o que faz um app parecer inacabado no primeiro
+# segundo de uso.
+flutter_native_splash:
+  color: "#F6F6F8"
+  color_dark: "#101622"
+  image: assets/splash/splash.png
+  image_dark: assets/splash/splash.png
+
+  # O Android 12+ ignora a splash clássica e usa a API própria do sistema: ele
+  # recorta a imagem num círculo e só garante os 2/3 centrais. Por isso aqui
+  # entra só a arte em transparente, com o azul da marca vindo do fundo — o
+  # mesmo desenho do ícone adaptativo.
+  android_12:
+    image: assets/splash/splash_android12.png
+    image_dark: assets/splash/splash_android12.png
+    icon_background_color: "#135BEC"
+    icon_background_color_dark: "#135BEC"
+    color: "#F6F6F8"
+    color_dark: "#101622"
+
+  android: true
+  ios: true
+  web: false

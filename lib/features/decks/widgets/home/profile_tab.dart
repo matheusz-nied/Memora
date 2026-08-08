@@ -17,6 +17,8 @@ import '../../../auth/auth_repository.dart';
 import '../../../auth/profile_text.dart';
 import '../../../auth/widgets/delete_account_button.dart';
 import '../../../backup/backup_text.dart';
+import '../../../legal/legal_links.dart';
+import '../../../legal/legal_text.dart';
 import '../../../quota/widgets/ai_quota_card.dart';
 import '../../../settings/api_key_text.dart';
 import '../../deck_repository.dart';
@@ -174,6 +176,8 @@ class ProfileTab extends ConsumerWidget {
                       const SizedBox(height: AppDimensions.md),
                       const _BackupTile(),
                     ],
+                    const SizedBox(height: AppDimensions.md),
+                    const _PrivacyTile(),
                     const SizedBox(height: AppDimensions.xl),
 
                     // Detailed account parameters card
@@ -263,6 +267,54 @@ class _BackupTile extends StatelessWidget {
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => context.push(RouteConstants.kRouteBackup),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// COMPONENT: PRIVACIDADE
+// ==========================================
+class _PrivacyTile extends StatelessWidget {
+  const _PrivacyTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(
+              Icons.privacy_tip_outlined,
+              color: AppColors.primary,
+            ),
+            title: const Text(LegalText.privacyTitle),
+            subtitle: Text(
+              LegalText.privacyHint,
+              style: theme.textTheme.bodySmall,
+            ),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => LegalLinks.openPrivacyPolicy(context),
+          ),
+          const Divider(height: 1),
+          // O canal de report é exigido pelas lojas em app generativo, e sem
+          // servidor o e-mail é o único caminho que existe.
+          ListTile(
+            leading: const Icon(
+              Icons.flag_outlined,
+              color: AppColors.textTertiary,
+            ),
+            title: const Text(LegalText.reportContent),
+            subtitle: Text(
+              LegalText.aiDisclaimer,
+              style: theme.textTheme.bodySmall,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => LegalLinks.reportContent(context),
+          ),
+        ],
       ),
     );
   }

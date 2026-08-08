@@ -13,6 +13,7 @@ import '../cards/card_model.dart';
 import '../cards/card_repository.dart';
 import '../decks/deck_repository.dart';
 import 'study_text.dart';
+import '../legal/widgets/ai_disclaimer_note.dart';
 
 class InsightScreen extends ConsumerWidget {
   const InsightScreen({super.key, required this.deckId, required this.cardId});
@@ -128,6 +129,7 @@ class _InsightContent extends StatelessWidget {
               styleSheet: _markdownStyle(context),
             ),
           ),
+          const AiDisclaimerNote(),
         ],
       ),
     );

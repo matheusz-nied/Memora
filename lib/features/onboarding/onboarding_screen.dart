@@ -9,6 +9,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/widgets/app_button.dart';
+import '../legal/legal_links.dart';
+import '../legal/legal_text.dart';
 import 'onboarding_page_model.dart';
 import 'onboarding_state.dart';
 
@@ -129,6 +131,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     label: OnboardingText.skipKey,
                     variant: AppButtonVariant.secondary,
                     onPressed: _complete,
+                  ),
+                ],
+                // O aviso aparece na última página, junto do botão que
+                // efetivamente registra o aceite — antes disso ninguém leu
+                // nada ainda.
+                if (_isLastPage) ...[
+                  const SizedBox(height: AppDimensions.lg),
+                  Text(
+                    LegalText.consent,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => LegalLinks.openPrivacyPolicy(context),
+                    child: const Text(LegalText.openPolicy),
                   ),
                 ],
               ],

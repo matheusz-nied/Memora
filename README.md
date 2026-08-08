@@ -1,98 +1,79 @@
 # Memora
 
-Flashcards com repetição espaçada e IA. O usuário cria decks, gera cards a
-partir de texto ou PDF, estuda com auto-avaliação, pede insights por card e
-conversa com um agente tutor configurável por deck.
+**Flashcards com repetição espaçada e um tutor de IA configurável por deck.**
 
-Flutter — Android, iOS e web.
+Crie decks, gere cards a partir de texto ou PDF, estude com auto-avaliação, peça insights por card e converse com um agente tutor — tudo no mesmo app. Android, iOS e web.
 
-## Dois modos, um binário de cada vez
+---
 
-O app compila em dois modos, escolhidos em `lib/core/config/app_mode.dart`:
+## Baixar
 
-| | `AppMode.local` | `AppMode.cloud` |
-|---|---|---|
-| Identidade | id gerado no aparelho | conta Supabase (e-mail + senha) |
-| Dados | só no Drift local | Drift + sync com Postgres |
-| Chave da IA | cadastrada pelo usuário | no servidor, com quota por usuário |
-| Backup | export/import `.json` na tela de Backup | dump cifrado agendado |
+**Site oficial:** [matheusz-nied.github.io/Memora](https://matheusz-nied.github.io/Memora/)
 
-`kAppMode` é `const`: as comparações somem em tempo de compilação, então o
-build local não carrega o SDK do Supabase e o build de nuvem não carrega o
-adaptador local. **O v1 é `AppMode.local`**; o adaptador de nuvem está pronto e
-testado, reservado para o v2.
+Lá você encontra os links de download, a política de privacidade e suporte.
 
-Trocar de modo é editar aquela linha e recompilar — nunca um `sed` sobre
-`AppMode.cloud`, que casaria também com a definição de `kIsCloudMode` logo
-abaixo e deixaria os dois atalhos com o mesmo valor.
+| Plataforma | Onde baixar |
+|---|---|
+| **Android** | [GitHub Releases](https://github.com/matheusz-nied/Memora/releases) (APK) · Google Play *(em breve)* |
+| **iOS** | App Store *(em breve)* |
+| **Web** | Em breve no site |
 
-## Rodando
+> Seus decks, cards e histórico de estudo ficam **apenas no seu aparelho**. Não há conta, não há servidor e não há telemetria. A única coisa que sai do aparelho é o texto que você manda para a IA, com a chave da DeepSeek que você cadastrou — direto do celular para lá, sem intermediário.
 
-Requer Flutter ≥ 3.35 (Dart ^3.8.1).
+---
 
-```bash
-cp .env.example .env      # `.env` é asset declarado no pubspec: sem ele o build falha
-flutter pub get
-flutter run
-```
+## O que o app faz
 
-O conteúdo do `.env` só é lido no modo nuvem — mas o arquivo precisa existir
-nos dois, porque está na lista de assets.
+- **Decks e cards** — organize o que quer aprender em baralhos com título, descrição e agente tutor próprio.
+- **Geração com IA** — cole um texto ou envie um PDF e receba flashcards prontos para revisar antes de salvar.
+- **Estudo offline** — repetição espaçada simplificada (Não sei / Difícil / Bom / Fácil), TTS no idioma do deck e sessão completa sem internet.
+- **Insights por card** — explicação aprofundada gerada uma vez e guardada para sempre.
+- **Chat com o tutor** — pratique inglês, biologia, programação ou qualquer tema com um agente configurável por deck.
+- **Backup** — exporte e importe um `.json` para não perder nada se trocar de aparelho.
 
-No modo local, o app pede a chave da DeepSeek no fim do onboarding. Ela fica no
-armazenamento privado do app, é do usuário e cobra na conta dele — sem ela o
-app funciona, mas sem geração, chat nem insight.
+Para usar geração, chat e insights, cadastre sua chave da [DeepSeek](https://platform.deepseek.com/) no fim do onboarding. Sem ela o app funciona normalmente para criar decks, estudar e fazer backup — só as funções de IA ficam indisponíveis.
 
-Depois de mexer em tabela do Drift:
+---
 
-```bash
-dart run build_runner build --delete-conflicting-outputs
-dart run drift_dev schema dump lib/core/database/app_database.dart drift_schemas/
-dart run drift_dev schema generate drift_schemas/ test/drift/generated/
-```
+## Telas
 
-O passo completo, incluindo o que fazer com `schemaVersion` e a migração, está
-em `AGENTS.md`. A CI recusa código gerado desatualizado.
+<p align="center">
+  <img src="docs/screenshots/onboarding.png" alt="Onboarding" width="180" />
+  <img src="docs/screenshots/decks.png" alt="Biblioteca de decks" width="180" />
+  <img src="docs/screenshots/study.png" alt="Estudo" width="180" />
+  <img src="docs/screenshots/generate.png" alt="Geração com IA" width="180" />
+  <img src="docs/screenshots/chat.png" alt="Chat com tutor" width="180" />
+</p>
 
-## Verificação
+---
 
-O que a CI cobra, na ordem em que ela cobra:
+## Como foi construído
 
-```bash
-dart format --set-exit-if-changed lib test
-flutter analyze --fatal-infos
-flutter test
-```
+Resumo técnico para quem quiser entender o projeto antes de abrir o código.
 
-As Edge Functions (só usadas no modo nuvem) têm um job próprio com
-`deno fmt`, `deno lint`, `deno check` e `deno test`.
+**Flutter** em três plataformas (Android, iOS, web), com **Riverpod** para estado, **go_router** para navegação e **Drift** como banco local offline-first — toda escrita vai primeiro para o aparelho.
 
-## Onde está o quê
+A IA roda via **DeepSeek** com a chave do próprio usuário; nada passa por servidor nosso. PDFs são lidos no dispositivo; o chat e os insights também saem direto do app para a API.
 
-- `lib/core/backend/` — contratos (`AuthGateway`, `RemoteDatabaseGateway`,
-  `StorageGateway`, `AiGateway`, `PdfTextGateway`) e os dois adaptadores,
-  `local/` e `supabase/`. Nenhuma feature sabe qual está ativo; a fronteira é
-  verificada por `test/architecture/backend_boundary_test.dart`.
-- `lib/core/database/` — Drift: tabelas, DAOs e migrações versionadas.
-- `lib/features/` — uma pasta por feature, cada uma com repositório, telas e
-  os textos em `*_text.dart`.
-- `supabase/functions/` — Edge Functions do modo nuvem.
+O backend remoto (Supabase — auth, sync, Edge Functions) já está implementado atrás de contratos internos, mas **o v1 publicado é 100% local**: sem conta, sem sync, sem quota. Trocar para o modo nuvem é recompilar com outra constante — o adaptador já existe no repositório, reservado para uma versão futura.
 
-O que falta para publicar, na ordem de execução: `LANCAMENTO.md`.
+Design system próprio (`AppColors`, `AppTypography`, `AppDimensions`), textos centralizados por feature, CI com testes e análise estática. Código aberto sob licença MIT.
+
+Detalhes de arquitetura, schema do banco e regras de contribuição: [`AGENTS.md`](AGENTS.md).
+
+---
+
+## Privacidade e suporte
+
+- [Política de Privacidade](https://matheusz-nied.github.io/Memora/politica-de-privacidade)
+- Dúvidas, erros e sugestões: [issues no GitHub](https://github.com/matheusz-nied/Memora/issues) ou matheusz.nied@gmail.com
+
+---
 
 ## Licença
 
-O código do Memora está sob a licença [MIT](LICENSE) — use, modifique e
-redistribua à vontade.
+O código do Memora está sob a licença [MIT](LICENSE).
 
-Uma ressalva importante para quem for compilar ou publicar a partir daqui: a
-dependência **`syncfusion_flutter_pdf`**, usada para extrair o texto dos PDFs,
-**não é open source**. Ela exige a Community License da Syncfusion (gratuita,
-mas com registro obrigatório e limitada a organizações com receita anual abaixo
-de US$ 1 milhão e menos de 5 desenvolvedores) ou uma licença comercial. A
-licença MIT deste repositório cobre o código escrito aqui, não as dependências
-de terceiros — se você não se enquadra na Community License, precisa contratar
-a comercial ou trocar o extrator de PDF.
+**Ressalva:** a dependência `syncfusion_flutter_pdf` (extração de texto de PDF) **não é open source**. Exige a [Community License da Syncfusion](https://www.syncfusion.com/sales/communitylicense) (gratuita, com registro) ou licença comercial. A MIT deste repositório cobre o código escrito aqui, não as dependências de terceiros.
 
-Os mockups em `memora_view_design/` são referência visual gerada no Stitch e
-não fazem parte do software licenciado acima.
+Os mockups em `memora_view_design/` são referência visual gerada no Stitch e não fazem parte do software licenciado acima.
