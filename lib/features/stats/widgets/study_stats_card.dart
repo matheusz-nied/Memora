@@ -223,22 +223,37 @@ class _DailyBars extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppDimensions.sm),
-        SizedBox(
-          height: 72,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              for (final day in days)
-                Expanded(
-                  child: _Bar(
-                    day: day,
-                    fraction: peak == 0 ? 0 : day.count / peak,
-                    accent: accent,
-                    isDark: isDark,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (final day in days)
+              Expanded(
+                child: _Bar(
+                  day: day,
+                  fraction: peak == 0 ? 0 : day.count / peak,
+                  accent: accent,
+                  isDark: isDark,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.xs),
+        Row(
+          children: [
+            for (final day in days)
+              Expanded(
+                child: Text(
+                  StatsText.weekdayInitials[day.day.weekday - 1],
+                  textAlign: TextAlign.center,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: isDark
+                        ? AppColors.textTertDark
+                        : AppColors.textTertiary,
+                    fontSize: 10,
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ],
     );
@@ -270,6 +285,7 @@ class _Bar extends StatelessWidget {
       children: [
         Text(
           day.count == 0 ? '' : '${day.count}',
+          textAlign: TextAlign.center,
           style: AppTypography.labelSmall.copyWith(
             color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
             fontSize: 10,
@@ -302,14 +318,6 @@ class _Bar extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
-          ),
-        ),
-        const SizedBox(height: AppDimensions.xs),
-        Text(
-          StatsText.weekdayInitials[day.day.weekday - 1],
-          style: AppTypography.labelSmall.copyWith(
-            color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
-            fontSize: 10,
           ),
         ),
       ],
