@@ -431,92 +431,92 @@ class _StudyContent extends StatelessWidget {
             vertical: AppDimensions.xl,
             horizontal: AppDimensions.xl,
           ),
-          child: Stack(
-            alignment: Alignment.center,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Progress dots
-                  if (cards.length <= 20)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(cards.length, (index) {
-                        final isActive = index == currentIndex;
-                        final isPast = index < currentIndex;
-                        return Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.xs / 2,
-                          ),
-                          height: 6,
-                          width: isActive ? 32 : 6,
-                          decoration: BoxDecoration(
-                            color: isActive || isPast
-                                ? AppColors.primary
-                                : (isDark
-                                      ? const Color(0xFF324467)
-                                      : AppColors.borderStrong),
-                            borderRadius: BorderRadius.circular(
-                              AppDimensions.radiusFull,
+              const SizedBox(width: AppDimensions.minTouchTarget),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Progress dots
+                    if (cards.length <= 20)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(cards.length, (index) {
+                          final isActive = index == currentIndex;
+                          final isPast = index < currentIndex;
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.xs / 2,
                             ),
-                          ),
-                        );
-                      }),
-                    )
-                  else
-                    SizedBox(
-                      width: 200,
-                      child: StudyProgressHeader(
-                        currentIndex: currentIndex,
-                        totalCards: cards.length,
-                        isDark: isDark,
-                      ),
-                    ),
-                  const SizedBox(height: AppDimensions.md),
-                  // Deck title
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.school,
-                        size: 14,
-                        color:
-                            (isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimary)
-                                .withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: AppDimensions.xs),
-                      Flexible(
-                        child: Text(
-                          'SESSÃO: ${deck.title}'.toUpperCase(),
-                          style: AppTypography.labelSmall.copyWith(
-                            color:
-                                (isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimary)
-                                    .withValues(alpha: 0.6),
-                            letterSpacing: 1.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                            height: 6,
+                            width: isActive ? 32 : 6,
+                            decoration: BoxDecoration(
+                              color: isActive || isPast
+                                  ? AppColors.primary
+                                  : (isDark
+                                        ? const Color(0xFF324467)
+                                        : AppColors.borderStrong),
+                              borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusFull,
+                              ),
+                            ),
+                          );
+                        }),
+                      )
+                    else
+                      SizedBox(
+                        width: 200,
+                        child: StudyProgressHeader(
+                          currentIndex: currentIndex,
+                          totalCards: cards.length,
+                          isDark: isDark,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              // Close button
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close),
-                  color: isDark
-                      ? AppColors.textSecDark
-                      : AppColors.textSecondary,
-                  onPressed: onBackToDeck,
+                    const SizedBox(height: AppDimensions.md),
+                    // Deck title
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.school,
+                          size: 14,
+                          color:
+                              (isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimary)
+                                  .withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: AppDimensions.xs),
+                        Flexible(
+                          child: Text(
+                            StudyText.sessionLabel(deck.title).toUpperCase(),
+                            style: AppTypography.labelSmall.copyWith(
+                              color:
+                                  (isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimary)
+                                      .withValues(alpha: 0.6),
+                              letterSpacing: 1.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                color: isDark
+                    ? AppColors.textSecDark
+                    : AppColors.textSecondary,
+                onPressed: onBackToDeck,
               ),
             ],
           ),

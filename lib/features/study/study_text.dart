@@ -21,6 +21,7 @@ class StudyText {
   static const String tapToReveal = 'Toque para revelar';
   static const String nextReview = 'Próxima revisão';
   static const String progress = 'Progresso';
+  static String sessionLabel(String deckTitle) => 'Sessão: $deckTitle';
   static const String front = 'Pergunta';
   static const String back = 'Resposta';
   static const String speak = 'Ouvir';
