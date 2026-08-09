@@ -244,7 +244,7 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                     ],
                     error: (_, __) => [
                       const SliverFillRemaining(
-                        hasScrollBody: false,
+                        hasScrollBody: true,
                         child: ErrorState(message: CardText.loadError),
                       ),
                     ],
@@ -262,21 +262,19 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                       if (filteredCards.isEmpty) {
                         return [
                           SliverFillRemaining(
-                            hasScrollBody: false,
+                            hasScrollBody: true,
                             child: _searchQuery.isNotEmpty
-                                ? Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(
-                                        AppDimensions.xl,
-                                      ),
-                                      child: Text(
-                                        'Nenhum flashcard corresponde à busca.',
-                                        style: AppTypography.bodyMedium
-                                            .copyWith(
-                                              color: isDark
-                                                  ? AppColors.textSecDark
-                                                  : AppColors.textSecondary,
-                                            ),
+                                ? Padding(
+                                    padding: const EdgeInsets.all(
+                                      AppDimensions.xl,
+                                    ),
+                                    child: Text(
+                                      'Nenhum flashcard corresponde à busca.',
+                                      textAlign: TextAlign.center,
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textSecDark
+                                            : AppColors.textSecondary,
                                       ),
                                     ),
                                   )
