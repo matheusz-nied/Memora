@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/glass_panel.dart';
+import '../../../core/widgets/pressable_scale.dart';
 import '../card_rating_model.dart';
 import '../study_text.dart';
 
@@ -18,12 +20,15 @@ class StudyRatingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         Expanded(
           child: _RatingButton(
             label: StudyText.again,
             color: AppColors.error,
+            isDark: isDark,
             enabled: enabled,
             onPressed: () => onRating(CardRating.again),
           ),
@@ -33,6 +38,7 @@ class StudyRatingBar extends StatelessWidget {
           child: _RatingButton(
             label: StudyText.hard,
             color: AppColors.warning,
+            isDark: isDark,
             enabled: enabled,
             onPressed: () => onRating(CardRating.hard),
           ),
@@ -42,6 +48,7 @@ class StudyRatingBar extends StatelessWidget {
           child: _RatingButton(
             label: StudyText.good,
             color: AppColors.info,
+            isDark: isDark,
             enabled: enabled,
             onPressed: () => onRating(CardRating.good),
           ),
@@ -51,6 +58,7 @@ class StudyRatingBar extends StatelessWidget {
           child: _RatingButton(
             label: StudyText.easy,
             color: AppColors.success,
+            isDark: isDark,
             enabled: enabled,
             onPressed: () => onRating(CardRating.easy),
           ),
@@ -64,39 +72,50 @@ class _RatingButton extends StatelessWidget {
   const _RatingButton({
     required this.label,
     required this.color,
+    required this.isDark,
     required this.enabled,
     required this.onPressed,
   });
 
   final String label;
   final Color color;
+  final bool isDark;
   final bool enabled;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 56,
-      child: OutlinedButton(
-        onPressed: enabled ? onPressed : null,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(
-            color: enabled
-                ? color.withValues(alpha: 0.5)
-                : AppColors.borderStrong,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xs),
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            style: AppTypography.labelMedium.copyWith(
-              fontWeight: FontWeight.bold,
+    return PressableScale(
+      onTap: enabled ? onPressed : null,
+      child: GlassPanel(
+        isDark: isDark,
+        showGlow: false,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderColor: enabled
+            ? color.withValues(alpha: 0.35)
+            : (isDark ? AppColors.glassBorderDark : AppColors.glassBorderLight),
+        padding: EdgeInsets.zero,
+        child: SizedBox(
+          height: 56,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.xs,
+                ),
+                child: Text(
+                  label,
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: enabled
+                        ? color
+                        : (isDark
+                              ? AppColors.textTertDark
+                              : AppColors.textTertiary),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

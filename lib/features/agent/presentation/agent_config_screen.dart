@@ -9,7 +9,9 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/glass_panel.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../core/widgets/scaffold_shell.dart';
 import '../../decks/deck_repository.dart';
 import '../data/agent_repository.dart';
 import '../data/agent_text.dart';
@@ -65,8 +67,8 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
     const slate600 = Color(0xFF475569);
     const slate800 = Color(0xFF1E293B);
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
+    return ScaffoldShell(
+      isDark: isDark,
       appBar: AppBar(
         title: Text(
           AgentText.configTitle,
@@ -76,6 +78,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
           ),
         ),
         elevation: 0,
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         iconTheme: IconThemeData(
           color: isDark ? Colors.white : AppColors.textPrimary,
@@ -570,48 +573,32 @@ class _FormSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      showTopHighlight: false,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: AppTypography.headingMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
+                  fontSize: 16,
                 ),
-              ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: AppTypography.headingMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : AppColors.textPrimary,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(height: AppDimensions.xl),
-            ...children,
-          ],
-        ),
+              ),
+            ],
+          ),
+          const Divider(height: AppDimensions.xl),
+          ...children,
+        ],
       ),
     );
   }
@@ -639,110 +626,90 @@ class _AgentPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final finalName = name.trim().isNotEmpty ? name.trim() : 'Novo Tutor';
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E2640), const Color(0xFF131A26)]
-              : [
-                  AppColors.primary.withValues(alpha: 0.08),
-                  AppColors.primary.withValues(alpha: 0.02),
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      showTopHighlight: false,
+      borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
+      borderColor: AppColors.primary.withValues(alpha: 0.2),
+      padding: const EdgeInsets.all(AppDimensions.xl),
+      child: Row(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.9),
+                  AppColors.neonBlue.withValues(alpha: 0.75),
                 ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : AppColors.primary.withValues(alpha: 0.12),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.xl),
-        child: Row(
-          children: [
-            // Gorgeous glowing avatar preview
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, Color(0xFF6366F1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.25),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text(
+                    'PREVIEW DO AGENTE',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 8,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                const SizedBox(height: 6),
+                Text(
+                  finalName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.headingLarge.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                    fontSize: 20,
                   ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.auto_awesome,
-                color: Colors.white,
-                size: 28,
-              ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${template.displayName} • Nível ${level[0].toUpperCase()}${level.substring(1)} (${language[0].toUpperCase()}${language.substring(1)})',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecDark
+                        : AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppDimensions.lg),
-
-            // Preview labels
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      'PREVIEW DO AGENTE',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 8,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    finalName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.headingLarge.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${template.displayName} • Nível ${level[0].toUpperCase()}${level.substring(1)} (${language[0].toUpperCase()}${language.substring(1)})',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: isDark
-                          ? const Color(0xFF94A3B8)
-                          : const Color(0xFF475569),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

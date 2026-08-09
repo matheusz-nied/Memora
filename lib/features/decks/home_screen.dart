@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/app_backdrop.dart';
 import 'deck_model.dart';
 import 'deck_repository.dart';
 import 'deck_text.dart';
@@ -31,32 +32,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: IndexedStack(
-                index: _currentTabIndex,
-                children: [
-                  DashboardTab(
-                    isDark: isDark,
-                    onCreateDeck: () => _showDeckForm(context),
-                    onOpenDecksTab: () => _setTab(_decksTab),
-                    onOpenProfileTab: () => _setTab(_profileTab),
+      floatingActionButton: _currentTabIndex == _decksTab
+          ? FloatingActionButton(
+              onPressed: () => _showDeckForm(context),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              highlightElevation: 4,
+              child: const Icon(Icons.add, size: 28),
+            )
+          : null,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          AppBackdrop(isDark: isDark),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentTabIndex,
+                    children: [
+                      DashboardTab(
+                        isDark: isDark,
+                        onCreateDeck: () => _showDeckForm(context),
+                        onOpenDecksTab: () => _setTab(_decksTab),
+                        onOpenProfileTab: () => _setTab(_profileTab),
+                      ),
+                      DecksLibraryTab(
+                        isDark: isDark,
+                        onCreateDeck: () => _showDeckForm(context),
+                        onEditDeck: (deck) => _showDeckForm(context, deck: deck),
+                        onDeleteDeck: (deck) =>
+                            _confirmDeleteDeck(context: context, deck: deck),
+                      ),
+                      ProfileTab(isDark: isDark),
+                    ],
                   ),
-                  DecksLibraryTab(
-                    isDark: isDark,
-                    onCreateDeck: () => _showDeckForm(context),
-                    onEditDeck: (deck) => _showDeckForm(context, deck: deck),
-                    onDeleteDeck: (deck) =>
-                        _confirmDeleteDeck(context: context, deck: deck),
-                  ),
-                  ProfileTab(isDark: isDark),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: HomeBottomNav(
         currentIndex: _currentTabIndex,
@@ -75,6 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DeckFormModal(
         deck: deck,
         onSubmit: (title, description) async {

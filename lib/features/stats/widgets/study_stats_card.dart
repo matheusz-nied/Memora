@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/glass_panel.dart';
 import '../stats_text.dart';
 import '../study_stats.dart';
 import '../study_stats_provider.dart';
@@ -39,24 +40,29 @@ class _StatsBody extends StatelessWidget {
         ? AppColors.textPrimaryDark
         : AppColors.textPrimary;
 
-    return Container(
+    return GlassPanel(
+      isDark: isDark,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
       padding: const EdgeInsets.all(AppDimensions.xl),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.border,
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            StatsText.title,
-            style: AppTypography.headingMedium.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.insights_outlined,
+                size: 20,
+                color: isDark ? AppColors.neonCyan : AppColors.primary,
+              ),
+              const SizedBox(width: AppDimensions.sm),
+              Text(
+                StatsText.title,
+                style: AppTypography.headingMedium.copyWith(
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppDimensions.lg),
           if (!stats.hasHistory)
@@ -87,7 +93,7 @@ class _StatsBody extends StatelessWidget {
                 Expanded(
                   child: _Metric(
                     icon: Icons.today_outlined,
-                    color: AppColors.primary,
+                    color: AppColors.neonCyan,
                     label: StatsText.reviewsToday,
                     value: '${stats.reviewsToday}',
                     isDark: isDark,
@@ -98,8 +104,6 @@ class _StatsBody extends StatelessWidget {
             const SizedBox(height: AppDimensions.xl),
             _DailyBars(
               title: StatsText.windowTotal,
-              // Trinta colunas não cabem num celular; a última semana é o que
-              // o usuário consegue ler e o que ele age em cima.
               days: stats.daily.sublist(stats.daily.length - 7),
               accent: AppColors.primary,
               isDark: isDark,
@@ -109,7 +113,7 @@ class _StatsBody extends StatelessWidget {
           _DailyBars(
             title: StatsText.upcoming,
             days: stats.upcoming,
-            accent: AppColors.info,
+            accent: AppColors.neonBlue,
             isDark: isDark,
           ),
         ],
@@ -154,7 +158,16 @@ class _Metric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: AppDimensions.xxl),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.xs),
+            child: Icon(icon, color: color, size: AppDimensions.xxl),
+          ),
+        ),
         const SizedBox(height: AppDimensions.sm),
         Text(
           value,
@@ -219,8 +232,6 @@ class _DailyBars extends StatelessWidget {
                 Expanded(
                   child: _Bar(
                     day: day,
-                    // Sem revisão nenhuma na série, todas as barras ficam no
-                    // mínimo em vez de dividir por zero.
                     fraction: peak == 0 ? 0 : day.count / peak,
                     accent: accent,
                     isDark: isDark,
@@ -252,6 +263,8 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final height = _minHeight + (_maxHeight - _minHeight) * fraction;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -263,14 +276,32 @@ class _Bar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppDimensions.xs),
-        Container(
-          height: _minHeight + (_maxHeight - _minHeight) * fraction,
+        AnimatedContainer(
+          duration: AppDimensions.animNormal,
+          curve: Curves.easeOutCubic,
+          height: height,
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
+            gradient: day.count == 0
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [accent, accent.withValues(alpha: 0.65)],
+                  ),
             color: day.count == 0
-                ? (isDark ? AppColors.borderDark : AppColors.border)
-                : accent,
+                ? (isDark ? AppColors.glassBorderDark : AppColors.border)
+                : null,
             borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            boxShadow: day.count == 0
+                ? null
+                : [
+                    BoxShadow(
+                      color: accent.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
         ),
         const SizedBox(height: AppDimensions.xs),

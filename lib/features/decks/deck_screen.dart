@@ -11,7 +11,12 @@ import '../../core/utils/connectivity_service.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/glass_search_field.dart';
 import '../../core/widgets/loading_state.dart';
+import '../../core/widgets/neon_button.dart';
+import '../../core/widgets/pressable_scale.dart';
+import '../../core/widgets/scaffold_shell.dart';
 import '../cards/card_model.dart';
 import '../cards/card_repository.dart';
 import '../cards/card_text.dart';
@@ -90,8 +95,8 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
+    return ScaffoldShell(
+      isDark: isDark,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -124,236 +129,200 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
         onPressed: () => _showCardForm(context),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        elevation: 2,
         child: const Icon(Icons.add, size: 28),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Responsive.constrainedContent(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.xl,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: AppDimensions.md),
+        child: deckAsync.when(
+          loading: () => const LoadingState(),
+          error: (_, __) => const ErrorState(message: DeckText.loadError),
+          data: (deck) {
+            if (deck == null) {
+              return const ErrorState(message: DeckText.deckNotFound);
+            }
 
-                      // Dynamic visual Hero Deck Details Card
-                      deckAsync.when(
-                        loading: () => const LoadingState(),
-                        error: (_, __) =>
-                            const ErrorState(message: DeckText.loadError),
-                        data: (deck) {
-                          if (deck == null) {
-                            return const ErrorState(
-                              message: DeckText.deckNotFound,
-                            );
-                          }
-                          return countsAsync.maybeWhen(
-                            data: (counts) => _DeckHeroCard(
-                              deck: deck,
-                              counts: counts,
-                              isDark: isDark,
-                            ),
-                            orElse: () => _DeckHeroCard(
-                              deck: deck,
-                              counts: null,
-                              isDark: isDark,
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: AppDimensions.lg),
-
-                      // Horizontal Quick Control Panel Row
-                      deckAsync.maybeWhen(
-                        data: (deck) => deck == null
-                            ? const SizedBox.shrink()
-                            : _QuickActionsRow(
-                                deck: deck,
-                                isOnline: isOnline,
-                                isDark: isDark,
-                              ),
-                        orElse: () => const SizedBox.shrink(),
-                      ),
-                      const SizedBox(height: AppDimensions.xl),
-
-                      // Cards Library Section Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            DeckText.yourCards,
-                            style: AppTypography.headingMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
+            return Responsive.constrainedContent(
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppDimensions.xl,
+                      AppDimensions.md,
+                      AppDimensions.xl,
+                      0,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        countsAsync.maybeWhen(
+                          data: (counts) => _DeckHeroCard(
+                            deck: deck,
+                            counts: counts,
+                            isDark: isDark,
                           ),
-                          countsAsync.maybeWhen(
-                            data: (counts) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppDimensions.md,
-                                vertical: AppDimensions.xs,
-                              ),
-                              decoration: BoxDecoration(
+                          orElse: () => _DeckHeroCard(
+                            deck: deck,
+                            counts: null,
+                            isDark: isDark,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.lg),
+                        _QuickActionsRow(
+                          deck: deck,
+                          isOnline: isOnline,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(height: AppDimensions.xl),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              DeckText.yourCards,
+                              style: AppTypography.headingMedium.copyWith(
                                 color: isDark
-                                    ? AppColors.surfaceDark
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(100),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.white.withValues(alpha: 0.05)
-                                      : Colors.black.withValues(alpha: 0.05),
-                                ),
-                              ),
-                              child: Text(
-                                '${counts.total} Cards',
-                                style: AppTypography.labelSmall.copyWith(
-                                  color: isDark
-                                      ? AppColors.textSecDark
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                ),
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            orElse: () => const SizedBox.shrink(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppDimensions.sm),
-
-                      // Smart Cards Search Input Filter
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusLg,
-                          ),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.08),
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          style: AppTypography.bodyLarge.copyWith(
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimary,
-                            fontSize: 16,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: DeckText.searchCards,
-                            hintStyle: AppTypography.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textSecDark
-                                  : AppColors.textSecondary,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: isDark
-                                  ? AppColors.textSecDark
-                                  : AppColors.textSecondary,
-                            ),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() {
-                                        _searchQuery = '';
-                                      });
-                                    },
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppDimensions.lg),
-
-                      // Paginated Cards Container List
-                      Expanded(
-                        child: cardsAsync.when(
-                          loading: () => const LoadingState(),
-                          error: (_, __) =>
-                              const ErrorState(message: CardText.loadError),
-                          data: (items) {
-                            final filteredCards = items.where((card) {
-                              if (_searchQuery.isEmpty) return true;
-                              return card.front.toLowerCase().contains(
-                                    _searchQuery,
-                                  ) ||
-                                  card.back.toLowerCase().contains(
-                                    _searchQuery,
-                                  );
-                            }).toList();
-
-                            _hasMoreCards = items.length >= _visibleCardLimit;
-
-                            if (filteredCards.isEmpty) {
-                              return _searchQuery.isNotEmpty
-                                  ? Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(
-                                          AppDimensions.xl,
-                                        ),
-                                        child: Text(
-                                          'Nenhum flashcard corresponde à busca.',
-                                          style: AppTypography.bodyMedium
-                                              .copyWith(
-                                                color: isDark
-                                                    ? AppColors.textSecDark
-                                                    : AppColors.textSecondary,
-                                              ),
-                                        ),
-                                      ),
-                                    )
-                                  : EmptyState(
-                                      title: CardText.emptyTitle,
-                                      message: CardText.emptyMessage,
-                                      actionLabel: CardText.newCard,
-                                      onAction: () => _showCardForm(context),
-                                    );
-                            }
-
-                            return ListView.separated(
-                              controller: _scrollController,
-                              itemCount: filteredCards.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: AppDimensions.md),
-                              itemBuilder: (context, index) {
-                                final card = filteredCards[index];
-                                return CardListItem(
-                                  card: card,
-                                  onEdit: () =>
-                                      _showCardForm(context, card: card),
-                                  onDelete: () => _confirmDeleteCard(
-                                    context: context,
-                                    card: card,
+                            countsAsync.maybeWhen(
+                              data: (counts) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.md,
+                                  vertical: AppDimensions.xs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.surfaceDark
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(100),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.05)
+                                        : Colors.black.withValues(alpha: 0.05),
                                   ),
-                                );
-                              },
-                            );
+                                ),
+                                child: Text(
+                                  '${counts.total} Cards',
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.textSecDark
+                                        : AppColors.textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                              orElse: () => const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppDimensions.sm),
+                        GlassSearchField(
+                          isDark: isDark,
+                          controller: _searchController,
+                          hintText: DeckText.searchCards,
+                          hasQuery: _searchQuery.isNotEmpty,
+                          onClear: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
                           },
                         ),
+                        const SizedBox(height: AppDimensions.lg),
+                      ]),
+                    ),
+                  ),
+                  ...cardsAsync.when(
+                    loading: () => [
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: LoadingState(),
                       ),
                     ],
+                    error: (_, __) => [
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: ErrorState(message: CardText.loadError),
+                      ),
+                    ],
+                    data: (items) {
+                      final filteredCards = items.where((card) {
+                        if (_searchQuery.isEmpty) return true;
+                        return card.front.toLowerCase().contains(
+                              _searchQuery,
+                            ) ||
+                            card.back.toLowerCase().contains(_searchQuery);
+                      }).toList();
+
+                      _hasMoreCards = items.length >= _visibleCardLimit;
+
+                      if (filteredCards.isEmpty) {
+                        return [
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _searchQuery.isNotEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(
+                                        AppDimensions.xl,
+                                      ),
+                                      child: Text(
+                                        'Nenhum flashcard corresponde à busca.',
+                                        style: AppTypography.bodyMedium
+                                            .copyWith(
+                                              color: isDark
+                                                  ? AppColors.textSecDark
+                                                  : AppColors.textSecondary,
+                                            ),
+                                      ),
+                                    ),
+                                  )
+                                : EmptyState(
+                                    title: CardText.emptyTitle,
+                                    message: CardText.emptyMessage,
+                                    actionLabel: CardText.newCard,
+                                    onAction: () => _showCardForm(context),
+                                  ),
+                          ),
+                        ];
+                      }
+
+                      return [
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.xl,
+                          ),
+                          sliver: SliverList.separated(
+                            itemCount: filteredCards.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: AppDimensions.md),
+                            itemBuilder: (context, index) {
+                              final card = filteredCards[index];
+                              return CardListItem(
+                                card: card,
+                                onEdit: () =>
+                                    _showCardForm(context, card: card),
+                                onDelete: () => _confirmDeleteCard(
+                                  context: context,
+                                  card: card,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 120),
+                        ),
+                      ];
+                    },
                   ),
-                ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -431,29 +400,11 @@ class _DeckHeroCard extends StatelessWidget {
     final total = counts?.total ?? 0;
     final due = counts?.due ?? 0;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.xl),
-        child: Column(
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      padding: const EdgeInsets.all(AppDimensions.xl),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Icon + Title + Description Row
@@ -571,7 +522,6 @@ class _DeckHeroCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -595,32 +545,12 @@ class _QuickActionsRow extends StatelessWidget {
     return Column(
       children: [
         // Primary full-width button to Estudar Agora
-        SizedBox(
-          width: double.infinity,
-          height: AppDimensions.minTouchTarget,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              context.push(RouteConstants.studyPath(deck.id));
-            },
-            icon: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
-            label: Text(
-              DeckText.studyNow,
-              style: AppTypography.labelMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-              ),
-              elevation: 4,
-              shadowColor: AppColors.primary.withValues(alpha: 0.3),
-            ),
-          ),
+        NeonButton(
+          label: DeckText.studyNow,
+          icon: Icons.play_arrow_rounded,
+          onPressed: () {
+            context.push(RouteConstants.studyPath(deck.id));
+          },
         ),
         const SizedBox(height: AppDimensions.xs),
 
@@ -714,55 +644,44 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeBg = isDark ? AppColors.surfaceDark : Colors.white;
-    final activeBorder = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.08);
-
-    final widgetChild = InkWell(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-      onTap: isEnabled ? onTap : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimensions.md),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isEnabled
-                  ? AppColors.primary
-                  : (isDark ? Colors.white30 : Colors.black26),
-              size: 20,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: AppTypography.labelSmall.copyWith(
-                color: isEnabled
-                    ? (isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary)
-                    : (isDark ? Colors.white30 : Colors.black26),
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
     return Tooltip(
       message: tooltip ?? '',
       child: Opacity(
         opacity: isEnabled ? 1.0 : 0.5,
-        child: Container(
-          decoration: BoxDecoration(
-            color: activeBg,
+        child: PressableScale(
+          onTap: isEnabled ? onTap : null,
+          child: GlassPanel(
+            isDark: isDark,
+            showGlow: false,
+            showTopHighlight: false,
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-            border: Border.all(color: activeBorder),
+            padding: const EdgeInsets.symmetric(vertical: AppDimensions.md),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: isEnabled
+                      ? AppColors.primary
+                      : (isDark ? Colors.white30 : Colors.black26),
+                  size: 20,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: isEnabled
+                        ? (isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary)
+                        : (isDark ? Colors.white30 : Colors.black26),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: widgetChild,
         ),
       ),
     );

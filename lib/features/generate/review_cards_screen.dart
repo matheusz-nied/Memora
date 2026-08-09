@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/widgets/app_button.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/neon_button.dart';
+import '../../core/widgets/scaffold_shell.dart';
 import '../cards/card_repository.dart';
 import 'generate_text.dart';
 import 'generated_cards_review_args.dart';
@@ -51,6 +55,7 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasReview = _cards.isNotEmpty && widget.args != null;
 
     return PopScope(
@@ -62,10 +67,20 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
 
         await _confirmDiscardAndPop();
       },
-      child: Scaffold(
-        appBar: AppBar(title: const Text(GenerateText.reviewTitle)),
+      child: ScaffoldShell(
+        isDark: isDark,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(
+            GenerateText.reviewTitle,
+            style: AppTypography.headingMedium.copyWith(
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+            ),
+          ),
+        ),
         bottomNavigationBar: hasReview
-            ? _SaveReviewBar(isSaving: _isSaving, onSave: _save)
+            ? _SaveReviewBar(isDark: isDark, isSaving: _isSaving, onSave: _save)
             : null,
         body: SafeArea(
           child: Responsive.constrainedContent(
@@ -99,6 +114,7 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
                         final cardIndex = index - 1;
                         final card = _cards[cardIndex];
                         return GeneratedCardEditor(
+                          isDark: isDark,
                           index: cardIndex,
                           frontController: card.frontController,
                           backController: card.backController,
@@ -202,40 +218,37 @@ class _ReviewHeader extends StatelessWidget {
 }
 
 class _SaveReviewBar extends StatelessWidget {
-  const _SaveReviewBar({required this.isSaving, required this.onSave});
+  const _SaveReviewBar({
+    required this.isDark,
+    required this.isSaving,
+    required this.onSave,
+  });
 
+  final bool isDark;
   final bool isSaving;
   final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
     return SafeArea(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.surface,
-          border: Border(top: BorderSide(color: colors.outlineVariant)),
-        ),
-        child: Padding(
-          padding: Responsive.contentPadding(
-            context,
-          ).copyWith(top: AppDimensions.md, bottom: AppDimensions.md),
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: AppConstants.kContentMaxWidth,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  label: GenerateText.saveCards,
-                  icon: Icons.check,
-                  isLoading: isSaving,
-                  onPressed: onSave,
-                ),
-              ),
+      child: GlassPanel(
+        isDark: isDark,
+        showGlow: false,
+        borderRadius: BorderRadius.zero,
+        showTopHighlight: false,
+        padding: Responsive.contentPadding(
+          context,
+        ).copyWith(top: AppDimensions.md, bottom: AppDimensions.md),
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppConstants.kContentMaxWidth,
+            ),
+            child: NeonButton(
+              label: GenerateText.saveCards,
+              icon: Icons.check,
+              onPressed: isSaving ? null : onSave,
             ),
           ),
         ),

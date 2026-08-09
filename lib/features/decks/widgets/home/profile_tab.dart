@@ -7,6 +7,8 @@ import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/pressable_scale.dart';
 import '../../../../core/utils/connectivity_service.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/identity/device_user_id.dart';
@@ -29,10 +31,9 @@ class ProfileTab extends ConsumerWidget {
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SingleChildScrollView(
-        child: Responsive.constrainedContent(
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Responsive.constrainedContent(
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.xl),
             child: Builder(
@@ -105,9 +106,9 @@ class ProfileTab extends ConsumerWidget {
                                             (isOnline
                                                     ? AppColors.success
                                                     : AppColors.warning)
-                                                .withValues(alpha: 0.4),
-                                        blurRadius: 6,
-                                        spreadRadius: 2,
+                                                .withValues(alpha: 0.2),
+                                        blurRadius: 3,
+                                        spreadRadius: 0,
                                       ),
                                     ],
                                   ),
@@ -156,7 +157,6 @@ class ProfileTab extends ConsumerWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -171,23 +171,68 @@ class _ApiKeyTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final apiKey = ref.watch(deepSeekKeyProvider);
     final hasKey = apiKey != null;
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = hasKey ? AppColors.success : AppColors.warning;
 
-    return Card(
-      child: ListTile(
-        leading: Icon(
-          hasKey ? Icons.key : Icons.key_off_outlined,
-          color: hasKey ? AppColors.success : AppColors.warning,
+    return PressableScale(
+      onTap: () => context.push(RouteConstants.kRouteApiKey),
+      child: GlassPanel(
+        isDark: isDark,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        showGlow: false,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.lg,
+          vertical: AppDimensions.sm,
         ),
-        title: const Text(ApiKeyText.title),
-        subtitle: Text(
-          hasKey
-              ? ApiKeyText.savedKey(maskApiKey(apiKey))
-              : ApiKeyText.emptyTitle,
-          style: theme.textTheme.bodySmall,
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.sm),
+                child: Icon(
+                  hasKey ? Icons.key : Icons.key_off_outlined,
+                  color: iconColor,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppDimensions.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ApiKeyText.title,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.xs),
+                  Text(
+                    hasKey
+                        ? ApiKeyText.savedKey(maskApiKey(apiKey))
+                        : ApiKeyText.emptyTitle,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecDark
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+            ),
+          ],
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push(RouteConstants.kRouteApiKey),
       ),
     );
   }
@@ -201,18 +246,62 @@ class _BackupTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.save_alt_outlined, color: AppColors.primary),
-        title: const Text(BackupText.title),
-        subtitle: Text(
-          BackupText.profileHint,
-          style: theme.textTheme.bodySmall,
+    return PressableScale(
+      onTap: () => context.push(RouteConstants.kRouteBackup),
+      child: GlassPanel(
+        isDark: isDark,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        showGlow: false,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.lg,
+          vertical: AppDimensions.sm,
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push(RouteConstants.kRouteBackup),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(AppDimensions.sm),
+                child: Icon(Icons.save_alt_outlined, color: AppColors.primary),
+              ),
+            ),
+            const SizedBox(width: AppDimensions.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    BackupText.title,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.xs),
+                  Text(
+                    BackupText.profileHint,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecDark
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -226,41 +315,115 @@ class _PrivacyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
+    return GlassPanel(
+      isDark: isDark,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      showGlow: false,
       child: Column(
         children: [
-          ListTile(
-            leading: const Icon(
-              Icons.privacy_tip_outlined,
-              color: AppColors.primary,
-            ),
-            title: const Text(LegalText.privacyTitle),
-            subtitle: Text(
-              LegalText.privacyHint,
-              style: theme.textTheme.bodySmall,
-            ),
+          _PrivacyRow(
+            isDark: isDark,
+            icon: Icons.privacy_tip_outlined,
+            iconColor: AppColors.primary,
+            title: LegalText.privacyTitle,
+            subtitle: LegalText.privacyHint,
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () => LegalLinks.openPrivacyPolicy(context),
           ),
-          const Divider(height: 1),
+          Divider(
+            height: 1,
+            color: isDark
+                ? AppColors.glassBorderDark
+                : AppColors.glassBorderLight,
+          ),
           // O canal de report é exigido pelas lojas em app generativo, e sem
           // servidor o e-mail é o único caminho que existe.
-          ListTile(
-            leading: const Icon(
-              Icons.flag_outlined,
-              color: AppColors.textTertiary,
-            ),
-            title: const Text(LegalText.reportContent),
-            subtitle: Text(
-              LegalText.aiDisclaimer,
-              style: theme.textTheme.bodySmall,
-            ),
-            trailing: const Icon(Icons.chevron_right),
+          _PrivacyRow(
+            isDark: isDark,
+            icon: Icons.flag_outlined,
+            iconColor: AppColors.textTertiary,
+            title: LegalText.reportContent,
+            subtitle: LegalText.aiDisclaimer,
+            trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => LegalLinks.reportContent(context),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PrivacyRow extends StatelessWidget {
+  const _PrivacyRow({
+    required this.isDark,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    required this.onTap,
+  });
+
+  final bool isDark;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.lg,
+          vertical: AppDimensions.md,
+        ),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.sm),
+                child: Icon(icon, color: iconColor),
+              ),
+            ),
+            const SizedBox(width: AppDimensions.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.xs),
+                  Text(
+                    subtitle,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecDark
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            trailing,
+          ],
+        ),
       ),
     );
   }
@@ -282,63 +445,42 @@ class _ProfileHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.xl),
-        child: Row(
-          children: [
-            // Styled Gradient Avatar Initials
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, Color(0xFF3B82F6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      padding: const EdgeInsets.all(AppDimensions.xl),
+      child: Row(
+        children: [
+          // Styled Gradient Avatar Initials
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, Color(0xFF3B82F6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              alignment: Alignment.center,
-              child: Text(
-                initial,
-                style: AppTypography.headingLarge.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 28,
-                ),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.25),
+                width: 1.5,
               ),
             ),
-            const SizedBox(width: AppDimensions.xl),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: AppTypography.headingLarge.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 28,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppDimensions.xl),
 
-            // Profile info strings
-            Expanded(
+          // Profile info strings
+          Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -371,7 +513,6 @@ class _ProfileHeaderCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -396,46 +537,38 @@ class _StatBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: iconColor, size: 20),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.textTertDark
-                          : AppColors.textTertiary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 8,
-                      letterSpacing: 1.0,
-                    ),
+    return GlassPanel(
+      isDark: isDark,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      showGlow: false,
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: isDark
+                        ? AppColors.textTertDark
+                        : AppColors.textTertiary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 8,
+                    letterSpacing: 1.0,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.md),
-            valueWidget,
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.md),
+          valueWidget,
+        ],
       ),
     );
   }
@@ -452,38 +585,30 @@ class _ProfileDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              ProfileText.account,
-              style: AppTypography.headingMedium.copyWith(
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
+    return GlassPanel(
+      isDark: isDark,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      showGlow: false,
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            ProfileText.account,
+            style: AppTypography.headingMedium.copyWith(
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: AppDimensions.xl),
-            _ProfileField(
-              label: ProfileText.name,
-              value: displayName,
-              isDark: isDark,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppDimensions.xl),
+          _ProfileField(
+            label: ProfileText.name,
+            value: displayName,
+            isDark: isDark,
+          ),
+        ],
       ),
     );
   }

@@ -12,8 +12,10 @@ import '../../../core/utils/connectivity_service.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/glass_panel.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/offline_banner.dart';
+import '../../../core/widgets/scaffold_shell.dart';
 import '../../decks/deck_repository.dart';
 import '../data/agent_repository.dart';
 import '../data/agent_text.dart';
@@ -75,8 +77,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       orElse: () => null,
     );
 
-    return Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ScaffoldShell(
+      isDark: isDark,
+      extendBody: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: Column(
           children: [
             Text(
@@ -164,6 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             // Input bar
             ChatInputBar(
+              isDark: isDark,
               controller: _inputController,
               enabled: isOnline && !_isAtLimit,
               isSending: _isSending,
@@ -354,22 +364,19 @@ class _MessageLimitBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.lg,
         vertical: AppDimensions.sm,
       ),
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.infoBg,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(
-          color: isDark
-              ? AppColors.borderDark
-              : AppColors.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
+      child: GlassPanel(
+        isDark: isDark,
+        showGlow: false,
+        showTopHighlight: false,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderColor: AppColors.primary.withValues(alpha: 0.25),
+        padding: const EdgeInsets.all(AppDimensions.md),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -403,6 +410,7 @@ class _MessageLimitBanner extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

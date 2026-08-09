@@ -7,13 +7,11 @@ import '../../../core/constants/route_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/glass_panel.dart';
+import '../../../core/widgets/pressable_scale.dart';
 import '../api_key_text.dart';
 
 /// Chamada para cadastrar a chave da DeepSeek, exibida enquanto não houver uma.
-///
-/// Fecha o buraco mais provável da primeira execução: sem este aviso, o usuário
-/// só descobre que precisa de chave quando a primeira geração falha — e nesse
-/// ponto ele já escreveu o material e escolheu a quantidade.
 class MissingApiKeyCard extends ConsumerWidget {
   const MissingApiKeyCard({super.key});
 
@@ -23,42 +21,60 @@ class MissingApiKeyCard extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    return Material(
-      color: AppColors.warningBg,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-      child: InkWell(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return PressableScale(
+      onTap: () => context.push(RouteConstants.kRouteApiKey),
+      child: GlassPanel(
+        isDark: isDark,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        onTap: () => context.push(RouteConstants.kRouteApiKey),
-        child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.lg),
-          child: Row(
-            children: [
-              const Icon(Icons.key_off_outlined, color: AppColors.warning),
-              const SizedBox(width: AppDimensions.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ApiKeyText.dashboardTitle,
-                      style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.xs),
-                    Text(
-                      ApiKeyText.dashboardMessage,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+        borderColor: AppColors.warning.withValues(alpha: 0.25),
+        showGlow: false,
+        showTopHighlight: false,
+        padding: const EdgeInsets.all(AppDimensions.lg),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.warning),
-            ],
-          ),
+              child: const Padding(
+                padding: EdgeInsets.all(AppDimensions.sm),
+                child: Icon(Icons.key_off_outlined, color: AppColors.warning),
+              ),
+            ),
+            const SizedBox(width: AppDimensions.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ApiKeyText.dashboardTitle,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.xs),
+                  Text(
+                    ApiKeyText.dashboardMessage,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecDark
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.warning.withValues(alpha: 0.9),
+            ),
+          ],
         ),
       ),
     );

@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/pressable_scale.dart';
 import '../../data/agent_text.dart';
 
 /// Bottom input bar for the chat screen.
 class ChatInputBar extends StatelessWidget {
   const ChatInputBar({
     super.key,
+    required this.isDark,
     required this.controller,
     required this.onSend,
     required this.enabled,
     required this.isSending,
   });
 
+  final bool isDark;
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool enabled;
@@ -22,49 +26,33 @@ class ChatInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Colors matching theme
-    const slate400 = Color(0xFF94A3B8);
-    const slate600 = Color(0xFF475569);
-
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF101622).withValues(alpha: 0.95)
-            : AppColors.background.withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.black.withValues(alpha: 0.06),
-          ),
-        ),
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      showTopHighlight: true,
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(AppDimensions.radius2Xl),
+        topRight: Radius.circular(AppDimensions.radius2Xl),
       ),
+      padding: const EdgeInsets.all(AppDimensions.md),
       child: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Floating Context RAG Capsule
             Center(
               child: Container(
                 margin: const EdgeInsets.only(bottom: AppDimensions.md),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: AppDimensions.md,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E2638)
-                      : AppColors.primary.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(100),
+                  color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : AppColors.primary.withValues(alpha: 0.12),
+                    color: AppColors.primary.withValues(alpha: 0.18),
                   ),
                 ),
                 child: Row(
@@ -80,7 +68,7 @@ class ChatInputBar extends StatelessWidget {
                       'TUTOR ATIVO • Consultando cards do deck',
                       style: AppTypography.labelSmall.copyWith(
                         color: isDark
-                            ? const Color(0xFF94A3B8)
+                            ? AppColors.textSecDark
                             : AppColors.primary,
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
@@ -91,8 +79,6 @@ class ChatInputBar extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Text input line
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -104,39 +90,46 @@ class ChatInputBar extends StatelessWidget {
                     maxLines: 4,
                     textInputAction: TextInputAction.newline,
                     style: AppTypography.bodyLarge.copyWith(
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                       fontSize: 16,
                     ),
                     decoration: InputDecoration(
                       hintText: AgentText.inputPlaceholder,
                       hintStyle: AppTypography.bodyLarge.copyWith(
-                        color: isDark ? slate600 : slate400,
+                        color: isDark
+                            ? AppColors.textTertDark
+                            : AppColors.textTertiary,
                       ),
                       suffixIcon: Icon(
                         Icons.mic_none_outlined,
                         color: isDark
-                            ? Colors.white.withValues(alpha: 0.25)
-                            : Colors.black.withValues(alpha: 0.25),
+                            ? AppColors.textTertDark
+                            : AppColors.textTertiary,
                         size: 20,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusXl),
                         borderSide: BorderSide(
                           color: isDark
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : Colors.black.withValues(alpha: 0.08),
+                              ? AppColors.glassBorderDark
+                              : AppColors.glassBorderLight,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusXl),
                         borderSide: BorderSide(
                           color: isDark
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : Colors.black.withValues(alpha: 0.08),
+                              ? AppColors.glassBorderDark
+                              : AppColors.glassBorderLight,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusXl),
                         borderSide: const BorderSide(
                           color: AppColors.primary,
                           width: 1.5,
@@ -148,8 +141,8 @@ class ChatInputBar extends StatelessWidget {
                       ),
                       filled: true,
                       fillColor: isDark
-                          ? const Color(0xFF1C2333)
-                          : AppColors.primary.withValues(alpha: 0.01),
+                          ? AppColors.surfaceDeep.withValues(alpha: 0.5)
+                          : AppColors.surface.withValues(alpha: 0.6),
                     ),
                   ),
                 ),
@@ -177,41 +170,31 @@ class _SendButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = onPressed != null;
 
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: active
-            ? AppColors.primary
-            : const Color(0xFF334155).withValues(alpha: 0.2),
-        boxShadow: active
-            ? [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
+    return PressableScale(
+      onTap: onPressed,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: active
+              ? AppColors.primary
+              : AppColors.borderDarkStrong.withValues(alpha: 0.35),
+        ),
+        child: Center(
+          child: isSending
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Icon(
+                  Icons.arrow_upward,
+                  color: active ? Colors.white : AppColors.textTertiary,
+                  size: 20,
                 ),
-              ]
-            : [],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const CircleBorder(),
-          child: Center(
-            child: isSending
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.arrow_upward, color: Colors.white, size: 20),
-          ),
         ),
       ),
     );

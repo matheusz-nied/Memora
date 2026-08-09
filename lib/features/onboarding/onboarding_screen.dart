@@ -8,6 +8,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/scaffold_shell.dart';
 import '../legal/legal_links.dart';
 import '../legal/legal_text.dart';
 import 'onboarding_page_model.dart';
@@ -38,7 +40,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       return;
     }
 
-    // A home entra primeiro para o cadastro da chave ter para onde voltar.
     context.go(RouteConstants.kRouteHome);
     if (openApiKey) {
       context.push(RouteConstants.kRouteApiKey);
@@ -59,7 +60,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ScaffoldShell(
+      isDark: isDark,
       body: SafeArea(
         child: Responsive.constrainedContent(
           child: Padding(
@@ -94,7 +98,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       });
                     },
                     itemBuilder: (context, index) {
-                      return _OnboardingPage(page: OnboardingText.pages[index]);
+                      return _OnboardingPage(
+                        page: OnboardingText.pages[index],
+                        isDark: isDark,
+                      );
                     },
                   ),
                 ),
@@ -111,9 +118,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   icon: _isLastPage ? Icons.key : Icons.arrow_forward,
                   onPressed: _next,
                 ),
-                // Cadastrar a chave não pode ser obrigatório: criar e estudar
-                // cards à mão funciona sem IA nenhuma, e travar aqui perderia
-                // quem só quer isso.
                 if (_isLastPage) ...[
                   const SizedBox(height: AppDimensions.sm),
                   AppButton(
@@ -122,9 +126,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     onPressed: _complete,
                   ),
                 ],
-                // O aviso aparece na última página, junto do botão que
-                // efetivamente registra o aceite — antes disso ninguém leu
-                // nada ainda.
                 if (_isLastPage) ...[
                   const SizedBox(height: AppDimensions.lg),
                   Text(
@@ -149,20 +150,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _OnboardingPage extends StatelessWidget {
-  const _OnboardingPage({required this.page});
+  const _OnboardingPage({required this.page, required this.isDark});
 
   final OnboardingPageModel page;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final secondaryTextColor = isDark
         ? AppColors.textSecDark
         : AppColors.textSecondary;
 
-    // Rola quando não couber: a altura útil varia muito entre aparelhos, e
-    // uma descrição um pouco mais longa não pode cortar o conteúdo.
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -171,28 +170,42 @@ class _OnboardingPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _HeroBadge(icon: page.icon),
+                _HeroBadge(icon: page.icon, isDark: isDark),
                 const SizedBox(height: AppDimensions.huge),
-                Text(
-                  AppConstants.appName,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.primary,
+                GlassPanel(
+                  isDark: isDark,
+                  showGlow: false,
+                  showTopHighlight: false,
+                  borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.xxl,
+                    vertical: AppDimensions.xxxl,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppDimensions.md),
-                Text(
-                  page.title,
-                  style: theme.textTheme.displayLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppDimensions.lg),
-                Text(
-                  page.description,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: secondaryTextColor,
+                  child: Column(
+                    children: [
+                      Text(
+                        AppConstants.appName,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppDimensions.md),
+                      Text(
+                        page.title,
+                        style: theme.textTheme.displayLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppDimensions.lg),
+                      Text(
+                        page.description,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: secondaryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -204,39 +217,39 @@ class _OnboardingPage extends StatelessWidget {
 }
 
 class _HeroBadge extends StatelessWidget {
-  const _HeroBadge({required this.icon});
+  const _HeroBadge({required this.icon, required this.isDark});
 
   final IconData icon;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
-
-    return Container(
-      width: AppDimensions.onboardingHeroSize,
-      height: AppDimensions.onboardingHeroSize,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radius3Xl),
-        border: Border.all(color: borderColor),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.primaryShadow,
-            blurRadius: AppDimensions.xxxl,
-            offset: Offset(0, AppDimensions.lg),
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      showTopHighlight: true,
+      borderRadius: BorderRadius.circular(AppDimensions.radius3Xl),
+      padding: EdgeInsets.zero,
+      child: SizedBox(
+        width: AppDimensions.onboardingHeroSize,
+        height: AppDimensions.onboardingHeroSize,
+        child: Center(
+          child: Container(
+            width: AppDimensions.huge * 2,
+            height: AppDimensions.huge * 2,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: isDark ? 0.2 : 1),
+              borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: AppDimensions.huge,
+              color: AppColors.primary,
+            ),
           ),
-        ],
-      ),
-      child: Center(
-        child: Container(
-          width: AppDimensions.huge * 2,
-          height: AppDimensions.huge * 2,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-          ),
-          child: Icon(icon, size: AppDimensions.huge, color: AppColors.primary),
         ),
       ),
     );

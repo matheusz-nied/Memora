@@ -4,9 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/scaffold_shell.dart';
 import 'backup_data.dart';
 import 'backup_reminder.dart';
 import 'backup_repository.dart';
@@ -26,9 +29,16 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text(BackupText.title)),
+    return ScaffoldShell(
+      isDark: isDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const Text(BackupText.title),
+      ),
       body: SingleChildScrollView(
         child: Responsive.constrainedContent(
           child: Padding(
@@ -39,6 +49,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 Text(BackupText.subtitle, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: AppDimensions.xxl),
                 _Section(
+                  isDark: isDark,
                   title: BackupText.exportTitle,
                   description: BackupText.exportDescription,
                   action: BackupText.exportAction,
@@ -48,6 +59,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 ),
                 const SizedBox(height: AppDimensions.xl),
                 _Section(
+                  isDark: isDark,
                   title: BackupText.importTitle,
                   description: BackupText.importDescription,
                   action: BackupText.importAction,
@@ -76,14 +88,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         fileName: BackupText.fileName(now),
         type: FileType.custom,
         allowedExtensions: const ['json'],
-        // Em Android e iOS o `saveFile` só grava quando recebe os bytes; sem
-        // isto ele devolve um caminho e não escreve nada.
         bytes: utf8.encode(content),
       );
 
       if (path != null) {
-        // Só conta como backup feito quando o arquivo foi realmente gravado:
-        // cancelar o seletor não pode zerar o lembrete.
         await ref.read(backupReminderProvider.notifier).markExported(at: now);
       }
 
@@ -95,9 +103,6 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     } on BackupException catch (error) {
       _report(error.message);
     } catch (error) {
-      // Permissão negada, seletor de arquivos indisponível, disco cheio: o
-      // `finally` já devolve o botão, e sem isto ele voltaria mudo — o usuário
-      // não saberia se exportou ou não.
       debugPrint('Falha ao exportar backup: $error');
       _report(BackupText.exportFailed);
     } finally {
@@ -168,6 +173,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
 class _Section extends StatelessWidget {
   const _Section({
+    required this.isDark,
     required this.title,
     required this.description,
     required this.action,
@@ -176,6 +182,7 @@ class _Section extends StatelessWidget {
     required this.onPressed,
   });
 
+  final bool isDark;
   final String title;
   final String description;
   final String action;
@@ -187,25 +194,28 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title, style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppDimensions.xs),
-            Text(description, style: theme.textTheme.bodySmall),
-            const SizedBox(height: AppDimensions.lg),
-            AppButton(
-              label: action,
-              icon: icon,
-              isLoading: isWorking,
-              variant: AppButtonVariant.secondary,
-              onPressed: onPressed,
-            ),
-          ],
-        ),
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      showTopHighlight: false,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      borderColor: AppColors.primary.withValues(alpha: 0.15),
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppDimensions.xs),
+          Text(description, style: theme.textTheme.bodySmall),
+          const SizedBox(height: AppDimensions.lg),
+          AppButton(
+            label: action,
+            icon: icon,
+            isLoading: isWorking,
+            variant: AppButtonVariant.secondary,
+            onPressed: onPressed,
+          ),
+        ],
       ),
     );
   }

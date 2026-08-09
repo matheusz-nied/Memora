@@ -10,6 +10,9 @@ import '../../deck_card_counts_provider.dart';
 import '../../deck_model.dart';
 import '../../deck_text.dart';
 import 'deck_visual_style.dart';
+import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/pressable_scale.dart';
+import '../../../../core/widgets/soft_progress_bar.dart';
 
 class RecentDeckTile extends ConsumerWidget {
   const RecentDeckTile({super.key, required this.deck, required this.isDark});
@@ -22,22 +25,14 @@ class RecentDeckTile extends ConsumerWidget {
     final style = DeckVisualStyle.fromTitle(deck.title, isDark);
     final countsAsync = ref.watch(deckCardCountsStreamProvider(deck.id));
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppDimensions.md),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        side: BorderSide(
-          color: isDark
-              ? AppColors.surface.withValues(alpha: 0.05)
-              : AppColors.textPrimary.withValues(alpha: 0.05),
-        ),
-      ),
-      color: isDark ? AppColors.surfaceDark : AppColors.surface,
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDimensions.md),
+      child: PressableScale(
         onTap: () => context.push(RouteConstants.deckPath(deck.id)),
-        child: Padding(
+        child: GlassPanel(
+          isDark: isDark,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+          showTopHighlight: false,
           padding: const EdgeInsets.all(AppDimensions.lg),
           child: Row(
             children: [
@@ -45,8 +40,25 @@ class RecentDeckTile extends ConsumerWidget {
                 width: AppDimensions.minTouchTarget,
                 height: AppDimensions.minTouchTarget,
                 decoration: BoxDecoration(
-                  color: style.backgroundColor,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      style.backgroundColor,
+                      style.backgroundColor.withValues(alpha: 0.6),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  border: Border.all(
+                    color: style.color.withValues(alpha: 0.25),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: style.color.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Icon(style.icon, color: style.color, size: 24),
               ),
@@ -82,9 +94,9 @@ class RecentDeckTile extends ConsumerWidget {
                             return Text(
                               '$percent%',
                               style: AppTypography.bodySmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecDark
-                                    : AppColors.textSecondary,
+                                color: AppColors.neonCyan.withValues(
+                                  alpha: isDark ? 0.9 : 1,
+                                ),
                                 fontWeight: FontWeight.bold,
                               ),
                             );
@@ -99,20 +111,9 @@ class RecentDeckTile extends ConsumerWidget {
                         final progress = counts.total == 0
                             ? 1.0
                             : (counts.total - counts.due) / counts.total;
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusFull,
-                          ),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 6,
-                            backgroundColor: isDark
-                                ? AppColors.surface.withValues(alpha: 0.05)
-                                : AppColors.textPrimary.withValues(alpha: 0.05),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.primary,
-                            ),
-                          ),
+                        return SoftProgressBar(
+                          progress: progress,
+                          isDark: isDark,
                         );
                       },
                       orElse: () => const SizedBox(height: 6),
@@ -124,7 +125,7 @@ class RecentDeckTile extends ConsumerWidget {
                             ? DeckText.reviewComplete
                             : '${counts.due} ${DeckText.dueToday}';
                         return Text(
-                          '${counts.total} ${DeckText.cards} - $status',
+                          '${counts.total} ${DeckText.cards} · $status',
                           style: AppTypography.bodySmall.copyWith(
                             color: isDark
                                 ? AppColors.textSecDark
@@ -138,6 +139,10 @@ class RecentDeckTile extends ConsumerWidget {
                   ],
                 ),
               ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
+              ),
             ],
           ),
         ),
@@ -145,3 +150,4 @@ class RecentDeckTile extends ConsumerWidget {
     );
   }
 }
+

@@ -35,4 +35,18 @@ class AppColors {
   static const Color warningBg = Color(0xFFFFFBEB);
   static const Color info = Color(0xFF135BEC);
   static const Color infoBg = Color(0xFFEFF6FF);
+
+  // Premium tech-neon palette (dashboard & future screens)
+  static const Color depthDark = Color(0xFF0A0E17);
+  static const Color surfaceDeep = Color(0xFF111827);
+  static const Color neonBlue = Color(0xFF3B82F6);
+  static const Color neonCyan = Color(0xFF22D3EE);
+  static const Color neonGlow = Color(0x66135BEC);
+  static const Color neonGlowStrong = Color(0x99135BEC);
+  static const Color glassLight = Color(0xB3FFFFFF);
+  static const Color glassDark = Color(0x661A212E);
+  static const Color glassBorderLight = Color(0x140F172A);
+  static const Color glassBorderDark = Color(0x24FFFFFF);
+  static const Color glassHighlight = Color(0x1AFFFFFF);
+  static const Color glassHighlightDark = Color(0x0DFFFFFF);
 }

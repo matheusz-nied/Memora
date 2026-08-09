@@ -6,6 +6,9 @@ import '../../../../core/constants/route_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/pressable_scale.dart';
+import '../../../../core/widgets/soft_progress_bar.dart';
 import '../../deck_card_counts_provider.dart';
 import '../../deck_model.dart';
 import '../../deck_text.dart';
@@ -28,30 +31,20 @@ class LibraryDeckCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final countsAsync = ref.watch(deckCardCountsStreamProvider(deck.id));
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppDimensions.lg),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        side: BorderSide(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.06),
-        ),
-      ),
-      color: isDark ? AppColors.surfaceDark : Colors.white,
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+      child: PressableScale(
         onTap: () => context.push(RouteConstants.deckPath(deck.id)),
-        child: Padding(
+        child: GlassPanel(
+          isDark: isDark,
+          showGlow: false,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           padding: const EdgeInsets.all(AppDimensions.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top title, status badge and settings menu
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Column(
@@ -89,8 +82,6 @@ class LibraryDeckCard extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: AppDimensions.md),
-
-                  // Pill Badge + Actions Menu
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -105,13 +96,13 @@ class LibraryDeckCard extends ConsumerWidget {
                             ),
                             decoration: BoxDecoration(
                               color: isDone
-                                  ? AppColors.successBg
-                                  : AppColors.primary.withValues(alpha: 0.1),
+                                  ? AppColors.success.withValues(alpha: 0.12)
+                                  : AppColors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(100),
                               border: Border.all(
                                 color: isDone
-                                    ? AppColors.success.withValues(alpha: 0.3)
-                                    : AppColors.primary.withValues(alpha: 0.3),
+                                    ? AppColors.success.withValues(alpha: 0.25)
+                                    : AppColors.primary.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Text(
@@ -166,8 +157,6 @@ class LibraryDeckCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppDimensions.xl),
-
-              // Bottom Mastery / Daily review progress
               countsAsync.maybeWhen(
                 data: (counts) {
                   final total = counts.total;
@@ -175,6 +164,9 @@ class LibraryDeckCard extends ConsumerWidget {
                   final percent = total == 0
                       ? 100
                       : (((total - due) / total) * 100).round();
+                  final progress = total == 0
+                      ? 1.0
+                      : (total - due) / total;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -204,19 +196,7 @@ class LibraryDeckCard extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: LinearProgressIndicator(
-                          value: total == 0 ? 1.0 : (total - due) / total,
-                          minHeight: 5,
-                          backgroundColor: isDark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.black.withValues(alpha: 0.05),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
-                        ),
-                      ),
+                      SoftProgressBar(progress: progress, isDark: isDark),
                     ],
                   );
                 },

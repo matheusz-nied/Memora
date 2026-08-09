@@ -13,7 +13,9 @@ import '../../core/utils/responsive.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
+import '../../core/widgets/neon_button.dart';
 import '../../core/widgets/offline_banner.dart';
+import '../../core/widgets/scaffold_shell.dart';
 import '../cards/card_model.dart';
 import '../cards/card_repository.dart';
 import '../decks/deck_model.dart';
@@ -25,6 +27,7 @@ import 'study_text.dart';
 import 'widgets/insight_widget.dart';
 import 'widgets/study_flashcard.dart';
 import 'widgets/study_rating_bar.dart';
+import 'widgets/study_progress_header.dart';
 import 'widgets/study_summary.dart';
 
 class StudyScreen extends ConsumerStatefulWidget {
@@ -75,8 +78,8 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
+    return ScaffoldShell(
+      isDark: isDark,
       body: SafeArea(
         child: Responsive.constrainedContent(
           child: deck.when(
@@ -419,8 +422,6 @@ class _StudyContent extends StatelessWidget {
     }
 
     final currentCard = cards[currentIndex];
-    final completed = currentIndex.clamp(0, cards.length);
-    final progress = cards.isEmpty ? 0.0 : completed / cards.length;
 
     return Column(
       children: [
@@ -458,16 +459,6 @@ class _StudyContent extends StatelessWidget {
                             borderRadius: BorderRadius.circular(
                               AppDimensions.radiusFull,
                             ),
-                            boxShadow: isActive
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : null,
                           ),
                         );
                       }),
@@ -475,16 +466,10 @@ class _StudyContent extends StatelessWidget {
                   else
                     SizedBox(
                       width: 200,
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusFull,
-                        ),
-                        backgroundColor: isDark
-                            ? const Color(0xFF324467)
-                            : AppColors.borderStrong,
-                        color: AppColors.primary,
+                      child: StudyProgressHeader(
+                        currentIndex: currentIndex,
+                        totalCards: cards.length,
+                        isDark: isDark,
                       ),
                     ),
                   const SizedBox(height: AppDimensions.md),
@@ -597,37 +582,10 @@ class _StudyContent extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 480),
             child: showBack
                 ? StudyRatingBar(enabled: !isSavingRating, onRating: onRating)
-                : SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: onToggleCard,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 8,
-                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusXl,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.visibility, size: 20),
-                          const SizedBox(width: AppDimensions.sm),
-                          Text(
-                            StudyText.revealAnswer,
-                            style: AppTypography.labelMedium.copyWith(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                : NeonButton(
+                    label: StudyText.revealAnswer,
+                    icon: Icons.visibility,
+                    onPressed: onToggleCard,
                   ),
           ),
         ),
