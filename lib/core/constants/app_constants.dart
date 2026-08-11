@@ -28,6 +28,8 @@ class AppConstants {
 
   static const int kMaxCardFront = 300;
   static const int kMaxCardBack = 600;
+  static const int kMaxCardsPerImport = 500;
+  static const int kMaxCardImportSizeMb = 2;
   static const int kMaxDeckTitle = 60;
   static const int kMaxDeckDescription = 200;
   static const int kMaxChatMessages = 40;

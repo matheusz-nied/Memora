@@ -10,7 +10,8 @@ import 'features/agent/presentation/chat_screen.dart';
 import 'features/backup/backup_screen.dart';
 import 'features/decks/deck_screen.dart';
 import 'features/decks/home_screen.dart';
-import 'features/generate/generated_cards_review_args.dart';
+import 'features/cards/card_import_screen.dart';
+import 'features/generate/card_review_args.dart';
 import 'features/generate/import_content_screen.dart';
 import 'features/generate/review_cards_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
@@ -102,10 +103,17 @@ final _routes = [
     },
   ),
   GoRoute(
+    path: RouteConstants.kRouteCardImport,
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return CardImportScreen(deckId: deckId);
+    },
+  ),
+  GoRoute(
     path: RouteConstants.kRouteReview,
     builder: (context, state) {
-      final args = state.extra is GeneratedCardsReviewArgs
-          ? state.extra as GeneratedCardsReviewArgs
+      final args = state.extra is CardReviewArgs
+          ? state.extra as CardReviewArgs
           : null;
       return ReviewCardsScreen(args: args);
     },

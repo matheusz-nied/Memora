@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/database/app_database.dart';
+import 'card_draft.dart';
 import 'card_model.dart';
 
 final cardRepositoryProvider = Provider<CardRepository>((ref) {
@@ -101,20 +102,60 @@ class CardRepository {
     required String deckId,
     required String front,
     required String back,
-  }) async {
-    final now = DateTime.now();
-    await _database.cardsDao.upsertCard(
-      CardsTableCompanion.insert(
-        id: _uuid.v4(),
-        deckId: deckId,
-        front: front.trim(),
-        back: back.trim(),
-        dueDate: now.millisecondsSinceEpoch,
-        createdAt: now.millisecondsSinceEpoch,
-        updatedAt: now.millisecondsSinceEpoch,
-      ),
+  }) {
+    return createCards(
+      deckId: deckId,
+      cards: [CardDraft(front: front, back: back)],
     );
   }
+
+  /// Insere uma importação ou revisão inteira de uma vez.
+  ///
+  /// O usuário só vê os cards quando todos foram persistidos com sucesso.
+  Future<void> createCards({
+    required String deckId,
+    required List<CardDraft> cards,
+  }) async {
+    if (cards.isEmpty) {
+      throw ArgumentError.value(cards, 'cards', 'Não pode estar vazio.');
+    }
+
+    final now = DateTime.now();
+    await _database.transaction(() async {
+      for (var index = 0; index < cards.length; index++) {
+        final card = cards[index];
+        final timestamp = now.millisecondsSinceEpoch + index;
+        await _database.cardsDao.upsertCard(
+          CardsTableCompanion.insert(
+            id: _uuid.v4(),
+            deckId: deckId,
+            front: card.front.trim(),
+            back: card.back.trim(),
+            dueDate: now.millisecondsSinceEpoch,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          ),
+        );
+      }
+    });
+  }
+
+  Future<bool> hasDuplicateCards({
+    required String deckId,
+    required List<CardDraft> cards,
+  }) async {
+    final seen = {
+      for (final card in await _database.cardsDao.getCardsForDeck(deckId))
+        _cardKey(card.front, card.back),
+    };
+    return cards.any((card) => !seen.add(_cardKey(card.front, card.back)));
+  }
+
+  String _cardKey(String front, String back) =>
+      '${_normalizeCardPart(front)}\u0000${_normalizeCardPart(back)}';
+
+  String _normalizeCardPart(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
   Future<void> updateCard({
     required CardModel card,

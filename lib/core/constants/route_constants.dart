@@ -10,7 +10,8 @@ class RouteConstants {
   static const String kRouteStudy = '/deck/:deckId/study';
   static const String kRouteCardInsight = '/deck/:deckId/card/:cardId/insight';
   static const String kRouteGenerate = '/deck/:deckId/generate';
-  static const String kRouteReview = '/deck/:deckId/generate/review';
+  static const String kRouteReview = '/deck/:deckId/cards/review';
+  static const String kRouteCardImport = '/deck/:deckId/import';
   static const String kRouteChat = '/deck/:deckId/chat';
   static const String kRouteAgentConfig = '/deck/:deckId/agent-config';
 
@@ -24,7 +25,8 @@ class RouteConstants {
   static String cardInsightPath(String deckId, String cardId) =>
       '/deck/$deckId/card/$cardId/insight';
   static String generatePath(String deckId) => '/deck/$deckId/generate';
-  static String reviewPath(String deckId) => '/deck/$deckId/generate/review';
+  static String reviewPath(String deckId) => '/deck/$deckId/cards/review';
+  static String cardImportPath(String deckId) => '/deck/$deckId/import';
   static String chatPath(String deckId) => '/deck/$deckId/chat';
   static String agentConfigPath(String deckId) => '/deck/$deckId/agent-config';
 }

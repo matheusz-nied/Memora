@@ -21,9 +21,10 @@ import '../../core/widgets/neon_button.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/scaffold_shell.dart';
 import '../../core/widgets/soft_progress_bar.dart';
+import '../cards/card_draft.dart';
 import 'generate_repository.dart';
 import 'generate_text.dart';
-import 'generated_cards_review_args.dart';
+import 'card_review_args.dart';
 import 'generation_progress.dart';
 import 'widgets/quantity_selector.dart';
 
@@ -148,10 +149,7 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
               ],
               if (_progress case final progress?) ...[
                 const SizedBox(height: AppDimensions.lg),
-                _GenerateProgressIndicator(
-                  progress: progress,
-                  isDark: isDark,
-                ),
+                _GenerateProgressIndicator(progress: progress, isDark: isDark),
               ],
               const SizedBox(height: AppDimensions.xxl),
               NeonButton(
@@ -325,7 +323,12 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
   void _openReview(List<GeneratedCard> cards) {
     context.push(
       RouteConstants.reviewPath(widget.deckId),
-      extra: GeneratedCardsReviewArgs(deckId: widget.deckId, cards: cards),
+      extra: CardReviewArgs(
+        deckId: widget.deckId,
+        cards: cards
+            .map((card) => CardDraft(front: card.front, back: card.back))
+            .toList(growable: false),
+      ),
     );
   }
 

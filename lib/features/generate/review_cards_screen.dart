@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
@@ -11,16 +12,18 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/glass_panel.dart';
 import '../../core/widgets/neon_button.dart';
 import '../../core/widgets/scaffold_shell.dart';
+import '../cards/card_draft.dart';
 import '../cards/card_repository.dart';
-import 'generate_text.dart';
-import 'generated_cards_review_args.dart';
+import '../cards/card_text.dart';
+import 'card_review_args.dart';
+import 'review_text.dart';
 import 'widgets/generated_card_editor.dart';
 import '../legal/widgets/ai_disclaimer_note.dart';
 
 class ReviewCardsScreen extends ConsumerStatefulWidget {
   const ReviewCardsScreen({super.key, required this.args});
 
-  final GeneratedCardsReviewArgs? args;
+  final CardReviewArgs? args;
 
   @override
   ConsumerState<ReviewCardsScreen> createState() => _ReviewCardsScreenState();
@@ -73,7 +76,7 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           title: Text(
-            GenerateText.reviewTitle,
+            ReviewText.title(widget.args?.source ?? CardReviewSource.ai),
             style: AppTypography.headingMedium.copyWith(
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
             ),
@@ -86,9 +89,13 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
           child: Responsive.constrainedContent(
             child: !hasReview
                 ? EmptyState(
-                    title: GenerateText.emptyReviewTitle,
-                    message: GenerateText.emptyReviewMessage,
-                    actionLabel: GenerateText.generate,
+                    title: ReviewText.emptyTitle,
+                    message: ReviewText.emptyMessage(
+                      widget.args?.source ?? CardReviewSource.ai,
+                    ),
+                    actionLabel: ReviewText.emptyAction(
+                      widget.args?.source ?? CardReviewSource.ai,
+                    ),
                     onAction: () => context.pop(),
                   )
                 : Form(
@@ -105,8 +112,13 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _ReviewHeader(count: _cards.length),
-                              const AiDisclaimerNote(),
+                              _ReviewHeader(
+                                count: _cards.length,
+                                source: widget.args!.source,
+                                ignoredMessage: _ignoredMessage,
+                              ),
+                              if (widget.args!.source == CardReviewSource.ai)
+                                const AiDisclaimerNote(),
                             ],
                           );
                         }
@@ -136,28 +148,44 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate() || widget.args == null) {
+    if (widget.args == null) {
+      return;
+    }
+    if (_cards.isEmpty) {
+      _showMessage(ReviewText.emptySaveError);
+      return;
+    }
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
     setState(() => _isSaving = true);
     try {
       final repository = ref.read(cardRepositoryProvider);
-      for (final card in _cards) {
-        await repository.createCard(
-          deckId: widget.args!.deckId,
-          front: card.frontController.text,
-          back: card.backController.text,
-        );
+      final drafts = _cards
+          .map(
+            (card) => CardDraft(
+              front: card.frontController.text,
+              back: card.backController.text,
+            ),
+          )
+          .toList(growable: false);
+      if (await repository.hasDuplicateCards(
+        deckId: widget.args!.deckId,
+        cards: drafts,
+      )) {
+        _showMessage(ReviewText.duplicateCards);
+        return;
       }
+      await repository.createCards(deckId: widget.args!.deckId, cards: drafts);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(const SnackBar(content: Text(GenerateText.saved)));
+        _showMessage(ReviewText.saved);
         _allowPop = true;
-        context.pop();
-        context.pop();
+        context.go(RouteConstants.deckPath(widget.args!.deckId));
       }
+    } catch (error) {
+      debugPrint('Falha ao salvar cards revisados: $error');
+      _showMessage(ReviewText.saveFailed);
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -165,20 +193,40 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
     }
   }
 
+  void _showMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String? get _ignoredMessage {
+    final args = widget.args;
+    if (args == null || (args.invalidCards == 0 && args.duplicateCards == 0)) {
+      return null;
+    }
+    return CardText.importIgnoredSummary(
+      invalid: args.invalidCards,
+      duplicates: args.duplicateCards,
+    );
+  }
+
   Future<void> _confirmDiscardAndPop() async {
     final shouldDiscard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text(GenerateText.discardReviewTitle),
-        content: const Text(GenerateText.discardReviewMessage),
+        title: const Text(ReviewText.discardTitle),
+        content: Text(ReviewText.discardMessage(widget.args!.source)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(GenerateText.discardReviewCancel),
+            child: const Text(ReviewText.discardCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(GenerateText.discardReviewConfirm),
+            child: const Text(ReviewText.discardConfirm),
           ),
         ],
       ),
@@ -194,9 +242,15 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
 }
 
 class _ReviewHeader extends StatelessWidget {
-  const _ReviewHeader({required this.count});
+  const _ReviewHeader({
+    required this.count,
+    required this.source,
+    this.ignoredMessage,
+  });
 
   final int count;
+  final CardReviewSource source;
+  final String? ignoredMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -204,14 +258,23 @@ class _ReviewHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          GenerateText.reviewTitle,
+          ReviewText.title(source),
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         const SizedBox(height: AppDimensions.sm),
         Text(
-          GenerateText.reviewSubtitle,
+          ReviewText.subtitle(source),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
+        if (ignoredMessage != null) ...[
+          const SizedBox(height: AppDimensions.sm),
+          Text(
+            ignoredMessage!,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.warning),
+          ),
+        ],
       ],
     );
   }
@@ -246,7 +309,7 @@ class _SaveReviewBar extends StatelessWidget {
               maxWidth: AppConstants.kContentMaxWidth,
             ),
             child: NeonButton(
-              label: GenerateText.saveCards,
+              label: ReviewText.saveCards,
               icon: Icons.check,
               onPressed: isSaving ? null : onSave,
             ),

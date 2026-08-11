@@ -126,7 +126,7 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCardForm(context),
+        onPressed: () => _showAddCardOptions(context),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 2,
@@ -281,8 +281,9 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                                 : EmptyState(
                                     title: CardText.emptyTitle,
                                     message: CardText.emptyMessage,
-                                    actionLabel: CardText.newCard,
-                                    onAction: () => _showCardForm(context),
+                                    actionLabel: CardText.addCards,
+                                    onAction: () =>
+                                        _showAddCardOptions(context),
                                   ),
                           ),
                         ];
@@ -311,9 +312,7 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
                             },
                           ),
                         ),
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 120),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 120)),
                       ];
                     },
                   ),
@@ -346,6 +345,39 @@ class _DeckScreenState extends ConsumerState<DeckScreen> {
             }
             return repository.updateCard(card: card, front: front, back: back);
           },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAddCardOptions(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text(CardText.newCard),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showCardForm(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.upload_file_outlined),
+                title: const Text(CardText.importJson),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  context.push(RouteConstants.cardImportPath(widget.deckId));
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -403,123 +435,123 @@ class _DeckHeroCard extends StatelessWidget {
       showGlow: false,
       padding: const EdgeInsets.all(AppDimensions.xl),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon + Title + Description Row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Math colored icon container
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: visual.backgroundColor,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                  ),
-                  child: Icon(visual.icon, color: visual.color, size: 26),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon + Title + Description Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Math colored icon container
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: visual.backgroundColor,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                 ),
-                const SizedBox(width: AppDimensions.lg),
+                child: Icon(visual.icon, color: visual.color, size: 26),
+              ),
+              const SizedBox(width: AppDimensions.lg),
 
-                // Title and Description
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        deck.title,
-                        style: AppTypography.headingLarge.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (deck.description != null &&
-                          deck.description!.isNotEmpty) ...[
-                        const SizedBox(height: AppDimensions.xs),
-                        Text(
-                          deck.description!,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: isDark
-                                ? AppColors.textSecDark
-                                : AppColors.textSecondary,
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.xl),
-
-            // Horizontal stats and metadata badges
-            Row(
-              children: [
-                const Spacer(),
-
-                // Total cards count
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              // Title and Description
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TOTAL',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isDark
-                            ? AppColors.textTertDark
-                            : AppColors.textTertiary,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '$total',
-                      style: AppTypography.bodyLarge.copyWith(
+                      deck.title,
+                      style: AppTypography.headingLarge.copyWith(
                         color: isDark
                             ? AppColors.textPrimaryDark
                             : AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                    if (deck.description != null &&
+                        deck.description!.isNotEmpty) ...[
+                      const SizedBox(height: AppDimensions.xs),
+                      Text(
+                        deck.description!,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.textSecDark
+                              : AppColors.textSecondary,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(width: AppDimensions.xl),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.xl),
 
-                // Cards due counts
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'A REVISAR',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isDark
-                            ? AppColors.textTertDark
-                            : AppColors.textTertiary,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
+          // Horizontal stats and metadata badges
+          Row(
+            children: [
+              const Spacer(),
+
+              // Total cards count
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'TOTAL',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: isDark
+                          ? AppColors.textTertDark
+                          : AppColors.textTertiary,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
-                      '$due',
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: due > 0
-                            ? AppColors.warning
-                            : (isDark
-                                  ? AppColors.textSecDark
-                                  : AppColors.textSecondary),
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  Text(
+                    '$total',
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: AppDimensions.xl),
+
+              // Cards due counts
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'A REVISAR',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: isDark
+                          ? AppColors.textTertDark
+                          : AppColors.textTertiary,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '$due',
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: due > 0
+                          ? AppColors.warning
+                          : (isDark
+                                ? AppColors.textSecDark
+                                : AppColors.textSecondary),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
