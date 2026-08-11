@@ -34,129 +34,126 @@ class ProfileTab extends ConsumerWidget {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Responsive.constrainedContent(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.xl),
-            child: Builder(
-              builder: (context) {
-                const displayName = DeviceUserId.displayName;
-                final initial = displayName[0].toUpperCase();
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.xl),
+          child: Builder(
+            builder: (context) {
+              const displayName = DeviceUserId.displayName;
+              final initial = displayName[0].toUpperCase();
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: AppDimensions.sm),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppDimensions.sm),
 
-                    // Premium Frosted Header Card
-                    _ProfileHeaderCard(
-                      displayName: displayName,
-                      initial: initial,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: AppDimensions.xl),
+                  // Premium Frosted Header Card
+                  _ProfileHeaderCard(
+                    displayName: displayName,
+                    initial: initial,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: AppDimensions.xl),
 
-                    // Live Interactive Stats Grid Row
-                    Row(
-                      children: [
-                        // Stat 1: Total Decks Watcher
-                        Expanded(
-                          child: _StatBlock(
-                            icon: Icons.folder_open,
-                            iconColor: AppColors.primary,
-                            title: 'DECKS CRIADOS',
-                            valueWidget: decksAsync.maybeWhen(
-                              data: (decks) => Text(
-                                '${decks.length}',
+                  // Live Interactive Stats Grid Row
+                  Row(
+                    children: [
+                      // Stat 1: Total Decks Watcher
+                      Expanded(
+                        child: _StatBlock(
+                          icon: Icons.folder_open,
+                          iconColor: AppColors.primary,
+                          title: 'DECKS CRIADOS',
+                          valueWidget: decksAsync.maybeWhen(
+                            data: (decks) => Text(
+                              '${decks.length}',
+                              style: AppTypography.headingLarge.copyWith(
+                                color: isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
+                              ),
+                            ),
+                            orElse: () => const Text('-'),
+                          ),
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.md),
+
+                      // Stat 2: Connection live indicator
+                      Expanded(
+                        child: _StatBlock(
+                          icon: isOnline ? Icons.wifi : Icons.wifi_off,
+                          iconColor: isOnline
+                              ? AppColors.success
+                              : AppColors.warning,
+                          title: 'CONEXÃO APP',
+                          valueWidget: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isOnline
+                                      ? AppColors.success
+                                      : AppColors.warning,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          (isOnline
+                                                  ? AppColors.success
+                                                  : AppColors.warning)
+                                              .withValues(alpha: 0.2),
+                                      blurRadius: 3,
+                                      spreadRadius: 0,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isOnline ? 'Online' : 'Offline',
                                 style: AppTypography.headingLarge.copyWith(
                                   color: isDark
                                       ? AppColors.textPrimaryDark
                                       : AppColors.textPrimary,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 24,
+                                  fontSize: 16,
                                 ),
                               ),
-                              orElse: () => const Text('-'),
-                            ),
-                            isDark: isDark,
+                            ],
                           ),
+                          isDark: isDark,
                         ),
-                        const SizedBox(width: AppDimensions.md),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.xl),
 
-                        // Stat 2: Connection live indicator
-                        Expanded(
-                          child: _StatBlock(
-                            icon: isOnline ? Icons.wifi : Icons.wifi_off,
-                            iconColor: isOnline
-                                ? AppColors.success
-                                : AppColors.warning,
-                            title: 'CONEXÃO APP',
-                            valueWidget: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: isOnline
-                                        ? AppColors.success
-                                        : AppColors.warning,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color:
-                                            (isOnline
-                                                    ? AppColors.success
-                                                    : AppColors.warning)
-                                                .withValues(alpha: 0.2),
-                                        blurRadius: 3,
-                                        spreadRadius: 0,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isOnline ? 'Online' : 'Offline',
-                                  style: AppTypography.headingLarge.copyWith(
-                                    color: isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            isDark: isDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppDimensions.xl),
+                  // Não há quota a mostrar: quem paga a IA é a chave da
+                  // DeepSeek do próprio usuário, e o que importa é saber se
+                  // ela está cadastrada.
+                  const _ApiKeyTile(),
+                  const SizedBox(height: AppDimensions.md),
+                  const _BackupTile(),
+                  const SizedBox(height: AppDimensions.md),
+                  const _PrivacyTile(),
+                  const SizedBox(height: AppDimensions.xl),
 
-                    // Não há quota a mostrar: quem paga a IA é a chave da
-                    // DeepSeek do próprio usuário, e o que importa é saber se
-                    // ela está cadastrada.
-                    const _ApiKeyTile(),
-                    const SizedBox(height: AppDimensions.md),
-                    const _BackupTile(),
-                    const SizedBox(height: AppDimensions.md),
-                    const _PrivacyTile(),
-                    const SizedBox(height: AppDimensions.xl),
-
-                    // Detailed account parameters card
-                    _ProfileDetailsCard(
-                      isDark: isDark,
-                      displayName: displayName,
-                    ),
-                    // Não há de onde sair nem conta a excluir: os dados vão
-                    // embora com o app, pelo próprio sistema.
-                    const SizedBox(height: 120), // Spacing for navigation bar
-                  ],
-                );
-              },
-            ),
+                  // Detailed account parameters card
+                  _ProfileDetailsCard(isDark: isDark, displayName: displayName),
+                  // Não há de onde sair nem conta a excluir: os dados vão
+                  // embora com o app, pelo próprio sistema.
+                  const SizedBox(height: 120), // Spacing for navigation bar
+                ],
+              );
+            },
           ),
         ),
+      ),
     );
   }
 }
@@ -481,38 +478,38 @@ class _ProfileHeaderCard extends StatelessWidget {
 
           // Profile info strings
           Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.headingLarge.copyWith(
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 22,
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.headingLarge.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 22,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ProfileText.onThisDevice,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: isDark
-                          ? AppColors.textSecDark
-                          : AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  ProfileText.onThisDevice,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: isDark
+                        ? AppColors.textSecDark
+                        : AppColors.textSecondary,
+                    fontSize: 13,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -596,9 +593,7 @@ class _ProfileDetailsCard extends StatelessWidget {
           Text(
             ProfileText.account,
             style: AppTypography.headingMedium.copyWith(
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimary,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
