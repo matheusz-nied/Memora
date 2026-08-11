@@ -47,36 +47,38 @@ class HomeBottomNav extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: AppDimensions.sm,
-                horizontal: AppDimensions.xl,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _NavItem(
-                    index: 0,
-                    icon: Icons.dashboard,
-                    label: DeckText.dashboard,
-                    currentIndex: currentIndex,
-                    isDark: isDark,
-                    onChanged: onChanged,
+                  Expanded(
+                    child: _NavItem(
+                      index: 0,
+                      icon: Icons.dashboard,
+                      label: DeckText.dashboard,
+                      currentIndex: currentIndex,
+                      isDark: isDark,
+                      onChanged: onChanged,
+                    ),
                   ),
-                  _NavItem(
-                    index: 1,
-                    icon: Icons.style,
-                    label: DeckText.decks,
-                    currentIndex: currentIndex,
-                    isDark: isDark,
-                    onChanged: onChanged,
+                  Expanded(
+                    child: _NavItem(
+                      index: 1,
+                      icon: Icons.style,
+                      label: DeckText.decks,
+                      currentIndex: currentIndex,
+                      isDark: isDark,
+                      onChanged: onChanged,
+                    ),
                   ),
-                  _NavItem(
-                    index: 2,
-                    icon: Icons.person,
-                    label: DeckText.profile,
-                    currentIndex: currentIndex,
-                    isDark: isDark,
-                    onChanged: onChanged,
+                  Expanded(
+                    child: _NavItem(
+                      index: 2,
+                      icon: Icons.person,
+                      label: DeckText.profile,
+                      currentIndex: currentIndex,
+                      isDark: isDark,
+                      onChanged: onChanged,
+                    ),
                   ),
                 ],
               ),
@@ -117,9 +119,10 @@ class _NavItem extends StatelessWidget {
       onTap: () => onChanged(index),
       child: SizedBox(
         height: 52,
+        width: double.infinity,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 26),
             const SizedBox(height: 2),
