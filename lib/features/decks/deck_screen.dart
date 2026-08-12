@@ -599,55 +599,53 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(height: AppDimensions.sm),
 
         // Sub horizontal grid with other three actions
-        Row(
-          children: [
-            // Chat button
-            Expanded(
-              child: _QuickActionButton(
-                icon: Icons.chat_bubble_outline,
-                label: DeckText.chatTutor,
-                isDark: isDark,
-                isEnabled: isOnline,
-                tooltip: isOnline
-                    ? null
-                    : 'Requer conexão com a internet para chat',
-                onTap: () {
-                  context.push(RouteConstants.chatPath(deck.id));
-                },
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.chat_bubble_outline,
+                  label: DeckText.chatTutor,
+                  isDark: isDark,
+                  isEnabled: isOnline,
+                  tooltip: isOnline
+                      ? null
+                      : 'Requer conexão com a internet para chat',
+                  onTap: () {
+                    context.push(RouteConstants.chatPath(deck.id));
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: AppDimensions.md),
-
-            // Generate with AI
-            Expanded(
-              child: _QuickActionButton(
-                icon: Icons.auto_awesome,
-                label: DeckText.importAi,
-                isDark: isDark,
-                isEnabled: isOnline,
-                tooltip: isOnline
-                    ? null
-                    : 'Requer conexão com a internet para gerar cards',
-                onTap: () {
-                  context.push(RouteConstants.generatePath(deck.id));
-                },
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.auto_awesome,
+                  label: DeckText.importAi,
+                  isDark: isDark,
+                  isEnabled: isOnline,
+                  tooltip: isOnline
+                      ? null
+                      : 'Requer conexão com a internet para gerar cards',
+                  onTap: () {
+                    context.push(RouteConstants.generatePath(deck.id));
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: AppDimensions.md),
-
-            // Settings Config
-            Expanded(
-              child: _QuickActionButton(
-                icon: Icons.tune,
-                label: DeckText.deckSettings,
-                isDark: isDark,
-                isEnabled: true,
-                onTap: () {
-                  context.push(RouteConstants.agentConfigPath(deck.id));
-                },
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.tune,
+                  label: DeckText.deckSettings,
+                  isDark: isDark,
+                  isEnabled: true,
+                  onTap: () {
+                    context.push(RouteConstants.agentConfigPath(deck.id));
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -665,6 +663,9 @@ class _QuickActionButton extends StatelessWidget {
     this.tooltip,
   });
 
+  static const _tileHeight = 76.0;
+  static const _labelHeight = 26.0;
+
   final IconData icon;
   final String label;
   final bool isDark;
@@ -674,39 +675,61 @@ class _QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip ?? '',
-      child: Opacity(
-        opacity: isEnabled ? 1.0 : 0.5,
-        child: PressableScale(
-          onTap: isEnabled ? onTap : null,
+    final labelColor = isEnabled
+        ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)
+        : (isDark ? Colors.white30 : Colors.black26);
+    final iconColor = isEnabled
+        ? AppColors.primary
+        : (isDark ? Colors.white30 : Colors.black26);
+    final labelStyle = AppTypography.bodySmall.copyWith(
+      color: labelColor,
+      fontWeight: FontWeight.w600,
+      fontSize: 11,
+      height: 1.1,
+    );
+
+    final button = Opacity(
+      opacity: isEnabled ? 1.0 : 0.5,
+      child: PressableScale(
+        onTap: isEnabled ? onTap : null,
+        child: SizedBox(
+          height: _tileHeight,
+          width: double.infinity,
           child: GlassPanel(
             isDark: isDark,
             showGlow: false,
             showTopHighlight: false,
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-            padding: const EdgeInsets.symmetric(vertical: AppDimensions.md),
+            padding: EdgeInsets.zero,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  color: isEnabled
-                      ? AppColors.primary
-                      : (isDark ? Colors.white30 : Colors.black26),
-                  size: 20,
+                Expanded(
+                  child: Center(
+                    child: Icon(icon, color: iconColor, size: 22),
+                  ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: isEnabled
-                        ? (isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimary)
-                        : (isDark ? Colors.white30 : Colors.black26),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
+                SizedBox(
+                  height: _labelHeight,
+                  width: double.infinity,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppDimensions.xs,
+                      0,
+                      AppDimensions.xs,
+                      AppDimensions.sm,
+                    ),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          style: labelStyle,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -715,6 +738,12 @@ class _QuickActionButton extends StatelessWidget {
         ),
       ),
     );
+
+    if (tooltip == null) {
+      return button;
+    }
+
+    return Tooltip(message: tooltip!, child: button);
   }
 }
 

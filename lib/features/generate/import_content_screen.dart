@@ -27,8 +27,7 @@ import 'generate_text.dart';
 import 'card_review_args.dart';
 import 'generation_progress.dart';
 import 'widgets/quantity_selector.dart';
-
-enum _GenerateMode { text, pdf }
+import 'widgets/source_mode_selector.dart';
 
 class ImportContentScreen extends ConsumerStatefulWidget {
   const ImportContentScreen({super.key, required this.deckId});
@@ -42,7 +41,7 @@ class ImportContentScreen extends ConsumerStatefulWidget {
 
 class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
   final _textController = TextEditingController();
-  var _mode = _GenerateMode.text;
+  var _isPdfMode = false;
   var _quantity = AppConstants.kCardQuantityOptions.first;
   GenerateProgress? _progress;
   String? _errorMessage;
@@ -50,6 +49,9 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
   Uint8List? _pdfBytes;
 
   bool get _isGenerating => _progress != null;
+
+  GenerateSourceMode get _sourceMode =>
+      _isPdfMode ? GenerateSourceMode.pdf : GenerateSourceMode.text;
 
   @override
   void dispose() {
@@ -95,35 +97,17 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppDimensions.xl),
-              GlassPanel(
-                isDark: isDark,
-                showGlow: false,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                padding: const EdgeInsets.all(AppDimensions.sm),
-                child: SegmentedButton<_GenerateMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: _GenerateMode.text,
-                      label: Text(GenerateText.textMode),
-                      icon: Icon(Icons.notes),
-                    ),
-                    ButtonSegment(
-                      value: _GenerateMode.pdf,
-                      label: Text(GenerateText.pdfMode),
-                      icon: Icon(Icons.picture_as_pdf_outlined),
-                    ),
-                  ],
-                  selected: {_mode},
-                  onSelectionChanged: (selected) {
-                    setState(() {
-                      _mode = selected.single;
-                      _errorMessage = null;
-                    });
-                  },
-                ),
+              SourceModeSelector(
+                value: _sourceMode,
+                onChanged: (mode) {
+                  setState(() {
+                    _isPdfMode = mode == GenerateSourceMode.pdf;
+                    _errorMessage = null;
+                  });
+                },
               ),
               const SizedBox(height: AppDimensions.xl),
-              if (_mode == _GenerateMode.text)
+              if (!_isPdfMode)
                 _TextInput(isDark: isDark, controller: _textController)
               else
                 _PdfPicker(isDark: isDark, pdfName: _pdfName, onPick: _pickPdf),
@@ -227,14 +211,14 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
         }
       }
 
-      final result = switch (_mode) {
-        _GenerateMode.text => await repository.generateFromText(
+      final result = switch (_sourceMode) {
+        GenerateSourceMode.text => await repository.generateFromText(
           deckId: widget.deckId,
           text: _textController.text,
           quantity: _quantity,
           onProgress: onProgress,
         ),
-        _GenerateMode.pdf => await repository.generateFromPdf(
+        GenerateSourceMode.pdf => await repository.generateFromPdf(
           deckId: widget.deckId,
           fileName: _pdfName ?? '',
           bytes: _pdfBytes ?? Uint8List(0),
@@ -272,7 +256,7 @@ class _ImportContentScreenState extends ConsumerState<ImportContentScreen> {
 
   GenerateProgress _initialProgress() {
     return GenerateProgress(
-      phase: _mode == _GenerateMode.pdf
+      phase: _isPdfMode
           ? GeneratePhase.extracting
           : GeneratePhase.generating,
       batchesDone: 0,
