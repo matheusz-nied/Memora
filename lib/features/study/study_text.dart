@@ -13,7 +13,7 @@ class StudyText {
   static const String freeStudy = 'Estudo livre';
   static const String freeStudyBanner =
       'Estudo livre: revisando todos os cards, inclusive os que ainda não '
-      'venceram.';
+      'venceram. Esta prática não altera os vencimentos.';
   static const String backToDeck = 'Voltar ao deck';
   static const String offline =
       'Offline: seu progresso será salvo localmente e sincronizado depois.';

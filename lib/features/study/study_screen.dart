@@ -22,6 +22,8 @@ import '../decks/deck_model.dart';
 import '../decks/deck_card_counts_provider.dart';
 import '../decks/deck_repository.dart';
 import 'card_rating_model.dart';
+import 'study_scheduler.dart';
+import 'study_session_controller.dart';
 import 'study_session_model.dart';
 import 'study_text.dart';
 import 'widgets/insight_widget.dart';
@@ -45,7 +47,9 @@ class StudyScreen extends ConsumerStatefulWidget {
 
 class _StudyScreenState extends ConsumerState<StudyScreen> {
   final FlutterTts _tts = FlutterTts();
+  final StudyScheduler _scheduler = StudyScheduler();
   List<CardModel>? _sessionCards;
+  StudySessionController? _sessionController;
   final Set<String> _reviewedCardIds = {};
   final Set<String> _needsReviewCardIds = {};
   var _currentIndex = 0;
@@ -115,7 +119,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                   onViewInsight: (cardId) => context.push(
                     RouteConstants.cardInsightPath(deckValue.id, cardId),
                   ),
-                  onRestart: () => _restartSession(items),
+                  totalCards: _sessionController?.totalCards ?? items.length,
+                  onRestart: widget.freeStudy
+                      ? () => _restartSession(items)
+                      : null,
                   onBackToDeck: () => context.pop(),
                 ),
               );
@@ -127,39 +134,28 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
   }
 
   List<CardModel> _cardsForSession(List<CardModel> cards) {
-    final currentIds = cards.map((card) => card.id).join('|');
-    final sessionIds = _sessionCards?.map((card) => card.id).join('|');
-    final canReplaceSession = _reviewedCardIds.isEmpty && _currentIndex == 0;
-
-    if (_sessionCards == null ||
-        (canReplaceSession && sessionIds != currentIds)) {
-      _sessionCards = _orderedCards(cards);
+    if (_sessionController == null ||
+        (_sessionController!.totalCards == 0 && cards.isNotEmpty)) {
+      _sessionController = StudySessionController(
+        cards: cards,
+        freeStudy: widget.freeStudy,
+      );
     } else {
       // A sessão é congelada depois de começar: o stream reemite a cada
-      // avaliação e reordenar no meio embaralharia o que o usuário está vendo.
-      // Só os dados de cada card são atualizados.
-      final latestById = {for (final card in cards) card.id: card};
-      _sessionCards = _sessionCards
-          ?.map((card) => latestById[card.id] ?? card)
-          .toList();
+      // avaliação, mas só substitui snapshots que realmente são mais novos.
+      _sessionController!.replaceLatestCards(cards);
     }
 
-    return _sessionCards ?? const [];
-  }
-
-  /// Sempre por vencimento. Antes a lista era embaralhada quando offline, o
-  /// que não fazia sentido: o `dueDate` está no banco local de qualquer jeito,
-  /// e a ordem mudava conforme a conexão.
-  List<CardModel> _orderedCards(List<CardModel> cards) {
-    final ordered = [...cards];
-    ordered.sort((a, b) {
-      final dueCompare = a.dueDate.compareTo(b.dueDate);
-      if (dueCompare != 0) {
-        return dueCompare;
-      }
-      return a.createdAt.compareTo(b.createdAt);
-    });
-    return ordered;
+    final controller = _sessionController!;
+    _sessionCards = controller.cards;
+    _currentIndex = controller.currentIndex;
+    _reviewedCardIds
+      ..clear()
+      ..addAll(controller.reviewedIds);
+    _needsReviewCardIds
+      ..clear()
+      ..addAll(controller.needsReviewIds);
+    return _sessionCards!;
   }
 
   Future<void> _speak(String text, DeckModel deck) async {
@@ -175,48 +171,72 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
   Future<void> _rateCurrentCard(CardRating rating) async {
     final cards = _sessionCards ?? const <CardModel>[];
-    if (_isSavingRating || _currentIndex >= cards.length) {
+    final controller = _sessionController;
+    final currentCard = controller?.currentCard;
+    if (_isSavingRating ||
+        currentCard == null ||
+        _currentIndex >= cards.length) {
       return;
     }
 
-    final card = cards[_currentIndex];
-    final result = calculateStudyProgress(
-      currentEaseFactor: card.easeFactor,
-      currentIntervalDays: card.intervalDays,
-      repetitions: card.repetitions,
-      rating: rating,
-    );
+    final card = currentCard;
 
     setState(() {
       _isSavingRating = true;
     });
 
     try {
-      await ref
-          .read(cardRepositoryProvider)
-          .updateProgress(
-            card: card,
-            easeFactor: result.easeFactor,
-            intervalDays: result.intervalDays,
-            repetitions: result.repetitions,
-            dueDate: result.dueDate,
-            rating: rating.index,
-          );
+      late final CardModel updatedCard;
+      if (widget.freeStudy) {
+        await ref
+            .read(cardRepositoryProvider)
+            .recordFreePractice(card: card, rating: rating.index);
+        updatedCard = card;
+      } else {
+        final result = _scheduler.schedule(card, rating);
+        await ref
+            .read(cardRepositoryProvider)
+            .updateScheduledProgress(
+              card: card,
+              fsrsState: result.fsrsState,
+              fsrsStep: result.fsrsStep,
+              stability: result.stability,
+              difficulty: result.difficulty,
+              lastReview: result.lastReview,
+              intervalDays: result.intervalDays,
+              repetitions: result.repetitions,
+              dueDate: result.dueDate,
+              rating: rating.index,
+            );
+        updatedCard = card.copyWith(
+          fsrsState: result.fsrsState,
+          fsrsStep: result.fsrsStep,
+          stability: result.stability,
+          difficulty: result.difficulty,
+          lastReview: result.lastReview,
+          intervalDays: result.intervalDays,
+          repetitions: result.repetitions,
+          dueDate: result.dueDate,
+          updatedAt: DateTime.now(),
+        );
+      }
       if (!mounted) {
         return;
       }
+      final sessionController = _sessionController;
+      if (sessionController == null) {
+        return;
+      }
+      sessionController.recordAnswer(updatedCard: updatedCard, rating: rating);
       setState(() {
-        _reviewedCardIds.add(card.id);
-        if (rating == CardRating.again || rating == CardRating.hard) {
-          _needsReviewCardIds.add(card.id);
-        }
-        if (rating == CardRating.again) {
-          // Recoloca o card no fim da fila: sem isto "Não sei" não tinha
-          // nenhuma consequência dentro da sessão e o usuário nunca revia o
-          // card que acabou de errar.
-          _sessionCards = [...cards, card];
-        }
-        _currentIndex += 1;
+        _sessionCards = sessionController.cards;
+        _currentIndex = sessionController.currentIndex;
+        _reviewedCardIds
+          ..clear()
+          ..addAll(sessionController.reviewedIds);
+        _needsReviewCardIds
+          ..clear()
+          ..addAll(sessionController.needsReviewIds);
         _showBack = false;
       });
     } finally {
@@ -236,19 +256,22 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
     setState(() {
       final currentCard = cards[_currentIndex];
+      final updatedCard = currentCard.copyWith(
+        insight: insight,
+        updatedAt: DateTime.now(),
+      );
+      _sessionController?.replaceLatestCards([updatedCard]);
       _sessionCards = [
         for (final card in cards)
-          if (card.id == currentCard.id)
-            card.copyWith(insight: insight, updatedAt: DateTime.now())
-          else
-            card,
+          if (card.id == currentCard.id) updatedCard else card,
       ];
     });
   }
 
   void _restartSession(List<CardModel> cards) {
     setState(() {
-      _sessionCards = _orderedCards(cards);
+      _sessionController?.restart(cards);
+      _sessionCards = _sessionController?.cards ?? cards;
       _reviewedCardIds.clear();
       _needsReviewCardIds.clear();
       _currentIndex = 0;
@@ -365,12 +388,13 @@ class _StudyContent extends StatelessWidget {
     required this.isSavingRating,
     required this.reviewedCardIds,
     required this.needsReviewCardIds,
+    required this.totalCards,
     required this.onToggleCard,
     required this.onSpeak,
     required this.onRating,
     required this.onInsightGenerated,
     required this.onViewInsight,
-    required this.onRestart,
+    this.onRestart,
     required this.onBackToDeck,
   });
 
@@ -384,12 +408,13 @@ class _StudyContent extends StatelessWidget {
   final bool isSavingRating;
   final Set<String> reviewedCardIds;
   final Set<String> needsReviewCardIds;
+  final int totalCards;
   final VoidCallback onToggleCard;
   final void Function(String text, DeckModel deck) onSpeak;
   final ValueChanged<CardRating> onRating;
   final ValueChanged<String> onInsightGenerated;
   final ValueChanged<String> onViewInsight;
-  final VoidCallback onRestart;
+  final VoidCallback? onRestart;
   final VoidCallback onBackToDeck;
 
   @override
@@ -412,7 +437,7 @@ class _StudyContent extends StatelessWidget {
     if (currentIndex >= cards.length) {
       return StudySummary(
         summary: StudySessionSummary.fromRatings(
-          totalCards: cards.length,
+          totalCards: totalCards,
           reviewedCardIds: reviewedCardIds,
           needsReviewCardIds: needsReviewCardIds,
         ),
@@ -513,9 +538,7 @@ class _StudyContent extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.close),
-                color: isDark
-                    ? AppColors.textSecDark
-                    : AppColors.textSecondary,
+                color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
                 onPressed: onBackToDeck,
               ),
             ],

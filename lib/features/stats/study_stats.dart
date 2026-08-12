@@ -1,4 +1,5 @@
 import '../../core/database/app_database.dart';
+import '../../core/database/review_kind.dart';
 import '../study/card_rating_model.dart';
 
 /// Quantidade de cards num dia — usado tanto para o que já foi revisado
@@ -72,7 +73,15 @@ StudyStats buildStudyStats({
   required List<int> upcomingDueDates,
   required DateTime now,
 }) {
-  if (reviews.isEmpty && upcomingDueDates.isEmpty) {
+  final scheduledReviews = reviews
+      .where(
+        (review) =>
+            ReviewKind.fromValue(review.reviewKind ?? 0) ==
+            ReviewKind.scheduled,
+      )
+      .toList(growable: false);
+
+  if (scheduledReviews.isEmpty && reviews.isEmpty && upcomingDueDates.isEmpty) {
     return const StudyStats.empty();
   }
 
@@ -80,12 +89,14 @@ StudyStats buildStudyStats({
 
   final perDay = <DateTime, int>{};
   var correct = 0;
-  for (final review in reviews) {
+  for (final review in scheduledReviews) {
     final day = startOfDay(
       DateTime.fromMillisecondsSinceEpoch(review.reviewedAt),
     );
     perDay[day] = (perDay[day] ?? 0) + 1;
-    if (review.rating >= CardRating.good.index) {
+    // Hard means the learner recalled the answer with effort; it is a
+    // successful retrieval, unlike Again.
+    if (review.rating != CardRating.again.index) {
       correct += 1;
     }
   }
@@ -111,9 +122,19 @@ StudyStats buildStudyStats({
 
   return StudyStats(
     reviewsToday: perDay[today] ?? 0,
-    totalReviews: reviews.length,
-    streakDays: computeStreak(perDay.keys, now: now),
-    accuracy: reviews.isEmpty ? null : correct / reviews.length,
+    totalReviews: scheduledReviews.length,
+    // Free practice is useful for maintaining a habit, but never changes the
+    // scheduled-review accuracy or count shown by the dashboard.
+    streakDays: computeStreak(
+      reviews.map(
+        (review) =>
+            startOfDay(DateTime.fromMillisecondsSinceEpoch(review.reviewedAt)),
+      ),
+      now: now,
+    ),
+    accuracy: scheduledReviews.isEmpty
+        ? null
+        : correct / scheduledReviews.length,
     daily: daily,
     upcoming: upcoming,
   );

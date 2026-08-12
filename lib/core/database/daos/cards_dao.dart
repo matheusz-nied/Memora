@@ -78,6 +78,12 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
     required int intervalDays,
     required int repetitions,
     required DateTime dueDate,
+    int? fsrsState,
+    int? fsrsStep,
+    double? stability,
+    double? difficulty,
+    DateTime? lastReview,
+    bool persistFsrsState = false,
   }) {
     final updatedAt = DateTime.now().millisecondsSinceEpoch;
     return (update(
@@ -87,6 +93,15 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
         easeFactor: Value(easeFactor),
         intervalDays: Value(intervalDays),
         repetitions: Value(repetitions),
+        fsrsState: persistFsrsState
+            ? Value(fsrsState ?? 1)
+            : const Value.absent(),
+        fsrsStep: persistFsrsState ? Value(fsrsStep) : const Value.absent(),
+        stability: persistFsrsState ? Value(stability) : const Value.absent(),
+        difficulty: persistFsrsState ? Value(difficulty) : const Value.absent(),
+        lastReview: persistFsrsState
+            ? Value(lastReview?.millisecondsSinceEpoch)
+            : const Value.absent(),
         dueDate: Value(dueDate.millisecondsSinceEpoch),
         updatedAt: Value(updatedAt),
       ),
@@ -121,7 +136,8 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
   ///
   /// Sem isto, gerar 100 cards de uma vez cria 100 vencidos no mesmo dia —
   /// `createCard` nasce com `dueDate = now`, então card novo e card atrasado
-  /// são indistinguíveis pelo vencimento. `repetitions == 0` é o que separa.
+  /// são indistinguíveis pelo vencimento. FSRS state is authoritative; the
+  /// repetition check is only a compatibility fallback for old backups.
   List<LocalCard> _capNewCards(List<LocalCard> cards, int newCardLimit) {
     if (newCardLimit < 0) {
       return cards;
@@ -130,7 +146,10 @@ class CardsDao extends DatabaseAccessor<AppDatabase> with _$CardsDaoMixin {
     final result = <LocalCard>[];
     var newCards = 0;
     for (final card in cards) {
-      if (card.repetitions == 0) {
+      if (card.repetitions == 0 &&
+          card.fsrsState == 1 &&
+          card.stability == null &&
+          card.lastReview == null) {
         if (newCards >= newCardLimit) {
           continue;
         }

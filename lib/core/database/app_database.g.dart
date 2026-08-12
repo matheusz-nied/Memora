@@ -798,6 +798,62 @@ class $CardsTableTable extends CardsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _fsrsStateMeta = const VerificationMeta(
+    'fsrsState',
+  );
+  @override
+  late final GeneratedColumn<int> fsrsState = GeneratedColumn<int>(
+    'fsrs_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _fsrsStepMeta = const VerificationMeta(
+    'fsrsStep',
+  );
+  @override
+  late final GeneratedColumn<int> fsrsStep = GeneratedColumn<int>(
+    'fsrs_step',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stabilityMeta = const VerificationMeta(
+    'stability',
+  );
+  @override
+  late final GeneratedColumn<double> stability = GeneratedColumn<double>(
+    'stability',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _difficultyMeta = const VerificationMeta(
+    'difficulty',
+  );
+  @override
+  late final GeneratedColumn<double> difficulty = GeneratedColumn<double>(
+    'difficulty',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastReviewMeta = const VerificationMeta(
+    'lastReview',
+  );
+  @override
+  late final GeneratedColumn<int> lastReview = GeneratedColumn<int>(
+    'last_review',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dueDateMeta = const VerificationMeta(
     'dueDate',
   );
@@ -862,6 +918,11 @@ class $CardsTableTable extends CardsTable
     easeFactor,
     intervalDays,
     repetitions,
+    fsrsState,
+    fsrsStep,
+    stability,
+    difficulty,
+    lastReview,
     dueDate,
     insight,
     deletedAt,
@@ -931,6 +992,36 @@ class $CardsTableTable extends CardsTable
           data['repetitions']!,
           _repetitionsMeta,
         ),
+      );
+    }
+    if (data.containsKey('fsrs_state')) {
+      context.handle(
+        _fsrsStateMeta,
+        fsrsState.isAcceptableOrUnknown(data['fsrs_state']!, _fsrsStateMeta),
+      );
+    }
+    if (data.containsKey('fsrs_step')) {
+      context.handle(
+        _fsrsStepMeta,
+        fsrsStep.isAcceptableOrUnknown(data['fsrs_step']!, _fsrsStepMeta),
+      );
+    }
+    if (data.containsKey('stability')) {
+      context.handle(
+        _stabilityMeta,
+        stability.isAcceptableOrUnknown(data['stability']!, _stabilityMeta),
+      );
+    }
+    if (data.containsKey('difficulty')) {
+      context.handle(
+        _difficultyMeta,
+        difficulty.isAcceptableOrUnknown(data['difficulty']!, _difficultyMeta),
+      );
+    }
+    if (data.containsKey('last_review')) {
+      context.handle(
+        _lastReviewMeta,
+        lastReview.isAcceptableOrUnknown(data['last_review']!, _lastReviewMeta),
       );
     }
     if (data.containsKey('due_date')) {
@@ -1006,6 +1097,26 @@ class $CardsTableTable extends CardsTable
         DriftSqlType.int,
         data['${effectivePrefix}repetitions'],
       )!,
+      fsrsState: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fsrs_state'],
+      )!,
+      fsrsStep: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fsrs_step'],
+      ),
+      stability: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}stability'],
+      ),
+      difficulty: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}difficulty'],
+      ),
+      lastReview: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_review'],
+      ),
       dueDate: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}due_date'],
@@ -1049,6 +1160,17 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
   /// duas primeiras repetições, e o limite diário de cards novos filtra por
   /// `repetitions == 0`.
   final int repetitions;
+
+  /// FSRS state: 1 = learning, 2 = review, 3 = relearning.
+  ///
+  /// The legacy SM-2 columns above remain in the schema so older backups and
+  /// installations can still be opened, but scheduling decisions use this
+  /// state plus stability/difficulty.
+  final int fsrsState;
+  final int? fsrsStep;
+  final double? stability;
+  final double? difficulty;
+  final int? lastReview;
   final int dueDate;
   final String? insight;
   final int? deletedAt;
@@ -1062,6 +1184,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     required this.easeFactor,
     required this.intervalDays,
     required this.repetitions,
+    required this.fsrsState,
+    this.fsrsStep,
+    this.stability,
+    this.difficulty,
+    this.lastReview,
     required this.dueDate,
     this.insight,
     this.deletedAt,
@@ -1078,6 +1205,19 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     map['ease_factor'] = Variable<double>(easeFactor);
     map['interval_days'] = Variable<int>(intervalDays);
     map['repetitions'] = Variable<int>(repetitions);
+    map['fsrs_state'] = Variable<int>(fsrsState);
+    if (!nullToAbsent || fsrsStep != null) {
+      map['fsrs_step'] = Variable<int>(fsrsStep);
+    }
+    if (!nullToAbsent || stability != null) {
+      map['stability'] = Variable<double>(stability);
+    }
+    if (!nullToAbsent || difficulty != null) {
+      map['difficulty'] = Variable<double>(difficulty);
+    }
+    if (!nullToAbsent || lastReview != null) {
+      map['last_review'] = Variable<int>(lastReview);
+    }
     map['due_date'] = Variable<int>(dueDate);
     if (!nullToAbsent || insight != null) {
       map['insight'] = Variable<String>(insight);
@@ -1099,6 +1239,19 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       easeFactor: Value(easeFactor),
       intervalDays: Value(intervalDays),
       repetitions: Value(repetitions),
+      fsrsState: Value(fsrsState),
+      fsrsStep: fsrsStep == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fsrsStep),
+      stability: stability == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stability),
+      difficulty: difficulty == null && nullToAbsent
+          ? const Value.absent()
+          : Value(difficulty),
+      lastReview: lastReview == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReview),
       dueDate: Value(dueDate),
       insight: insight == null && nullToAbsent
           ? const Value.absent()
@@ -1124,6 +1277,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       easeFactor: serializer.fromJson<double>(json['easeFactor']),
       intervalDays: serializer.fromJson<int>(json['intervalDays']),
       repetitions: serializer.fromJson<int>(json['repetitions']),
+      fsrsState: serializer.fromJson<int>(json['fsrsState']),
+      fsrsStep: serializer.fromJson<int?>(json['fsrsStep']),
+      stability: serializer.fromJson<double?>(json['stability']),
+      difficulty: serializer.fromJson<double?>(json['difficulty']),
+      lastReview: serializer.fromJson<int?>(json['lastReview']),
       dueDate: serializer.fromJson<int>(json['dueDate']),
       insight: serializer.fromJson<String?>(json['insight']),
       deletedAt: serializer.fromJson<int?>(json['deletedAt']),
@@ -1142,6 +1300,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       'easeFactor': serializer.toJson<double>(easeFactor),
       'intervalDays': serializer.toJson<int>(intervalDays),
       'repetitions': serializer.toJson<int>(repetitions),
+      'fsrsState': serializer.toJson<int>(fsrsState),
+      'fsrsStep': serializer.toJson<int?>(fsrsStep),
+      'stability': serializer.toJson<double?>(stability),
+      'difficulty': serializer.toJson<double?>(difficulty),
+      'lastReview': serializer.toJson<int?>(lastReview),
       'dueDate': serializer.toJson<int>(dueDate),
       'insight': serializer.toJson<String?>(insight),
       'deletedAt': serializer.toJson<int?>(deletedAt),
@@ -1158,6 +1321,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     double? easeFactor,
     int? intervalDays,
     int? repetitions,
+    int? fsrsState,
+    Value<int?> fsrsStep = const Value.absent(),
+    Value<double?> stability = const Value.absent(),
+    Value<double?> difficulty = const Value.absent(),
+    Value<int?> lastReview = const Value.absent(),
     int? dueDate,
     Value<String?> insight = const Value.absent(),
     Value<int?> deletedAt = const Value.absent(),
@@ -1171,6 +1339,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     easeFactor: easeFactor ?? this.easeFactor,
     intervalDays: intervalDays ?? this.intervalDays,
     repetitions: repetitions ?? this.repetitions,
+    fsrsState: fsrsState ?? this.fsrsState,
+    fsrsStep: fsrsStep.present ? fsrsStep.value : this.fsrsStep,
+    stability: stability.present ? stability.value : this.stability,
+    difficulty: difficulty.present ? difficulty.value : this.difficulty,
+    lastReview: lastReview.present ? lastReview.value : this.lastReview,
     dueDate: dueDate ?? this.dueDate,
     insight: insight.present ? insight.value : this.insight,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -1192,6 +1365,15 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
       repetitions: data.repetitions.present
           ? data.repetitions.value
           : this.repetitions,
+      fsrsState: data.fsrsState.present ? data.fsrsState.value : this.fsrsState,
+      fsrsStep: data.fsrsStep.present ? data.fsrsStep.value : this.fsrsStep,
+      stability: data.stability.present ? data.stability.value : this.stability,
+      difficulty: data.difficulty.present
+          ? data.difficulty.value
+          : this.difficulty,
+      lastReview: data.lastReview.present
+          ? data.lastReview.value
+          : this.lastReview,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       insight: data.insight.present ? data.insight.value : this.insight,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -1210,6 +1392,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           ..write('easeFactor: $easeFactor, ')
           ..write('intervalDays: $intervalDays, ')
           ..write('repetitions: $repetitions, ')
+          ..write('fsrsState: $fsrsState, ')
+          ..write('fsrsStep: $fsrsStep, ')
+          ..write('stability: $stability, ')
+          ..write('difficulty: $difficulty, ')
+          ..write('lastReview: $lastReview, ')
           ..write('dueDate: $dueDate, ')
           ..write('insight: $insight, ')
           ..write('deletedAt: $deletedAt, ')
@@ -1228,6 +1415,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
     easeFactor,
     intervalDays,
     repetitions,
+    fsrsState,
+    fsrsStep,
+    stability,
+    difficulty,
+    lastReview,
     dueDate,
     insight,
     deletedAt,
@@ -1245,6 +1437,11 @@ class LocalCard extends DataClass implements Insertable<LocalCard> {
           other.easeFactor == this.easeFactor &&
           other.intervalDays == this.intervalDays &&
           other.repetitions == this.repetitions &&
+          other.fsrsState == this.fsrsState &&
+          other.fsrsStep == this.fsrsStep &&
+          other.stability == this.stability &&
+          other.difficulty == this.difficulty &&
+          other.lastReview == this.lastReview &&
           other.dueDate == this.dueDate &&
           other.insight == this.insight &&
           other.deletedAt == this.deletedAt &&
@@ -1260,6 +1457,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
   final Value<double> easeFactor;
   final Value<int> intervalDays;
   final Value<int> repetitions;
+  final Value<int> fsrsState;
+  final Value<int?> fsrsStep;
+  final Value<double?> stability;
+  final Value<double?> difficulty;
+  final Value<int?> lastReview;
   final Value<int> dueDate;
   final Value<String?> insight;
   final Value<int?> deletedAt;
@@ -1274,6 +1476,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     this.easeFactor = const Value.absent(),
     this.intervalDays = const Value.absent(),
     this.repetitions = const Value.absent(),
+    this.fsrsState = const Value.absent(),
+    this.fsrsStep = const Value.absent(),
+    this.stability = const Value.absent(),
+    this.difficulty = const Value.absent(),
+    this.lastReview = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.insight = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1289,6 +1496,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     this.easeFactor = const Value.absent(),
     this.intervalDays = const Value.absent(),
     this.repetitions = const Value.absent(),
+    this.fsrsState = const Value.absent(),
+    this.fsrsStep = const Value.absent(),
+    this.stability = const Value.absent(),
+    this.difficulty = const Value.absent(),
+    this.lastReview = const Value.absent(),
     required int dueDate,
     this.insight = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1310,6 +1522,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     Expression<double>? easeFactor,
     Expression<int>? intervalDays,
     Expression<int>? repetitions,
+    Expression<int>? fsrsState,
+    Expression<int>? fsrsStep,
+    Expression<double>? stability,
+    Expression<double>? difficulty,
+    Expression<int>? lastReview,
     Expression<int>? dueDate,
     Expression<String>? insight,
     Expression<int>? deletedAt,
@@ -1325,6 +1542,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
       if (easeFactor != null) 'ease_factor': easeFactor,
       if (intervalDays != null) 'interval_days': intervalDays,
       if (repetitions != null) 'repetitions': repetitions,
+      if (fsrsState != null) 'fsrs_state': fsrsState,
+      if (fsrsStep != null) 'fsrs_step': fsrsStep,
+      if (stability != null) 'stability': stability,
+      if (difficulty != null) 'difficulty': difficulty,
+      if (lastReview != null) 'last_review': lastReview,
       if (dueDate != null) 'due_date': dueDate,
       if (insight != null) 'insight': insight,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -1342,6 +1564,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     Value<double>? easeFactor,
     Value<int>? intervalDays,
     Value<int>? repetitions,
+    Value<int>? fsrsState,
+    Value<int?>? fsrsStep,
+    Value<double?>? stability,
+    Value<double?>? difficulty,
+    Value<int?>? lastReview,
     Value<int>? dueDate,
     Value<String?>? insight,
     Value<int?>? deletedAt,
@@ -1357,6 +1584,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
       repetitions: repetitions ?? this.repetitions,
+      fsrsState: fsrsState ?? this.fsrsState,
+      fsrsStep: fsrsStep ?? this.fsrsStep,
+      stability: stability ?? this.stability,
+      difficulty: difficulty ?? this.difficulty,
+      lastReview: lastReview ?? this.lastReview,
       dueDate: dueDate ?? this.dueDate,
       insight: insight ?? this.insight,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -1390,6 +1622,21 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
     if (repetitions.present) {
       map['repetitions'] = Variable<int>(repetitions.value);
     }
+    if (fsrsState.present) {
+      map['fsrs_state'] = Variable<int>(fsrsState.value);
+    }
+    if (fsrsStep.present) {
+      map['fsrs_step'] = Variable<int>(fsrsStep.value);
+    }
+    if (stability.present) {
+      map['stability'] = Variable<double>(stability.value);
+    }
+    if (difficulty.present) {
+      map['difficulty'] = Variable<double>(difficulty.value);
+    }
+    if (lastReview.present) {
+      map['last_review'] = Variable<int>(lastReview.value);
+    }
     if (dueDate.present) {
       map['due_date'] = Variable<int>(dueDate.value);
     }
@@ -1421,6 +1668,11 @@ class CardsTableCompanion extends UpdateCompanion<LocalCard> {
           ..write('easeFactor: $easeFactor, ')
           ..write('intervalDays: $intervalDays, ')
           ..write('repetitions: $repetitions, ')
+          ..write('fsrsState: $fsrsState, ')
+          ..write('fsrsStep: $fsrsStep, ')
+          ..write('stability: $stability, ')
+          ..write('difficulty: $difficulty, ')
+          ..write('lastReview: $lastReview, ')
           ..write('dueDate: $dueDate, ')
           ..write('insight: $insight, ')
           ..write('deletedAt: $deletedAt, ')
@@ -1518,6 +1770,18 @@ class $ReviewsTableTable extends ReviewsTable
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _reviewKindMeta = const VerificationMeta(
+    'reviewKind',
+  );
+  @override
+  late final GeneratedColumn<int> reviewKind = GeneratedColumn<int>(
+    'review_kind',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _reviewedAtMeta = const VerificationMeta(
     'reviewedAt',
   );
@@ -1539,6 +1803,7 @@ class $ReviewsTableTable extends ReviewsTable
     easeAfter,
     intervalBefore,
     intervalAfter,
+    reviewKind,
     reviewedAt,
   ];
   @override
@@ -1620,6 +1885,12 @@ class $ReviewsTableTable extends ReviewsTable
     } else if (isInserting) {
       context.missing(_intervalAfterMeta);
     }
+    if (data.containsKey('review_kind')) {
+      context.handle(
+        _reviewKindMeta,
+        reviewKind.isAcceptableOrUnknown(data['review_kind']!, _reviewKindMeta),
+      );
+    }
     if (data.containsKey('reviewed_at')) {
       context.handle(
         _reviewedAtMeta,
@@ -1669,6 +1940,10 @@ class $ReviewsTableTable extends ReviewsTable
         DriftSqlType.int,
         data['${effectivePrefix}interval_after'],
       )!,
+      reviewKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}review_kind'],
+      ),
       reviewedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}reviewed_at'],
@@ -1692,10 +1967,17 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
 
   /// Índice de [CardRating]: 0 = again, 1 = hard, 2 = good, 3 = easy.
   final int rating;
+
+  /// Legacy SM-2 snapshots kept for compatibility with old backups. New FSRS
+  /// reviews leave these at the card's legacy values; the scheduler never
+  /// reads them.
   final double easeBefore;
   final double easeAfter;
   final int intervalBefore;
   final int intervalAfter;
+
+  /// 0 = scheduled review, 1 = free practice (never changes FSRS state).
+  final int? reviewKind;
 
   /// Epoch ms.
   final int reviewedAt;
@@ -1708,6 +1990,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     required this.easeAfter,
     required this.intervalBefore,
     required this.intervalAfter,
+    this.reviewKind,
     required this.reviewedAt,
   });
   @override
@@ -1721,6 +2004,9 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     map['ease_after'] = Variable<double>(easeAfter);
     map['interval_before'] = Variable<int>(intervalBefore);
     map['interval_after'] = Variable<int>(intervalAfter);
+    if (!nullToAbsent || reviewKind != null) {
+      map['review_kind'] = Variable<int>(reviewKind);
+    }
     map['reviewed_at'] = Variable<int>(reviewedAt);
     return map;
   }
@@ -1735,6 +2021,9 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       easeAfter: Value(easeAfter),
       intervalBefore: Value(intervalBefore),
       intervalAfter: Value(intervalAfter),
+      reviewKind: reviewKind == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewKind),
       reviewedAt: Value(reviewedAt),
     );
   }
@@ -1753,6 +2042,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       easeAfter: serializer.fromJson<double>(json['easeAfter']),
       intervalBefore: serializer.fromJson<int>(json['intervalBefore']),
       intervalAfter: serializer.fromJson<int>(json['intervalAfter']),
+      reviewKind: serializer.fromJson<int?>(json['reviewKind']),
       reviewedAt: serializer.fromJson<int>(json['reviewedAt']),
     );
   }
@@ -1768,6 +2058,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       'easeAfter': serializer.toJson<double>(easeAfter),
       'intervalBefore': serializer.toJson<int>(intervalBefore),
       'intervalAfter': serializer.toJson<int>(intervalAfter),
+      'reviewKind': serializer.toJson<int?>(reviewKind),
       'reviewedAt': serializer.toJson<int>(reviewedAt),
     };
   }
@@ -1781,6 +2072,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     double? easeAfter,
     int? intervalBefore,
     int? intervalAfter,
+    Value<int?> reviewKind = const Value.absent(),
     int? reviewedAt,
   }) => LocalReview(
     id: id ?? this.id,
@@ -1791,6 +2083,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     easeAfter: easeAfter ?? this.easeAfter,
     intervalBefore: intervalBefore ?? this.intervalBefore,
     intervalAfter: intervalAfter ?? this.intervalAfter,
+    reviewKind: reviewKind.present ? reviewKind.value : this.reviewKind,
     reviewedAt: reviewedAt ?? this.reviewedAt,
   );
   LocalReview copyWithCompanion(ReviewsTableCompanion data) {
@@ -1809,6 +2102,9 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
       intervalAfter: data.intervalAfter.present
           ? data.intervalAfter.value
           : this.intervalAfter,
+      reviewKind: data.reviewKind.present
+          ? data.reviewKind.value
+          : this.reviewKind,
       reviewedAt: data.reviewedAt.present
           ? data.reviewedAt.value
           : this.reviewedAt,
@@ -1826,6 +2122,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
           ..write('easeAfter: $easeAfter, ')
           ..write('intervalBefore: $intervalBefore, ')
           ..write('intervalAfter: $intervalAfter, ')
+          ..write('reviewKind: $reviewKind, ')
           ..write('reviewedAt: $reviewedAt')
           ..write(')'))
         .toString();
@@ -1841,6 +2138,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
     easeAfter,
     intervalBefore,
     intervalAfter,
+    reviewKind,
     reviewedAt,
   );
   @override
@@ -1855,6 +2153,7 @@ class LocalReview extends DataClass implements Insertable<LocalReview> {
           other.easeAfter == this.easeAfter &&
           other.intervalBefore == this.intervalBefore &&
           other.intervalAfter == this.intervalAfter &&
+          other.reviewKind == this.reviewKind &&
           other.reviewedAt == this.reviewedAt);
 }
 
@@ -1867,6 +2166,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
   final Value<double> easeAfter;
   final Value<int> intervalBefore;
   final Value<int> intervalAfter;
+  final Value<int?> reviewKind;
   final Value<int> reviewedAt;
   final Value<int> rowid;
   const ReviewsTableCompanion({
@@ -1878,6 +2178,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     this.easeAfter = const Value.absent(),
     this.intervalBefore = const Value.absent(),
     this.intervalAfter = const Value.absent(),
+    this.reviewKind = const Value.absent(),
     this.reviewedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1890,6 +2191,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     required double easeAfter,
     required int intervalBefore,
     required int intervalAfter,
+    this.reviewKind = const Value.absent(),
     required int reviewedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1910,6 +2212,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     Expression<double>? easeAfter,
     Expression<int>? intervalBefore,
     Expression<int>? intervalAfter,
+    Expression<int>? reviewKind,
     Expression<int>? reviewedAt,
     Expression<int>? rowid,
   }) {
@@ -1922,6 +2225,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
       if (easeAfter != null) 'ease_after': easeAfter,
       if (intervalBefore != null) 'interval_before': intervalBefore,
       if (intervalAfter != null) 'interval_after': intervalAfter,
+      if (reviewKind != null) 'review_kind': reviewKind,
       if (reviewedAt != null) 'reviewed_at': reviewedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1936,6 +2240,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     Value<double>? easeAfter,
     Value<int>? intervalBefore,
     Value<int>? intervalAfter,
+    Value<int?>? reviewKind,
     Value<int>? reviewedAt,
     Value<int>? rowid,
   }) {
@@ -1948,6 +2253,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
       easeAfter: easeAfter ?? this.easeAfter,
       intervalBefore: intervalBefore ?? this.intervalBefore,
       intervalAfter: intervalAfter ?? this.intervalAfter,
+      reviewKind: reviewKind ?? this.reviewKind,
       reviewedAt: reviewedAt ?? this.reviewedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1980,6 +2286,9 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
     if (intervalAfter.present) {
       map['interval_after'] = Variable<int>(intervalAfter.value);
     }
+    if (reviewKind.present) {
+      map['review_kind'] = Variable<int>(reviewKind.value);
+    }
     if (reviewedAt.present) {
       map['reviewed_at'] = Variable<int>(reviewedAt.value);
     }
@@ -2000,6 +2309,7 @@ class ReviewsTableCompanion extends UpdateCompanion<LocalReview> {
           ..write('easeAfter: $easeAfter, ')
           ..write('intervalBefore: $intervalBefore, ')
           ..write('intervalAfter: $intervalAfter, ')
+          ..write('reviewKind: $reviewKind, ')
           ..write('reviewedAt: $reviewedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2739,6 +3049,11 @@ typedef $$CardsTableTableCreateCompanionBuilder =
       Value<double> easeFactor,
       Value<int> intervalDays,
       Value<int> repetitions,
+      Value<int> fsrsState,
+      Value<int?> fsrsStep,
+      Value<double?> stability,
+      Value<double?> difficulty,
+      Value<int?> lastReview,
       required int dueDate,
       Value<String?> insight,
       Value<int?> deletedAt,
@@ -2755,6 +3070,11 @@ typedef $$CardsTableTableUpdateCompanionBuilder =
       Value<double> easeFactor,
       Value<int> intervalDays,
       Value<int> repetitions,
+      Value<int> fsrsState,
+      Value<int?> fsrsStep,
+      Value<double?> stability,
+      Value<double?> difficulty,
+      Value<int?> lastReview,
       Value<int> dueDate,
       Value<String?> insight,
       Value<int?> deletedAt,
@@ -2804,6 +3124,31 @@ class $$CardsTableTableFilterComposer
 
   ColumnFilters<int> get repetitions => $composableBuilder(
     column: $table.repetitions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fsrsState => $composableBuilder(
+    column: $table.fsrsState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fsrsStep => $composableBuilder(
+    column: $table.fsrsStep,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get stability => $composableBuilder(
+    column: $table.stability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastReview => $composableBuilder(
+    column: $table.lastReview,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2877,6 +3222,31 @@ class $$CardsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get fsrsState => $composableBuilder(
+    column: $table.fsrsState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fsrsStep => $composableBuilder(
+    column: $table.fsrsStep,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get stability => $composableBuilder(
+    column: $table.stability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastReview => $composableBuilder(
+    column: $table.lastReview,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get dueDate => $composableBuilder(
     column: $table.dueDate,
     builder: (column) => ColumnOrderings(column),
@@ -2939,6 +3309,25 @@ class $$CardsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get fsrsState =>
+      $composableBuilder(column: $table.fsrsState, builder: (column) => column);
+
+  GeneratedColumn<int> get fsrsStep =>
+      $composableBuilder(column: $table.fsrsStep, builder: (column) => column);
+
+  GeneratedColumn<double> get stability =>
+      $composableBuilder(column: $table.stability, builder: (column) => column);
+
+  GeneratedColumn<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastReview => $composableBuilder(
+    column: $table.lastReview,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
@@ -2993,6 +3382,11 @@ class $$CardsTableTableTableManager
                 Value<double> easeFactor = const Value.absent(),
                 Value<int> intervalDays = const Value.absent(),
                 Value<int> repetitions = const Value.absent(),
+                Value<int> fsrsState = const Value.absent(),
+                Value<int?> fsrsStep = const Value.absent(),
+                Value<double?> stability = const Value.absent(),
+                Value<double?> difficulty = const Value.absent(),
+                Value<int?> lastReview = const Value.absent(),
                 Value<int> dueDate = const Value.absent(),
                 Value<String?> insight = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
@@ -3007,6 +3401,11 @@ class $$CardsTableTableTableManager
                 easeFactor: easeFactor,
                 intervalDays: intervalDays,
                 repetitions: repetitions,
+                fsrsState: fsrsState,
+                fsrsStep: fsrsStep,
+                stability: stability,
+                difficulty: difficulty,
+                lastReview: lastReview,
                 dueDate: dueDate,
                 insight: insight,
                 deletedAt: deletedAt,
@@ -3023,6 +3422,11 @@ class $$CardsTableTableTableManager
                 Value<double> easeFactor = const Value.absent(),
                 Value<int> intervalDays = const Value.absent(),
                 Value<int> repetitions = const Value.absent(),
+                Value<int> fsrsState = const Value.absent(),
+                Value<int?> fsrsStep = const Value.absent(),
+                Value<double?> stability = const Value.absent(),
+                Value<double?> difficulty = const Value.absent(),
+                Value<int?> lastReview = const Value.absent(),
                 required int dueDate,
                 Value<String?> insight = const Value.absent(),
                 Value<int?> deletedAt = const Value.absent(),
@@ -3037,6 +3441,11 @@ class $$CardsTableTableTableManager
                 easeFactor: easeFactor,
                 intervalDays: intervalDays,
                 repetitions: repetitions,
+                fsrsState: fsrsState,
+                fsrsStep: fsrsStep,
+                stability: stability,
+                difficulty: difficulty,
+                lastReview: lastReview,
                 dueDate: dueDate,
                 insight: insight,
                 deletedAt: deletedAt,
@@ -3076,6 +3485,7 @@ typedef $$ReviewsTableTableCreateCompanionBuilder =
       required double easeAfter,
       required int intervalBefore,
       required int intervalAfter,
+      Value<int?> reviewKind,
       required int reviewedAt,
       Value<int> rowid,
     });
@@ -3089,6 +3499,7 @@ typedef $$ReviewsTableTableUpdateCompanionBuilder =
       Value<double> easeAfter,
       Value<int> intervalBefore,
       Value<int> intervalAfter,
+      Value<int?> reviewKind,
       Value<int> reviewedAt,
       Value<int> rowid,
     });
@@ -3139,6 +3550,11 @@ class $$ReviewsTableTableFilterComposer
 
   ColumnFilters<int> get intervalAfter => $composableBuilder(
     column: $table.intervalAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reviewKind => $composableBuilder(
+    column: $table.reviewKind,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3197,6 +3613,11 @@ class $$ReviewsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get reviewKind => $composableBuilder(
+    column: $table.reviewKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get reviewedAt => $composableBuilder(
     column: $table.reviewedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3239,6 +3660,11 @@ class $$ReviewsTableTableAnnotationComposer
 
   GeneratedColumn<int> get intervalAfter => $composableBuilder(
     column: $table.intervalAfter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reviewKind => $composableBuilder(
+    column: $table.reviewKind,
     builder: (column) => column,
   );
 
@@ -3287,6 +3713,7 @@ class $$ReviewsTableTableTableManager
                 Value<double> easeAfter = const Value.absent(),
                 Value<int> intervalBefore = const Value.absent(),
                 Value<int> intervalAfter = const Value.absent(),
+                Value<int?> reviewKind = const Value.absent(),
                 Value<int> reviewedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ReviewsTableCompanion(
@@ -3298,6 +3725,7 @@ class $$ReviewsTableTableTableManager
                 easeAfter: easeAfter,
                 intervalBefore: intervalBefore,
                 intervalAfter: intervalAfter,
+                reviewKind: reviewKind,
                 reviewedAt: reviewedAt,
                 rowid: rowid,
               ),
@@ -3311,6 +3739,7 @@ class $$ReviewsTableTableTableManager
                 required double easeAfter,
                 required int intervalBefore,
                 required int intervalAfter,
+                Value<int?> reviewKind = const Value.absent(),
                 required int reviewedAt,
                 Value<int> rowid = const Value.absent(),
               }) => ReviewsTableCompanion.insert(
@@ -3322,6 +3751,7 @@ class $$ReviewsTableTableTableManager
                 easeAfter: easeAfter,
                 intervalBefore: intervalBefore,
                 intervalAfter: intervalAfter,
+                reviewKind: reviewKind,
                 reviewedAt: reviewedAt,
                 rowid: rowid,
               ),

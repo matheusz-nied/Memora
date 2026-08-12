@@ -8,6 +8,7 @@ import '../../drift/generated/schema_v1.dart' as v1;
 import '../../drift/generated/schema_v2.dart' as v2;
 import '../../drift/generated/schema_v3.dart' as v3;
 import '../../drift/generated/schema_v4.dart' as v4;
+import '../../drift/generated/schema_v5.dart' as v5;
 
 /// Garante que o schema declarado no código continua igual ao snapshot da
 /// versão correspondente e que toda migração roda limpa, sem perder dado.
@@ -272,4 +273,103 @@ void main() {
       },
     );
   });
+
+  test('v4 -> v5 preserva vencimento e reconstrói estado FSRS', () async {
+    const deckId = 'deck-1';
+    const cardId = 'card-1';
+    final createdAt = DateTime(2026, 8, 1, 9).millisecondsSinceEpoch;
+    final updatedAt = createdAt + 1234;
+    final dueDate = DateTime(2026, 8, 20, 18).millisecondsSinceEpoch;
+    final reviewedAt = DateTime(2026, 8, 10, 12).millisecondsSinceEpoch;
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 4,
+      newVersion: 5,
+      createOld: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(
+          oldDb.cards,
+          v4.CardsCompanion.insert(
+            id: cardId,
+            deckId: deckId,
+            front: 'Mitocôndria',
+            back: 'Respiração celular',
+            repetitions: const Value(4),
+            intervalDays: const Value(9),
+            dueDate: dueDate,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+        );
+        batch.insert(
+          oldDb.reviews,
+          v4.ReviewsCompanion.insert(
+            id: 'review-1',
+            cardId: cardId,
+            deckId: deckId,
+            rating: 2,
+            easeBefore: 2.5,
+            easeAfter: 2.5,
+            intervalBefore: 1,
+            intervalAfter: 9,
+            reviewedAt: reviewedAt,
+          ),
+        );
+      },
+      validateItems: (newDb) async {
+        final card = (await newDb.select(newDb.cards).get()).single;
+        expect(card.dueDate, dueDate);
+        expect(card.updatedAt, updatedAt);
+        expect(card.fsrsState, 2);
+        expect(card.stability, isNotNull);
+        expect(card.difficulty, isNotNull);
+        expect(card.lastReview, reviewedAt);
+
+        final review = (await newDb.select(newDb.reviews).get()).single;
+        expect(review.reviewKind, 0);
+      },
+    );
+  });
+
+  test(
+    'v1 -> v5 adiciona estado novo sem reabrir card como revisado',
+    () async {
+      const deckId = 'deck-1';
+      const cardId = 'card-1';
+      final createdAt = DateTime(2026, 8, 1).millisecondsSinceEpoch;
+      final dueDate = DateTime(2026, 8, 30).millisecondsSinceEpoch;
+
+      await verifier.testWithDataIntegrity(
+        oldVersion: 1,
+        newVersion: 5,
+        createOld: v1.DatabaseAtV1.new,
+        createNew: v5.DatabaseAtV5.new,
+        openTestedDatabase: AppDatabase.new,
+        createItems: (batch, oldDb) {
+          batch.insert(
+            oldDb.cards,
+            v1.CardsCompanion.insert(
+              id: cardId,
+              deckId: deckId,
+              front: 'Pergunta',
+              back: 'Resposta',
+              dueDate: dueDate,
+              createdAt: createdAt,
+              updatedAt: createdAt,
+            ),
+          );
+        },
+        validateItems: (newDb) async {
+          final card = (await newDb.select(newDb.cards).get()).single;
+          expect(card.dueDate, dueDate);
+          expect(card.fsrsState, 1);
+          expect(card.fsrsStep, 0);
+          expect(card.stability, isNull);
+          expect(await newDb.select(newDb.reviews).get(), isEmpty);
+        },
+      );
+    },
+  );
 }

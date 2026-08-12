@@ -99,7 +99,9 @@ void main() {
         now: now,
       );
 
-      expect(stats.accuracy, 0.5);
+      // Hard means the answer was recalled with effort, so only Again is a
+      // failed retrieval.
+      expect(stats.accuracy, 0.75);
       expect(stats.reviewsToday, 4);
       expect(stats.totalReviews, 4);
     });

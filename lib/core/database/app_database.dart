@@ -7,6 +7,7 @@ import 'daos/cards_dao.dart';
 import 'daos/chat_messages_dao.dart';
 import 'daos/decks_dao.dart';
 import 'daos/reviews_dao.dart';
+import 'fsrs_migration.dart';
 import 'tables/cards_table.dart';
 import 'tables/chat_messages_table.dart';
 import 'tables/decks_table.dart';
@@ -23,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Incrementar a cada mudança de schema, junto com um novo passo em
   /// [migration] e um snapshot em `drift_schemas/`. Ver AGENTS.md.
-  static const int latestSchemaVersion = 4;
+  static const int latestSchemaVersion = 5;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -44,7 +45,28 @@ class AppDatabase extends _$AppDatabase {
           // comportamento desejado, já que não há histórico para reconstruir
           // o valor real.
           await migrator.addColumn(cardsTable, cardsTable.repetitions);
-          await migrator.createTable(reviewsTable);
+          if (to >= 5) {
+            await migrator.createTable(reviewsTable);
+          } else {
+            // The v4 verifier (and real installations opened by a v4 build)
+            // must receive the historical table shape. Creating today's
+            // ReviewsTable here would leak the v5 review_kind column into a
+            // v4 database before the v5 migration has run.
+            await migrator.database.customStatement('''
+              CREATE TABLE IF NOT EXISTS reviews (
+                id TEXT NOT NULL,
+                card_id TEXT NOT NULL,
+                deck_id TEXT NOT NULL,
+                rating INTEGER NOT NULL,
+                ease_before REAL NOT NULL,
+                ease_after REAL NOT NULL,
+                interval_before INTEGER NOT NULL,
+                interval_after INTEGER NOT NULL,
+                reviewed_at INTEGER NOT NULL,
+                PRIMARY KEY (id)
+              )
+            ''');
+          }
         }
         if (from < 3 && to >= 3) {
           // Tabela nova e vazia: nunca houve histórico de conversa para
@@ -60,16 +82,35 @@ class AppDatabase extends _$AppDatabase {
           // com o schema novo e copia os dados. `columnTransformer` fica
           // vazio: as colunas que sobram mantêm nome e tipo.
           //
-          // `TableMigration` é marcada como experimental no drift, mas é a
-          // única API pública para isto e está documentada como tal. O
-          // `ignore` é preferível a desligar o lint no projeto inteiro: se um
-          // dia ela sumir, é aqui que o build precisa quebrar.
-          // ignore: experimental_member_use
-          await migrator.alterTable(TableMigration(decksTable));
-          // ignore: experimental_member_use
-          await migrator.alterTable(TableMigration(cardsTable));
-          // ignore: experimental_member_use
-          await migrator.alterTable(TableMigration(reviewsTable));
+          // The current TableInfo already contains the v5 columns, so using
+          // TableMigration here would ask SQLite to copy columns that do not
+          // exist yet on a v1–v3 database. SQLite's DROP COLUMN is supported by
+          // every engine version used by Drift's native and WASM backends.
+          await migrator.database.customStatement(
+            'ALTER TABLE decks DROP COLUMN sync_pending',
+          );
+          await migrator.database.customStatement(
+            'ALTER TABLE cards DROP COLUMN sync_pending',
+          );
+          if (from >= 2) {
+            await migrator.database.customStatement(
+              'ALTER TABLE reviews DROP COLUMN sync_pending',
+            );
+          }
+        }
+        if (from < 5 && to >= 5) {
+          // FSRS state replaces scheduling decisions based on the old SM-2
+          // ease/interval columns. The additive columns leave every existing
+          // value untouched while the backfill reconstructs FSRS state.
+          await migrator.addColumn(cardsTable, cardsTable.fsrsState);
+          await migrator.addColumn(cardsTable, cardsTable.fsrsStep);
+          await migrator.addColumn(cardsTable, cardsTable.stability);
+          await migrator.addColumn(cardsTable, cardsTable.difficulty);
+          await migrator.addColumn(cardsTable, cardsTable.lastReview);
+          if (from >= 2) {
+            await migrator.addColumn(reviewsTable, reviewsTable.reviewKind);
+          }
+          await migrateLegacyCardsToFsrs(database: this);
         }
       },
     );

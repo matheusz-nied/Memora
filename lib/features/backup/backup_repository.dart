@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/database/app_database.dart';
 import '../../core/identity/device_user_id.dart';
+import '../../core/database/review_kind.dart';
 import 'backup_data.dart';
 
 final backupRepositoryProvider = Provider<BackupRepository>((ref) {
@@ -118,6 +119,11 @@ class BackupRepository {
           easeFactor: Value(card.easeFactor),
           intervalDays: Value(card.intervalDays),
           repetitions: Value(card.repetitions),
+          fsrsState: Value(card.fsrsState),
+          fsrsStep: Value<int?>(card.fsrsStep),
+          stability: Value<double?>(card.stability),
+          difficulty: Value<double?>(card.difficulty),
+          lastReview: Value<int?>(card.lastReview),
           dueDate: card.dueDate,
           insight: Value(card.insight),
           deletedAt: Value(card.deletedAt),
@@ -150,6 +156,7 @@ class BackupRepository {
           easeAfter: review.easeAfter,
           intervalBefore: review.intervalBefore,
           intervalAfter: review.intervalAfter,
+          reviewKind: Value(ReviewKind.fromValue(review.reviewKind ?? 0).value),
           reviewedAt: review.reviewedAt,
         ),
       );

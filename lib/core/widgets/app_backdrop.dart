@@ -20,7 +20,7 @@ class _AppBackdropState extends State<AppBackdrop>
   late final AnimationController _controller;
 
   bool get _shouldAnimate =>
-      widget.animate && !_isWidgetTest && TickerMode.of(context);
+      widget.animate && !_isWidgetTest && TickerMode.valuesOf(context).enabled;
 
   static bool get _isWidgetTest =>
       WidgetsBinding.instance.runtimeType.toString().contains('Test');
@@ -124,9 +124,7 @@ class _GlowOrb extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [color, color.withValues(alpha: 0)],
-          ),
+          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
         ),
       ),
     );

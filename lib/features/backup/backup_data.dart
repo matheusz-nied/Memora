@@ -99,9 +99,44 @@ BackupData decodeBackup(String source) {
         DateTime.tryParse(parsed['exportedAt'] as String? ?? '') ??
         DateTime.fromMillisecondsSinceEpoch(0),
     decks: _mapList(parsed['decks'], LocalDeck.fromJson, 'decks'),
-    cards: _mapList(parsed['cards'], LocalCard.fromJson, 'cards'),
-    reviews: _mapList(parsed['reviews'], LocalReview.fromJson, 'reviews'),
+    cards: _mapList(
+      parsed['cards'],
+      (map) => LocalCard.fromJson(_normalizeCardMap(map)),
+      'cards',
+    ),
+    reviews: _mapList(
+      parsed['reviews'],
+      (map) => LocalReview.fromJson(_normalizeReviewMap(map)),
+      'reviews',
+    ),
   );
+}
+
+Map<String, dynamic> _normalizeCardMap(Map<String, dynamic> source) {
+  return {
+    ...source,
+    'easeFactor': source['easeFactor'] ?? 2.5,
+    'intervalDays': source['intervalDays'] ?? 1,
+    'repetitions': source['repetitions'] ?? 0,
+    'fsrsState': source['fsrsState'] ?? 1,
+    'fsrsStep': source['fsrsStep'],
+    'stability': source['stability'],
+    'difficulty': source['difficulty'],
+    'lastReview': source['lastReview'],
+    'insight': source['insight'],
+    'deletedAt': source['deletedAt'],
+  };
+}
+
+Map<String, dynamic> _normalizeReviewMap(Map<String, dynamic> source) {
+  return {
+    ...source,
+    'easeBefore': source['easeBefore'] ?? 2.5,
+    'easeAfter': source['easeAfter'] ?? 2.5,
+    'intervalBefore': source['intervalBefore'] ?? 1,
+    'intervalAfter': source['intervalAfter'] ?? 1,
+    'reviewKind': source['reviewKind'] ?? 0,
+  };
 }
 
 List<T> _mapList<T>(

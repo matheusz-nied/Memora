@@ -19,6 +19,17 @@ class CardsTable extends Table {
   /// `repetitions == 0`.
   IntColumn get repetitions => integer().withDefault(const Constant(0))();
 
+  /// FSRS state: 1 = learning, 2 = review, 3 = relearning.
+  ///
+  /// The legacy SM-2 columns above remain in the schema so older backups and
+  /// installations can still be opened, but scheduling decisions use this
+  /// state plus stability/difficulty.
+  IntColumn get fsrsState => integer().withDefault(const Constant(1))();
+  IntColumn get fsrsStep => integer().nullable()();
+  RealColumn get stability => real().nullable()();
+  RealColumn get difficulty => real().nullable()();
+  IntColumn get lastReview => integer().nullable()();
+
   IntColumn get dueDate => integer()();
   TextColumn get insight => text().nullable()();
   IntColumn get deletedAt => integer().nullable()();

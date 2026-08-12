@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/database/app_database.dart';
+import '../../core/database/review_kind.dart';
 import 'card_draft.dart';
 import 'card_model.dart';
 
@@ -172,6 +173,11 @@ class CardRepository {
         easeFactor: Value(card.easeFactor),
         intervalDays: Value(card.intervalDays),
         dueDate: card.dueDate.millisecondsSinceEpoch,
+        fsrsState: Value(card.fsrsState),
+        fsrsStep: Value<int?>(card.fsrsStep),
+        stability: Value<double?>(card.stability),
+        difficulty: Value<double?>(card.difficulty),
+        lastReview: Value<int?>(card.lastReview?.millisecondsSinceEpoch),
         insight: Value(card.insight),
         createdAt: card.createdAt.millisecondsSinceEpoch,
         updatedAt: now,
@@ -197,8 +203,16 @@ class CardRepository {
     required DateTime dueDate,
     required int rating,
     DateTime? reviewedAt,
+    int? fsrsState,
+    int? fsrsStep,
+    double? stability,
+    double? difficulty,
+    DateTime? lastReview,
+    ReviewKind reviewKind = ReviewKind.scheduled,
+    bool persistFsrsState = false,
   }) async {
     final reviewTime = reviewedAt ?? DateTime.now();
+    final shouldPersistFsrs = persistFsrsState || fsrsState != null;
 
     await _database.transaction(() async {
       await _database.cardsDao.updateProgress(
@@ -207,6 +221,12 @@ class CardRepository {
         intervalDays: intervalDays,
         repetitions: repetitions,
         dueDate: dueDate,
+        fsrsState: fsrsState,
+        fsrsStep: fsrsStep,
+        stability: stability,
+        difficulty: difficulty,
+        lastReview: lastReview,
+        persistFsrsState: shouldPersistFsrs,
       );
       await _database.reviewsDao.insertReview(
         ReviewsTableCompanion.insert(
@@ -218,10 +238,81 @@ class CardRepository {
           easeAfter: easeFactor,
           intervalBefore: card.intervalDays,
           intervalAfter: intervalDays,
+          reviewKind: Value(reviewKind.value),
           reviewedAt: reviewTime.millisecondsSinceEpoch,
         ),
       );
     });
+  }
+
+  /// Persists an FSRS state transition and its scheduled review atomically.
+  Future<void> updateScheduledProgress({
+    required CardModel card,
+    required int fsrsState,
+    required int? fsrsStep,
+    required double? stability,
+    required double? difficulty,
+    required DateTime? lastReview,
+    required int intervalDays,
+    required int repetitions,
+    required DateTime dueDate,
+    required int rating,
+    DateTime? reviewedAt,
+  }) async {
+    final reviewTime = reviewedAt ?? DateTime.now();
+
+    await _database.transaction(() async {
+      await _database.cardsDao.updateProgress(
+        cardId: card.id,
+        easeFactor: card.easeFactor,
+        intervalDays: intervalDays,
+        repetitions: repetitions,
+        dueDate: dueDate,
+        fsrsState: fsrsState,
+        fsrsStep: fsrsStep,
+        stability: stability,
+        difficulty: difficulty,
+        lastReview: lastReview,
+        persistFsrsState: true,
+      );
+      await _database.reviewsDao.insertReview(
+        ReviewsTableCompanion.insert(
+          id: _uuid.v4(),
+          cardId: card.id,
+          deckId: card.deckId,
+          rating: rating,
+          easeBefore: card.easeFactor,
+          easeAfter: card.easeFactor,
+          intervalBefore: card.intervalDays,
+          intervalAfter: intervalDays,
+          reviewKind: Value(ReviewKind.scheduled.value),
+          reviewedAt: reviewTime.millisecondsSinceEpoch,
+        ),
+      );
+    });
+  }
+
+  /// Records a voluntary practice attempt without changing the card's due
+  /// date or FSRS state.
+  Future<void> recordFreePractice({
+    required CardModel card,
+    required int rating,
+    DateTime? reviewedAt,
+  }) {
+    return _database.reviewsDao.insertReview(
+      ReviewsTableCompanion.insert(
+        id: _uuid.v4(),
+        cardId: card.id,
+        deckId: card.deckId,
+        rating: rating,
+        easeBefore: card.easeFactor,
+        easeAfter: card.easeFactor,
+        intervalBefore: card.intervalDays,
+        intervalAfter: card.intervalDays,
+        reviewKind: Value(ReviewKind.freePractice.value),
+        reviewedAt: (reviewedAt ?? DateTime.now()).millisecondsSinceEpoch,
+      ),
+    );
   }
 
   Future<void> updateInsight({

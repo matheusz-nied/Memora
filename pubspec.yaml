@@ -44,6 +44,7 @@ dependencies:
   shimmer: ^3.0.0
   drift: ^2.31.0
   drift_flutter: ^0.2.8
+  fsrs: 2.0.1
   shared_preferences: ^2.5.3
   # A IA é a única coisa que precisa de rede. Serve para avisar antes de
   # tentar, em vez de deixar a chamada estourar em timeout.

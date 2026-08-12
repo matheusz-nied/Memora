@@ -13,12 +13,12 @@ class StudySummary extends StatelessWidget {
   const StudySummary({
     super.key,
     required this.summary,
-    required this.onRestart,
+    this.onRestart,
     required this.onBackToDeck,
   });
 
   final StudySessionSummary summary;
-  final VoidCallback onRestart;
+  final VoidCallback? onRestart;
   final VoidCallback onBackToDeck;
 
   @override
@@ -82,8 +82,10 @@ class StudySummary extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppDimensions.xxl),
-              NeonButton(label: StudyText.restart, onPressed: onRestart),
-              const SizedBox(height: AppDimensions.md),
+              if (onRestart != null) ...[
+                NeonButton(label: StudyText.restart, onPressed: onRestart),
+                const SizedBox(height: AppDimensions.md),
+              ],
               AppButton(
                 label: StudyText.backToDeck,
                 variant: AppButtonVariant.secondary,
