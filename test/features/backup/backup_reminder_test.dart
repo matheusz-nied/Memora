@@ -56,4 +56,58 @@ void main() {
       isFalse,
     );
   });
+
+  group('shouldShowBackupReminder', () {
+    test('atrasado e nunca dispensado mostra', () {
+      expect(
+        shouldShowBackupReminder(
+          lastExportAt: null,
+          dismissedAt: null,
+          now: now,
+        ),
+        isTrue,
+      );
+    });
+
+    test('atrasado e dispensado há 3 dias oculta', () {
+      expect(
+        shouldShowBackupReminder(
+          lastExportAt: null,
+          dismissedAt: now
+              .subtract(const Duration(days: 3))
+              .millisecondsSinceEpoch,
+          now: now,
+        ),
+        isFalse,
+      );
+    });
+
+    test('atrasado e dispensado há 7+ dias mostra de novo', () {
+      expect(
+        shouldShowBackupReminder(
+          lastExportAt: null,
+          dismissedAt: now
+              .subtract(BackupReminderNotifier.dismissSnooze)
+              .millisecondsSinceEpoch,
+          now: now,
+        ),
+        isTrue,
+      );
+    });
+
+    test('export recente oculta mesmo se dispensado', () {
+      expect(
+        shouldShowBackupReminder(
+          lastExportAt: now
+              .subtract(const Duration(days: 1))
+              .millisecondsSinceEpoch,
+          dismissedAt: now
+              .subtract(const Duration(days: 10))
+              .millisecondsSinceEpoch,
+          now: now,
+        ),
+        isFalse,
+      );
+    });
+  });
 }

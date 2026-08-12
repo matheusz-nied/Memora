@@ -14,6 +14,7 @@ class BackupText {
   static const String reminderMessage =
       'Seu histórico de estudo existe só neste aparelho. Exportar leva alguns '
       'segundos e é o que permite recuperar tudo se você trocar de celular.';
+  static const String reminderDismiss = 'Dispensar lembrete';
 
   static const String exportTitle = 'Exportar';
   static const String exportDescription =

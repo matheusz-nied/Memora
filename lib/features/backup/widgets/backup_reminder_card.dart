@@ -26,70 +26,101 @@ class BackupReminderCard extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final overdue = isBackupOverdue(
-      lastExportAt: ref.watch(backupReminderProvider),
+    final reminder = ref.watch(backupReminderProvider);
+    final show = shouldShowBackupReminder(
+      lastExportAt: reminder.lastExportAt,
+      dismissedAt: reminder.dismissedAt,
       now: DateTime.now(),
     );
-    if (!overdue) {
+    if (!show) {
       return const SizedBox.shrink();
     }
 
-    return PressableScale(
-      onTap: () => context.push(RouteConstants.kRouteBackup),
-      child: GlassPanel(
-        isDark: isDark,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        borderColor: AppColors.primary.withValues(alpha: 0.25),
-        glowColor: AppColors.primary,
-        showTopHighlight: false,
-        padding: const EdgeInsets.all(AppDimensions.lg),
-        child: Row(
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(AppDimensions.sm),
-                child: Icon(
-                  Icons.save_alt_outlined,
-                  color: AppColors.neonCyan,
+    final secondaryColor =
+        isDark ? AppColors.textSecDark : AppColors.textSecondary;
+
+    return GlassPanel(
+      isDark: isDark,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      borderColor: AppColors.primary.withValues(alpha: 0.25),
+      glowColor: AppColors.primary,
+      showTopHighlight: false,
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      child: Stack(
+        children: [
+          PressableScale(
+            onTap: () => context.push(RouteConstants.kRouteBackup),
+            child: Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(AppDimensions.sm),
+                    child: Icon(
+                      Icons.save_alt_outlined,
+                      color: AppColors.neonCyan,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: AppDimensions.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    BackupText.reminderTitle,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const SizedBox(width: AppDimensions.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        // Reserva espaço para o botão de dispensar no canto.
+                        padding: const EdgeInsets.only(right: 40),
+                        child: Text(
+                          BackupText.reminderTitle,
+                          style: AppTypography.labelMedium.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.xs),
+                      Text(
+                        BackupText.reminderMessage,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: secondaryColor,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppDimensions.xs),
-                  Text(
-                    BackupText.reminderMessage,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: isDark
-                          ? AppColors.textSecDark
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: isDark ? AppColors.neonCyan : AppColors.primary,
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: -8,
+            right: -8,
+            child: IconButton(
+              tooltip: BackupText.reminderDismiss,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
+              icon: Icon(
+                Icons.close_rounded,
+                color: secondaryColor,
+                size: 20,
+                semanticLabel: BackupText.reminderDismiss,
+              ),
+              onPressed: () {
+                ref.read(backupReminderProvider.notifier).dismiss();
+              },
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isDark ? AppColors.neonCyan : AppColors.primary,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
