@@ -1,10 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
@@ -14,23 +13,33 @@ import '../../core/utils/responsive.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
+import '../../core/widgets/neon_button.dart';
 import '../../core/widgets/offline_banner.dart';
+import '../../core/widgets/scaffold_shell.dart';
 import '../cards/card_model.dart';
 import '../cards/card_repository.dart';
 import '../decks/deck_model.dart';
+import '../decks/deck_card_counts_provider.dart';
 import '../decks/deck_repository.dart';
 import 'card_rating_model.dart';
+import 'study_scheduler.dart';
+import 'study_session_controller.dart';
 import 'study_session_model.dart';
 import 'study_text.dart';
 import 'widgets/insight_widget.dart';
 import 'widgets/study_flashcard.dart';
 import 'widgets/study_rating_bar.dart';
+import 'widgets/study_progress_header.dart';
 import 'widgets/study_summary.dart';
 
 class StudyScreen extends ConsumerStatefulWidget {
-  const StudyScreen({super.key, required this.deckId});
+  const StudyScreen({super.key, required this.deckId, this.freeStudy = false});
 
   final String deckId;
+
+  /// Revisa o deck inteiro, ignorando o vencimento. Opção explícita do menu do
+  /// deck — a sessão normal traz só o que vence hoje.
+  final bool freeStudy;
 
   @override
   ConsumerState<StudyScreen> createState() => _StudyScreenState();
@@ -38,7 +47,9 @@ class StudyScreen extends ConsumerStatefulWidget {
 
 class _StudyScreenState extends ConsumerState<StudyScreen> {
   final FlutterTts _tts = FlutterTts();
+  final StudyScheduler _scheduler = StudyScheduler();
   List<CardModel>? _sessionCards;
+  StudySessionController? _sessionController;
   final Set<String> _reviewedCardIds = {};
   final Set<String> _needsReviewCardIds = {};
   var _currentIndex = 0;
@@ -54,15 +65,25 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
   @override
   Widget build(BuildContext context) {
     final deck = ref.watch(deckStreamProvider(widget.deckId));
-    final cards = ref.watch(cardsStreamProvider(widget.deckId));
+    final cards = widget.freeStudy
+        ? ref.watch(cardsStreamProvider(widget.deckId))
+        : ref.watch(
+            dueCardsStreamProvider((
+              deckId: widget.deckId,
+              newCardLimit: AppConstants.kNewCardsPerSession,
+            )),
+          );
     final isOnline = ref
         .watch(onlineStatusProvider)
         .maybeWhen(data: (value) => value, orElse: () => true);
+    final deckHasCards = ref
+        .watch(deckCardCountsStreamProvider(widget.deckId))
+        .maybeWhen(data: (counts) => counts.total > 0, orElse: () => false);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
+    return ScaffoldShell(
+      isDark: isDark,
       body: SafeArea(
         child: Responsive.constrainedContent(
           child: deck.when(
@@ -78,7 +99,9 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                     const ErrorState(message: StudyText.loadingError),
                 data: (items) => _StudyContent(
                   deck: deckValue,
-                  cards: _cardsForSession(items, isOnline: isOnline),
+                  freeStudy: widget.freeStudy,
+                  deckHasCards: deckHasCards,
+                  cards: _cardsForSession(items),
                   currentIndex: _currentIndex,
                   showBack: _showBack,
                   isOnline: isOnline,
@@ -96,7 +119,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
                   onViewInsight: (cardId) => context.push(
                     RouteConstants.cardInsightPath(deckValue.id, cardId),
                   ),
-                  onRestart: () => _restartSession(items, isOnline: isOnline),
+                  totalCards: _sessionController?.totalCards ?? items.length,
+                  onRestart: widget.freeStudy
+                      ? () => _restartSession(items)
+                      : null,
                   onBackToDeck: () => context.pop(),
                 ),
               );
@@ -107,45 +133,29 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     );
   }
 
-  List<CardModel> _cardsForSession(
-    List<CardModel> cards, {
-    required bool isOnline,
-  }) {
-    final currentIds = cards.map((card) => card.id).join('|');
-    final sessionIds = _sessionCards?.map((card) => card.id).join('|');
-    final canReplaceSession = _reviewedCardIds.isEmpty && _currentIndex == 0;
-
-    if (_sessionCards == null ||
-        (canReplaceSession && sessionIds != currentIds)) {
-      _sessionCards = _orderedCards(cards, isOnline: isOnline);
+  List<CardModel> _cardsForSession(List<CardModel> cards) {
+    if (_sessionController == null ||
+        (_sessionController!.totalCards == 0 && cards.isNotEmpty)) {
+      _sessionController = StudySessionController(
+        cards: cards,
+        freeStudy: widget.freeStudy,
+      );
     } else {
-      final latestById = {for (final card in cards) card.id: card};
-      _sessionCards = _sessionCards
-          ?.map((card) => latestById[card.id] ?? card)
-          .toList();
+      // A sessão é congelada depois de começar: o stream reemite a cada
+      // avaliação, mas só substitui snapshots que realmente são mais novos.
+      _sessionController!.replaceLatestCards(cards);
     }
 
-    return _sessionCards ?? const [];
-  }
-
-  List<CardModel> _orderedCards(
-    List<CardModel> cards, {
-    required bool isOnline,
-  }) {
-    final ordered = [...cards];
-    if (isOnline) {
-      ordered.sort((a, b) {
-        final dueCompare = a.dueDate.compareTo(b.dueDate);
-        if (dueCompare != 0) {
-          return dueCompare;
-        }
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      return ordered;
-    }
-
-    ordered.shuffle(math.Random(DateTime.now().millisecondsSinceEpoch));
-    return ordered;
+    final controller = _sessionController!;
+    _sessionCards = controller.cards;
+    _currentIndex = controller.currentIndex;
+    _reviewedCardIds
+      ..clear()
+      ..addAll(controller.reviewedIds);
+    _needsReviewCardIds
+      ..clear()
+      ..addAll(controller.needsReviewIds);
+    return _sessionCards!;
   }
 
   Future<void> _speak(String text, DeckModel deck) async {
@@ -161,39 +171,72 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
   Future<void> _rateCurrentCard(CardRating rating) async {
     final cards = _sessionCards ?? const <CardModel>[];
-    if (_isSavingRating || _currentIndex >= cards.length) {
+    final controller = _sessionController;
+    final currentCard = controller?.currentCard;
+    if (_isSavingRating ||
+        currentCard == null ||
+        _currentIndex >= cards.length) {
       return;
     }
 
-    final card = cards[_currentIndex];
-    final result = calculateStudyProgress(
-      currentEaseFactor: card.easeFactor,
-      currentIntervalDays: card.intervalDays,
-      rating: rating,
-    );
+    final card = currentCard;
 
     setState(() {
       _isSavingRating = true;
     });
 
     try {
-      await ref
-          .read(cardRepositoryProvider)
-          .updateProgress(
-            card: card,
-            easeFactor: result.easeFactor,
-            intervalDays: result.intervalDays,
-            dueDate: result.dueDate,
-          );
+      late final CardModel updatedCard;
+      if (widget.freeStudy) {
+        await ref
+            .read(cardRepositoryProvider)
+            .recordFreePractice(card: card, rating: rating.index);
+        updatedCard = card;
+      } else {
+        final result = _scheduler.schedule(card, rating);
+        await ref
+            .read(cardRepositoryProvider)
+            .updateScheduledProgress(
+              card: card,
+              fsrsState: result.fsrsState,
+              fsrsStep: result.fsrsStep,
+              stability: result.stability,
+              difficulty: result.difficulty,
+              lastReview: result.lastReview,
+              intervalDays: result.intervalDays,
+              repetitions: result.repetitions,
+              dueDate: result.dueDate,
+              rating: rating.index,
+            );
+        updatedCard = card.copyWith(
+          fsrsState: result.fsrsState,
+          fsrsStep: result.fsrsStep,
+          stability: result.stability,
+          difficulty: result.difficulty,
+          lastReview: result.lastReview,
+          intervalDays: result.intervalDays,
+          repetitions: result.repetitions,
+          dueDate: result.dueDate,
+          updatedAt: DateTime.now(),
+        );
+      }
       if (!mounted) {
         return;
       }
+      final sessionController = _sessionController;
+      if (sessionController == null) {
+        return;
+      }
+      sessionController.recordAnswer(updatedCard: updatedCard, rating: rating);
       setState(() {
-        _reviewedCardIds.add(card.id);
-        if (rating == CardRating.again || rating == CardRating.hard) {
-          _needsReviewCardIds.add(card.id);
-        }
-        _currentIndex += 1;
+        _sessionCards = sessionController.cards;
+        _currentIndex = sessionController.currentIndex;
+        _reviewedCardIds
+          ..clear()
+          ..addAll(sessionController.reviewedIds);
+        _needsReviewCardIds
+          ..clear()
+          ..addAll(sessionController.needsReviewIds);
         _showBack = false;
       });
     } finally {
@@ -213,23 +256,22 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
     setState(() {
       final currentCard = cards[_currentIndex];
+      final updatedCard = currentCard.copyWith(
+        insight: insight,
+        updatedAt: DateTime.now(),
+      );
+      _sessionController?.replaceLatestCards([updatedCard]);
       _sessionCards = [
         for (final card in cards)
-          if (card.id == currentCard.id)
-            card.copyWith(
-              insight: insight,
-              syncPending: true,
-              updatedAt: DateTime.now(),
-            )
-          else
-            card,
+          if (card.id == currentCard.id) updatedCard else card,
       ];
     });
   }
 
-  void _restartSession(List<CardModel> cards, {required bool isOnline}) {
+  void _restartSession(List<CardModel> cards) {
     setState(() {
-      _sessionCards = _orderedCards(cards, isOnline: isOnline);
+      _sessionController?.restart(cards);
+      _sessionCards = _sessionController?.cards ?? cards;
       _reviewedCardIds.clear();
       _needsReviewCardIds.clear();
       _currentIndex = 0;
@@ -263,11 +305,56 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
     // Heuristics: Check for common English words in card text
     final englishStopwords = {
-      'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
-      'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
-      'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
-      'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
-      'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me'
+      'the',
+      'be',
+      'to',
+      'of',
+      'and',
+      'a',
+      'in',
+      'that',
+      'have',
+      'i',
+      'it',
+      'for',
+      'not',
+      'on',
+      'with',
+      'he',
+      'as',
+      'you',
+      'do',
+      'at',
+      'this',
+      'but',
+      'his',
+      'by',
+      'from',
+      'they',
+      'we',
+      'say',
+      'her',
+      'she',
+      'or',
+      'an',
+      'will',
+      'my',
+      'one',
+      'all',
+      'would',
+      'there',
+      'their',
+      'what',
+      'so',
+      'up',
+      'out',
+      'if',
+      'about',
+      'who',
+      'get',
+      'which',
+      'go',
+      'me',
     };
 
     final words = normalizedText
@@ -292,6 +379,8 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 class _StudyContent extends StatelessWidget {
   const _StudyContent({
     required this.deck,
+    required this.freeStudy,
+    required this.deckHasCards,
     required this.cards,
     required this.currentIndex,
     required this.showBack,
@@ -299,16 +388,19 @@ class _StudyContent extends StatelessWidget {
     required this.isSavingRating,
     required this.reviewedCardIds,
     required this.needsReviewCardIds,
+    required this.totalCards,
     required this.onToggleCard,
     required this.onSpeak,
     required this.onRating,
     required this.onInsightGenerated,
     required this.onViewInsight,
-    required this.onRestart,
+    this.onRestart,
     required this.onBackToDeck,
   });
 
   final DeckModel deck;
+  final bool freeStudy;
+  final bool deckHasCards;
   final List<CardModel> cards;
   final int currentIndex;
   final bool showBack;
@@ -316,12 +408,13 @@ class _StudyContent extends StatelessWidget {
   final bool isSavingRating;
   final Set<String> reviewedCardIds;
   final Set<String> needsReviewCardIds;
+  final int totalCards;
   final VoidCallback onToggleCard;
   final void Function(String text, DeckModel deck) onSpeak;
   final ValueChanged<CardRating> onRating;
   final ValueChanged<String> onInsightGenerated;
   final ValueChanged<String> onViewInsight;
-  final VoidCallback onRestart;
+  final VoidCallback? onRestart;
   final VoidCallback onBackToDeck;
 
   @override
@@ -329,9 +422,13 @@ class _StudyContent extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (cards.isEmpty) {
+      // Deck com cards mas nada vencido é sucesso, não estado de erro.
+      final caughtUp = deckHasCards && !freeStudy;
       return EmptyState(
-        title: StudyText.emptyTitle,
-        message: StudyText.emptyMessage,
+        title: caughtUp ? StudyText.allCaughtUpTitle : StudyText.emptyTitle,
+        message: caughtUp
+            ? StudyText.allCaughtUpMessage
+            : StudyText.emptyMessage,
         actionLabel: StudyText.backToDeck,
         onAction: onBackToDeck,
       );
@@ -340,7 +437,7 @@ class _StudyContent extends StatelessWidget {
     if (currentIndex >= cards.length) {
       return StudySummary(
         summary: StudySessionSummary.fromRatings(
-          totalCards: cards.length,
+          totalCards: totalCards,
           reviewedCardIds: reviewedCardIds,
           needsReviewCardIds: needsReviewCardIds,
         ),
@@ -350,8 +447,6 @@ class _StudyContent extends StatelessWidget {
     }
 
     final currentCard = cards[currentIndex];
-    final completed = currentIndex.clamp(0, cards.length);
-    final progress = cards.isEmpty ? 0.0 : completed / cards.length;
 
     return Column(
       children: [
@@ -361,113 +456,95 @@ class _StudyContent extends StatelessWidget {
             vertical: AppDimensions.xl,
             horizontal: AppDimensions.xl,
           ),
-          child: Stack(
-            alignment: Alignment.center,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Progress dots
-                  if (cards.length <= 20)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(cards.length, (index) {
-                        final isActive = index == currentIndex;
-                        final isPast = index < currentIndex;
-                        return Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.xs / 2,
-                          ),
-                          height: 6,
-                          width: isActive ? 32 : 6,
-                          decoration: BoxDecoration(
-                            color: isActive || isPast
-                                ? AppColors.primary
-                                : (isDark
-                                      ? const Color(0xFF324467)
-                                      : AppColors.borderStrong),
-                            borderRadius: BorderRadius.circular(
-                              AppDimensions.radiusFull,
+              const SizedBox(width: AppDimensions.minTouchTarget),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Progress dots
+                    if (cards.length <= 20)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(cards.length, (index) {
+                          final isActive = index == currentIndex;
+                          final isPast = index < currentIndex;
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.xs / 2,
                             ),
-                            boxShadow: isActive
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                        );
-                      }),
-                    )
-                  else
-                    SizedBox(
-                      width: 200,
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusFull,
+                            height: 6,
+                            width: isActive ? 32 : 6,
+                            decoration: BoxDecoration(
+                              color: isActive || isPast
+                                  ? AppColors.primary
+                                  : (isDark
+                                        ? const Color(0xFF324467)
+                                        : AppColors.borderStrong),
+                              borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusFull,
+                              ),
+                            ),
+                          );
+                        }),
+                      )
+                    else
+                      SizedBox(
+                        width: 200,
+                        child: StudyProgressHeader(
+                          currentIndex: currentIndex,
+                          totalCards: cards.length,
+                          isDark: isDark,
                         ),
-                        backgroundColor: isDark
-                            ? const Color(0xFF324467)
-                            : AppColors.borderStrong,
-                        color: AppColors.primary,
                       ),
+                    const SizedBox(height: AppDimensions.md),
+                    // Deck title
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.school,
+                          size: 14,
+                          color:
+                              (isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimary)
+                                  .withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: AppDimensions.xs),
+                        Flexible(
+                          child: Text(
+                            StudyText.sessionLabel(deck.title).toUpperCase(),
+                            style: AppTypography.labelSmall.copyWith(
+                              color:
+                                  (isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimary)
+                                      .withValues(alpha: 0.6),
+                              letterSpacing: 1.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
                     ),
-                  const SizedBox(height: AppDimensions.md),
-                  // Deck title
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.school,
-                        size: 14,
-                        color:
-                            (isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimary)
-                                .withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: AppDimensions.xs),
-                      Flexible(
-                        child: Text(
-                          'SESSÃO: ${deck.title}'.toUpperCase(),
-                          style: AppTypography.labelSmall.copyWith(
-                            color:
-                                (isDark
-                                        ? AppColors.textPrimaryDark
-                                        : AppColors.textPrimary)
-                                    .withValues(alpha: 0.6),
-                            letterSpacing: 1.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              // Close button
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close),
-                  color: isDark
-                      ? AppColors.textSecDark
-                      : AppColors.textSecondary,
-                  onPressed: onBackToDeck,
+                  ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
+                onPressed: onBackToDeck,
               ),
             ],
           ),
         ),
-        if (!isOnline) const OfflineBanner(message: StudyText.offline),
+        if (freeStudy) const OfflineBanner(message: StudyText.freeStudyBanner),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xl),
@@ -528,37 +605,10 @@ class _StudyContent extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 480),
             child: showBack
                 ? StudyRatingBar(enabled: !isSavingRating, onRating: onRating)
-                : SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: onToggleCard,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 8,
-                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusXl,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.visibility, size: 20),
-                          const SizedBox(width: AppDimensions.sm),
-                          Text(
-                            StudyText.revealAnswer,
-                            style: AppTypography.labelMedium.copyWith(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                : NeonButton(
+                    label: StudyText.revealAnswer,
+                    icon: Icons.visibility,
+                    onPressed: onToggleCard,
                   ),
           ),
         ),

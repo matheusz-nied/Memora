@@ -6,6 +6,7 @@ import '../../../core/backend/models/backend_exception.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/glass_panel.dart';
 import '../../cards/card_model.dart';
 import '../insight_repository.dart';
 import '../study_text.dart';
@@ -49,18 +50,13 @@ class _InsightWidgetState extends ConsumerState<InsightWidget> {
   Widget build(BuildContext context) {
     final insight = _visibleInsight;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppColors.surfaceDark : AppColors.infoBg;
-    final borderColor = isDark ? AppColors.borderDarkStrong : AppColors.border;
-    return Container(
-      width: double.infinity,
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.md,
         vertical: AppDimensions.sm,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

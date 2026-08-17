@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/glass_panel.dart';
+import '../../../core/widgets/pressable_scale.dart';
 import '../card_model.dart';
 import '../card_text.dart';
 
@@ -19,8 +22,15 @@ class CardListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return PressableScale(
+      onTap: null,
+      child: GlassPanel(
+        isDark: isDark,
+        showGlow: false,
+        showTopHighlight: false,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         padding: const EdgeInsets.all(AppDimensions.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,11 +43,20 @@ class CardListItem extends StatelessWidget {
                     card.front,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: AppTypography.headingMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                    ),
                   ),
                 ),
                 PopupMenuButton<_CardAction>(
-                  icon: const Icon(Icons.more_horiz),
+                  icon: Icon(
+                    Icons.more_horiz,
+                    color: isDark
+                        ? AppColors.textSecDark
+                        : AppColors.textSecondary,
+                  ),
                   onSelected: (action) {
                     switch (action) {
                       case _CardAction.edit:
@@ -64,16 +83,10 @@ class CardListItem extends StatelessWidget {
               card.back,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (card.syncPending) ...[
-              const SizedBox(height: AppDimensions.md),
-              const Icon(
-                Icons.cloud_upload_outlined,
-                color: AppColors.warning,
-                size: AppDimensions.xl,
+              style: AppTypography.bodyMedium.copyWith(
+                color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
               ),
-            ],
+            ),
           ],
         ),
       ),

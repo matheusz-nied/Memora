@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/backend/backend_provider.dart';
 import '../../core/backend/contracts/ai_gateway.dart';
+import '../../core/backend/gateway_providers.dart';
 import '../../core/backend/models/backend_exception.dart';
 import '../../core/utils/connectivity_service.dart';
 import '../cards/card_model.dart';
@@ -10,7 +10,7 @@ import 'study_text.dart';
 
 final insightRepositoryProvider = Provider<InsightRepository>((ref) {
   return InsightRepository(
-    aiGateway: ref.watch(backendClientProvider).ai,
+    aiGateway: ref.watch(aiGatewayProvider),
     cardRepository: ref.watch(cardRepositoryProvider),
     isOnline: ref.watch(connectivityServiceProvider).isOnline,
   );

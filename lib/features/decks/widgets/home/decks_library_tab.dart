@@ -7,6 +7,7 @@ import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/glass_search_field.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../deck_model.dart';
 import '../../deck_repository.dart';
@@ -57,117 +58,129 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
   @override
   Widget build(BuildContext context) {
     final decksAsync = ref.watch(decksPageProvider(_visibleDeckLimit));
+    final width = MediaQuery.sizeOf(context).width;
+    final isTabletOrDesktop = width >= 600;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        onPressed: widget.onCreateDeck,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 6,
-        child: const Icon(Icons.add, size: 28),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.xl,
-          vertical: AppDimensions.lg,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Styled Premium Search Bar
-            _DeckSearchField(
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppDimensions.xl,
+            AppDimensions.lg,
+            AppDimensions.xl,
+            AppDimensions.xl,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: GlassSearchField(
               isDark: widget.isDark,
               controller: _searchController,
+              hintText: DeckText.searchDecks,
               hasQuery: _searchQuery.isNotEmpty,
               onClear: _clearSearch,
             ),
-            const SizedBox(height: AppDimensions.xl),
-
-            // Dynamic grid or list depending on viewport width (Rule 4)
-            Expanded(
-              child: decksAsync.when(
-                loading: () => const LoadingState(),
-                error: (_, __) => const ErrorState(message: DeckText.loadError),
-                data: _buildDeckList,
-              ),
-            ),
-            const SizedBox(height: 80), // Spacer for navigation bar
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeckList(List<DeckModel> decks) {
-    final filteredDecks = decks.where(_matchesSearch).toList();
-    _hasMoreDecks = decks.length >= _visibleDeckLimit;
-
-    if (filteredDecks.isEmpty) {
-      if (_searchQuery.isNotEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.xl),
-            child: Text(
-              DeckText.noDecksFound,
-              style: AppTypography.bodyMedium.copyWith(
-                color: widget.isDark
-                    ? AppColors.textSecDark
-                    : AppColors.textSecondary,
-              ),
-            ),
           ),
-        );
-      }
-
-      return EmptyState(
-        title: DeckText.emptyTitle,
-        message: DeckText.emptyMessage,
-        actionLabel: DeckText.newDeck,
-        onAction: widget.onCreateDeck,
-      );
-    }
-
-    final width = MediaQuery.of(context).size.width;
-    final isTabletOrDesktop = width >= 600;
-
-    // Conforming to Rule 4 - Responsividade obrigatória (grid com 2 colunas se largura >= 600)
-    if (isTabletOrDesktop) {
-      return GridView.builder(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: AppDimensions.lg,
-          mainAxisSpacing: AppDimensions.sm,
-          childAspectRatio: 2.0,
         ),
-        itemCount: filteredDecks.length,
-        itemBuilder: (context, index) {
-          final deck = filteredDecks[index];
-          return LibraryDeckCard(
-            deck: deck,
-            isDark: widget.isDark,
-            onEdit: () => widget.onEditDeck(deck),
-            onDelete: () => widget.onDeleteDeck(deck),
-          );
-        },
-      );
-    }
+        ...decksAsync.when(
+          loading: () => [
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: LoadingState(),
+            ),
+          ],
+          error: (_, __) => [
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: ErrorState(message: DeckText.loadError),
+            ),
+          ],
+          data: (decks) {
+            final filteredDecks = decks.where(_matchesSearch).toList();
+            _hasMoreDecks = decks.length >= _visibleDeckLimit;
 
-    return ListView.builder(
-      controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: filteredDecks.length,
-      itemBuilder: (context, index) {
-        final deck = filteredDecks[index];
-        return LibraryDeckCard(
-          deck: deck,
-          isDark: widget.isDark,
-          onEdit: () => widget.onEditDeck(deck),
-          onDelete: () => widget.onDeleteDeck(deck),
-        );
-      },
+            if (filteredDecks.isEmpty) {
+              return [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.xl,
+                    ),
+                    child: _searchQuery.isNotEmpty
+                        ? Center(
+                            child: Text(
+                              DeckText.noDecksFound,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: widget.isDark
+                                    ? AppColors.textSecDark
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          )
+                        : EmptyState(
+                            title: DeckText.emptyTitle,
+                            message: DeckText.emptyMessage,
+                            actionLabel: DeckText.newDeck,
+                            onAction: widget.onCreateDeck,
+                          ),
+                  ),
+                ),
+              ];
+            }
+
+            if (isTabletOrDesktop) {
+              return [
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.xl,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: AppDimensions.lg,
+                          mainAxisSpacing: AppDimensions.sm,
+                          childAspectRatio: 2.0,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final deck = filteredDecks[index];
+                      return LibraryDeckCard(
+                        deck: deck,
+                        isDark: widget.isDark,
+                        onEdit: () => widget.onEditDeck(deck),
+                        onDelete: () => widget.onDeleteDeck(deck),
+                      );
+                    }, childCount: filteredDecks.length),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              ];
+            }
+
+            return [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.xl,
+                ),
+                sliver: SliverList.builder(
+                  itemCount: filteredDecks.length,
+                  itemBuilder: (context, index) {
+                    final deck = filteredDecks[index];
+                    return LibraryDeckCard(
+                      deck: deck,
+                      isDark: widget.isDark,
+                      onEdit: () => widget.onEditDeck(deck),
+                      onDelete: () => widget.onDeleteDeck(deck),
+                    );
+                  },
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ];
+          },
+        ),
+      ],
     );
   }
 
@@ -197,60 +210,5 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
     }
 
     setState(() => _visibleDeckLimit += AppConstants.kLocalPageSize);
-  }
-}
-
-class _DeckSearchField extends StatelessWidget {
-  const _DeckSearchField({
-    required this.isDark,
-    required this.controller,
-    required this.hasQuery,
-    required this.onClear,
-  });
-
-  final bool isDark;
-  final TextEditingController controller;
-  final bool hasQuery;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: AppDimensions.minTouchTarget,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.08),
-        ),
-      ),
-      child: TextField(
-        controller: controller,
-        style: AppTypography.bodyLarge.copyWith(
-          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-          fontSize: 16,
-        ),
-        decoration: InputDecoration(
-          hintText: DeckText.searchDecks,
-          hintStyle: AppTypography.bodyMedium.copyWith(
-            color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
-          ),
-          suffixIcon: hasQuery
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: onClear,
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-      ),
-    );
   }
 }

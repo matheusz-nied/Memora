@@ -1,7 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessária em release. Os manifests de debug/ e profile/ declaram a
+         permissão só para o tooling do Flutter, e nenhum plugin do projeto a
+         declara: sem esta linha o app publicado não fala com a DeepSeek, e a
+         falha não aparece em nenhum teste feito em debug. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Sem backup automático: ver `res/xml/data_extraction_rules.xml`. O
+         `allowBackup` cobre o backup em nuvem até o Android 11; do 12 em
+         diante quem manda são as regras, e as duas linhas precisam existir. -->
     <application
-        android:label="memora"
+        android:label="Memora"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -23,14 +33,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data
-                    android:scheme="com.example.memora"
-                    android:host="auth-callback"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

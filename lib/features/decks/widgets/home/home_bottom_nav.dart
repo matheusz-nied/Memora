@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -19,56 +21,68 @@ class HomeBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.backgroundDark : AppColors.background,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AppDimensions.radiusLg),
-          topRight: Radius.circular(AppDimensions.radiusLg),
-        ),
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? AppColors.surface.withValues(alpha: 0.05)
-                : AppColors.textPrimary.withValues(alpha: 0.05),
-          ),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(AppDimensions.radiusLg),
+        topRight: Radius.circular(AppDimensions.radiusLg),
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppDimensions.sm,
-            horizontal: AppDimensions.xl,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: AppDimensions.glassBlur,
+          sigmaY: AppDimensions.glassBlur,
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.glassDark.withValues(alpha: 0.88)
+                : AppColors.glassLight.withValues(alpha: 0.92),
+            border: Border(
+              top: BorderSide(
+                color: isDark
+                    ? AppColors.glassBorderDark
+                    : AppColors.glassBorderLight,
+              ),
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                index: 0,
-                icon: Icons.dashboard,
-                label: DeckText.dashboard,
-                currentIndex: currentIndex,
-                isDark: isDark,
-                onChanged: onChanged,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _NavItem(
+                      index: 0,
+                      icon: Icons.dashboard,
+                      label: DeckText.dashboard,
+                      currentIndex: currentIndex,
+                      isDark: isDark,
+                      onChanged: onChanged,
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavItem(
+                      index: 1,
+                      icon: Icons.style,
+                      label: DeckText.decks,
+                      currentIndex: currentIndex,
+                      isDark: isDark,
+                      onChanged: onChanged,
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavItem(
+                      index: 2,
+                      icon: Icons.person,
+                      label: DeckText.profile,
+                      currentIndex: currentIndex,
+                      isDark: isDark,
+                      onChanged: onChanged,
+                    ),
+                  ),
+                ],
               ),
-              _NavItem(
-                index: 1,
-                icon: Icons.style,
-                label: DeckText.decks,
-                currentIndex: currentIndex,
-                isDark: isDark,
-                onChanged: onChanged,
-              ),
-              _NavItem(
-                index: 2,
-                icon: Icons.person,
-                label: DeckText.profile,
-                currentIndex: currentIndex,
-                isDark: isDark,
-                onChanged: onChanged,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -105,9 +119,10 @@ class _NavItem extends StatelessWidget {
       onTap: () => onChanged(index),
       child: SizedBox(
         height: 52,
+        width: double.infinity,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 26),
             const SizedBox(height: 2),

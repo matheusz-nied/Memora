@@ -10,8 +10,6 @@ class AppDimensions {
   static const double xxxl = 32.0;
   static const double huge = 48.0;
   static const double onboardingHeroSize = 180.0;
-  static const double authMaxWidth = 448.0;
-  static const double authFormMaxWidth = 384.0;
 
   static const double radiusSm = 8.0;
   static const double radiusMd = 12.0;
@@ -22,4 +20,13 @@ class AppDimensions {
   static const double radiusFull = 999.0;
 
   static const double minTouchTarget = 48.0;
+
+  static const double glowBlur = 24.0;
+  static const double glowBlurStrong = 40.0;
+  static const double glassBlur = 16.0;
+
+  static const Duration animFast = Duration(milliseconds: 150);
+  static const Duration animNormal = Duration(milliseconds: 280);
+  static const Duration animSlow = Duration(milliseconds: 600);
+  static const Duration animPulse = Duration(milliseconds: 2400);
 }

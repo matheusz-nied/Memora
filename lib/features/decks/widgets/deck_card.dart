@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../deck_model.dart';
 import '../deck_text.dart';
@@ -77,7 +76,6 @@ class DeckCard extends StatelessWidget {
               const SizedBox(height: AppDimensions.xxl),
               Row(
                 children: [
-                  _SyncPill(syncPending: deck.syncPending),
                   const Spacer(),
                   Icon(
                     Icons.chevron_right,
@@ -87,32 +85,6 @@ class DeckCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SyncPill extends StatelessWidget {
-  const _SyncPill({required this.syncPending});
-
-  final bool syncPending;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: AppDimensions.xs,
-      ),
-      decoration: BoxDecoration(
-        color: syncPending ? AppColors.warningBg : AppColors.successBg,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-      ),
-      child: Text(
-        syncPending ? DeckText.pending : DeckText.synced,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: syncPending ? AppColors.warning : AppColors.success,
         ),
       ),
     );

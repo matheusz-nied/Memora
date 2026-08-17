@@ -1,20 +1,15 @@
-import 'dart:async';
-
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/database/app_database.dart';
-import '../../core/sync/app_sync_service.dart';
-import '../auth/auth_repository.dart';
+import '../../core/identity/device_user_id.dart';
 import 'deck_model.dart';
 
 final deckRepositoryProvider = Provider<DeckRepository>((ref) {
   return DeckRepository(
     database: ref.watch(appDatabaseProvider),
-    syncService: ref.watch(appSyncServiceProvider),
-    authRepository: ref.watch(authRepositoryProvider),
+    userId: ref.watch(deviceUserIdProvider),
   );
 });
 
@@ -37,83 +32,56 @@ final deckStreamProvider = StreamProvider.family<DeckModel?, String>((
 });
 
 class DeckRepository {
-  DeckRepository({
-    required AppDatabase database,
-    required AppSyncService syncService,
-    required AuthRepository authRepository,
-  }) : _database = database,
-       _syncService = syncService,
-       _authRepository = authRepository;
+  DeckRepository({required AppDatabase database, required String userId})
+    : _database = database,
+      _userId = userId;
 
   final AppDatabase _database;
-  final AppSyncService _syncService;
-  final AuthRepository _authRepository;
+
+  /// O dono dos decks: o próprio aparelho. Filtrar por ele é o que impede um
+  /// backup importado de outra instalação de aparecer misturado.
+  final String _userId;
+
   final Uuid _uuid = const Uuid();
 
   Stream<List<DeckModel>> watchDecks() {
-    final userId = _authRepository.currentSession?.user.id;
-    if (userId == null) {
-      return Stream<List<DeckModel>>.value([]);
-    }
-    _runSyncSilently(syncDecks);
     return _database.decksDao
-        .watchAllDecks(userId: userId)
+        .watchAllDecks(userId: _userId)
         .map((decks) => decks.map(DeckModel.fromLocal).toList());
   }
 
   Stream<List<DeckModel>> watchDecksPage({required int limit}) {
-    final userId = _authRepository.currentSession?.user.id;
-    if (userId == null) {
-      return Stream<List<DeckModel>>.value([]);
-    }
-    _runSyncSilently(syncDecks);
     return _database.decksDao
-        .watchDecksPage(userId: userId, limit: limit)
+        .watchDecksPage(userId: _userId, limit: limit)
         .map((decks) => decks.map(DeckModel.fromLocal).toList());
   }
 
   Future<int> countDecks() {
-    final userId = _authRepository.currentSession?.user.id;
-    if (userId == null) {
-      return Future<int>.value(0);
-    }
-    return _database.decksDao.countDecks(userId: userId);
+    return _database.decksDao.countDecks(userId: _userId);
   }
 
   Stream<DeckModel?> watchDeck(String deckId) {
-    final userId = _authRepository.currentSession?.user.id;
-    if (userId == null) {
-      return Stream<DeckModel?>.value(null);
-    }
     return _database.decksDao
-        .watchDeckById(deckId, userId: userId)
+        .watchDeckById(deckId, userId: _userId)
         .map((deck) => deck == null ? null : DeckModel.fromLocal(deck));
   }
 
-  Future<void> syncDecks({bool requireSync = false}) {
-    return _syncService.syncDecks(requireSync: requireSync);
-  }
-
-  Future<String> createDeck({required String title, String? description}) async {
-    final session = _authRepository.currentSession;
-    if (session == null) {
-      throw StateError('Sessão expirada. Entre novamente.');
-    }
-
+  Future<String> createDeck({
+    required String title,
+    String? description,
+  }) async {
     final id = _uuid.v4();
     final now = DateTime.now().millisecondsSinceEpoch;
     await _database.decksDao.upsertDeck(
       DecksTableCompanion.insert(
         id: id,
-        userId: session.user.id,
+        userId: _userId,
         title: title.trim(),
         description: Value(_nullableTrim(description)),
-        syncPending: const Value(true),
         createdAt: now,
         updatedAt: now,
       ),
     );
-    _runSyncSilently(syncDecks);
     return id;
   }
 
@@ -134,32 +102,28 @@ class DeckRepository {
         agentTemplate: Value(deck.agentTemplate),
         agentLanguage: Value(deck.agentLanguage),
         agentLevel: Value(deck.agentLevel),
-        syncPending: const Value(true),
         createdAt: deck.createdAt.millisecondsSinceEpoch,
         updatedAt: now,
       ),
     );
-    _runSyncSilently(syncDecks);
   }
 
+  /// Apaga o deck por tombstone, junto com seus cards.
+  ///
+  /// O `deletedAt` fica: é ele que faz reimportar um backup antigo não
+  /// ressuscitar o que o usuário tirou — apagar é uma edição como outra
+  /// qualquer, e o import compara `updatedAt`.
   Future<void> deleteDeck(String deckId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await _database.cardsDao.markCardsForDeckDeleted(deckId, now);
     await _database.decksDao.markDeckDeleted(deckId, now);
-    _runSyncSilently(syncDecks);
+    // A conversa não é exportada no backup e não precisa de tombstone: some
+    // junto com o deck.
+    await _database.chatMessagesDao.deleteMessagesForDeck(deckId);
   }
 
   String? _nullableTrim(String? value) {
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
-  }
-
-  void _runSyncSilently(Future<void> Function() sync) {
-    unawaited(
-      sync().catchError((Object error, StackTrace stackTrace) {
-        debugPrint('Deck sync failed: $error');
-        debugPrintStack(stackTrace: stackTrace);
-      }),
-    );
   }
 }

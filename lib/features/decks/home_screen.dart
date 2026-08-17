@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/connectivity_service.dart';
-import '../../core/widgets/offline_banner.dart';
-import '../auth/auth_repository.dart';
-import '../auth/profile_text.dart';
+import '../../core/widgets/app_backdrop.dart';
 import 'deck_model.dart';
 import 'deck_repository.dart';
 import 'deck_text.dart';
@@ -30,49 +25,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _profileTab = 2;
 
   var _currentTabIndex = _dashboardTab;
-  var _isSyncing = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isOnline = ref
-        .watch(onlineStatusProvider)
-        .maybeWhen(data: (value) => value, orElse: () => true);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (!isOnline) const OfflineBanner(message: DeckText.offline),
-            Expanded(
-              child: IndexedStack(
-                index: _currentTabIndex,
-                children: [
-                  DashboardTab(
-                    isDark: isDark,
-                    onRefresh: _syncNow,
-                    onCreateDeck: () => _showDeckForm(context),
-                    onOpenDecksTab: () => _setTab(_decksTab),
-                    onOpenProfileTab: () => _setTab(_profileTab),
+      floatingActionButton: _currentTabIndex == _decksTab
+          ? FloatingActionButton(
+              onPressed: () => _showDeckForm(context),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              highlightElevation: 4,
+              child: const Icon(Icons.add, size: 28),
+            )
+          : null,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          AppBackdrop(isDark: isDark),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentTabIndex,
+                    children: [
+                      DashboardTab(
+                        isDark: isDark,
+                        onCreateDeck: () => _showDeckForm(context),
+                        onOpenDecksTab: () => _setTab(_decksTab),
+                        onOpenProfileTab: () => _setTab(_profileTab),
+                      ),
+                      DecksLibraryTab(
+                        isDark: isDark,
+                        onCreateDeck: () => _showDeckForm(context),
+                        onEditDeck: (deck) => _showDeckForm(context, deck: deck),
+                        onDeleteDeck: (deck) =>
+                            _confirmDeleteDeck(context: context, deck: deck),
+                      ),
+                      ProfileTab(isDark: isDark),
+                    ],
                   ),
-                  DecksLibraryTab(
-                    isDark: isDark,
-                    onCreateDeck: () => _showDeckForm(context),
-                    onEditDeck: (deck) => _showDeckForm(context, deck: deck),
-                    onDeleteDeck: (deck) =>
-                        _confirmDeleteDeck(context: context, deck: deck),
-                  ),
-                  ProfileTab(
-                    isDark: isDark,
-                    isSigningOut: _isSyncing,
-                    onSignOut: _signOut,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: HomeBottomNav(
         currentIndex: _currentTabIndex,
@@ -91,6 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DeckFormModal(
         deck: deck,
         onSubmit: (title, description) async {
@@ -137,53 +139,5 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (confirmed ?? false) {
       await ref.read(deckRepositoryProvider).deleteDeck(deck.id);
     }
-  }
-
-  Future<void> _syncNow() async {
-    setState(() => _isSyncing = true);
-    try {
-      await ref.read(deckRepositoryProvider).syncDecks(requireSync: true);
-      if (mounted) {
-        _showSnackBar(DeckText.syncSuccess);
-      }
-    } catch (error) {
-      if (mounted) {
-        _showSnackBar(_readableSyncError(error));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-    }
-  }
-
-  Future<void> _signOut() async {
-    setState(() => _isSyncing = true);
-
-    try {
-      await ref.read(authRepositoryProvider).signOut();
-      if (mounted) {
-        context.go(RouteConstants.kRouteLogin);
-      }
-    } catch (_) {
-      if (mounted) {
-        _showSnackBar(ProfileText.signOutError);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  String _readableSyncError(Object error) {
-    final message = error.toString().replaceFirst('Bad state: ', '').trim();
-    return message.isEmpty ? DeckText.syncErrorFallback : message;
   }
 }

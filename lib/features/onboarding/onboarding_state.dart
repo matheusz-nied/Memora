@@ -1,11 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
-
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('SharedPreferences must be overridden.');
-});
+import '../../core/storage/preferences_provider.dart';
+import '../legal/privacy_consent.dart';
 
 final onboardingCompletedProvider =
     NotifierProvider<OnboardingCompletedNotifier, bool>(
@@ -36,6 +33,10 @@ class OnboardingController {
   final Ref _ref;
 
   Future<void> complete() async {
+    // O aceite da política é gravado junto com a conclusão do onboarding: é
+    // ali que o texto foi apresentado, e as lojas pedem que o aceite seja
+    // registrado, não apenas exibido.
+    await _ref.read(privacyAcceptedVersionProvider.notifier).accept();
     await _ref.read(onboardingCompletedProvider.notifier).complete();
   }
 }

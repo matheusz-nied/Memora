@@ -1,15 +1,10 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:memora/core/backend/contracts/ai_gateway.dart';
-import 'package:memora/core/backend/contracts/remote_database_gateway.dart';
 import 'package:memora/core/backend/models/ai_chat_message.dart';
-import 'package:memora/core/backend/models/backend_card.dart';
-import 'package:memora/core/backend/models/backend_chat_message.dart';
-import 'package:memora/core/backend/models/backend_deck.dart';
 import 'package:memora/core/backend/models/backend_exception.dart';
 import 'package:memora/core/backend/models/generated_card.dart';
 import 'package:memora/core/database/app_database.dart';
-import 'package:memora/core/sync/app_sync_service.dart';
 import 'package:memora/features/cards/card_model.dart';
 import 'package:memora/features/cards/card_repository.dart';
 import 'package:memora/features/study/insight_repository.dart';
@@ -21,16 +16,7 @@ void main() {
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
-    cardRepository = CardRepository(
-      database: database,
-      syncService: AppSyncService(
-        database: database,
-        remoteDatabase: _FakeRemoteDatabaseGateway(),
-        isOnline: () async => false,
-        canSync: () async => true,
-        currentUserId: () => 'user-1',
-      ),
-    );
+    cardRepository = CardRepository(database: database);
   });
 
   tearDown(() async {
@@ -101,7 +87,6 @@ void main() {
     expect(ai.lastDeckId, 'deck-1');
     expect(ai.lastFront, 'What is a closure?');
     expect(saved!.insight, 'Closures keep access to outer scope.');
-    expect(saved.syncPending, isTrue);
   });
 }
 
@@ -126,8 +111,8 @@ CardModel _card({String? insight}) {
     back: 'A function that captures variables.',
     easeFactor: 2.5,
     intervalDays: 1,
+    repetitions: 0,
     dueDate: now,
-    syncPending: false,
     insight: insight,
     createdAt: now,
     updatedAt: now,
@@ -168,66 +153,9 @@ class _FakeAiGateway implements AiGateway {
     required String text,
     required int quantity,
     required String deckId,
+    List<String> avoidFronts = const [],
+    bool fromPdf = false,
   }) {
     throw UnimplementedError();
   }
-
-  @override
-  Future<List<GeneratedCard>> generateCardsFromPdf({
-    required String pdfPath,
-    required int quantity,
-    required String deckId,
-  }) {
-    throw UnimplementedError();
-  }
-}
-
-class _FakeRemoteDatabaseGateway implements RemoteDatabaseGateway {
-  @override
-  Future<void> deleteCard(String cardId) async {}
-
-  @override
-  Future<void> deleteDeck(String deckId) async {}
-
-  @override
-  Future<List<BackendCard>> fetchCards(String deckId) async => [];
-
-  @override
-  Future<List<BackendChatMessage>> fetchChatMessages(String deckId) async => [];
-
-  @override
-  Future<List<BackendDeck>> fetchDecks() async => [];
-
-  @override
-  Future<BackendChatMessage> insertChatMessage(
-    BackendChatMessage message,
-  ) async {
-    return message;
-  }
-
-  @override
-  Future<BackendCard> updateCardInsight({
-    required String cardId,
-    required String insight,
-    required DateTime updatedAt,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<BackendCard> updateCardProgress({
-    required String cardId,
-    required double easeFactor,
-    required int intervalDays,
-    required DateTime dueDate,
-    required DateTime updatedAt,
-  }) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<BackendCard> upsertCard(BackendCard card) async => card;
-
-  @override
-  Future<BackendDeck> upsertDeck(BackendDeck deck) async => deck;
 }

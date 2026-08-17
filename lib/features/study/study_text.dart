@@ -6,6 +6,14 @@ class StudyText {
   static const String emptyTitle = 'Nenhum card para estudar';
   static const String emptyMessage =
       'Adicione cards neste deck para iniciar uma sessão.';
+  static const String allCaughtUpTitle = 'Tudo em dia!';
+  static const String allCaughtUpMessage =
+      'Nenhum card vence hoje neste deck. Volte amanhã ou use o estudo livre '
+      'para revisar tudo.';
+  static const String freeStudy = 'Estudo livre';
+  static const String freeStudyBanner =
+      'Estudo livre: revisando todos os cards, inclusive os que ainda não '
+      'venceram. Esta prática não altera os vencimentos.';
   static const String backToDeck = 'Voltar ao deck';
   static const String offline =
       'Offline: seu progresso será salvo localmente e sincronizado depois.';
@@ -13,6 +21,7 @@ class StudyText {
   static const String tapToReveal = 'Toque para revelar';
   static const String nextReview = 'Próxima revisão';
   static const String progress = 'Progresso';
+  static String sessionLabel(String deckTitle) => 'Sessão: $deckTitle';
   static const String front = 'Pergunta';
   static const String back = 'Resposta';
   static const String speak = 'Ouvir';

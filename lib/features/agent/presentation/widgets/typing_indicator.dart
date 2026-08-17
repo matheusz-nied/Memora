@@ -37,18 +37,23 @@ class _TypingIndicatorState extends State<TypingIndicator>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Agent avatar
         Container(
           width: 32,
           height: 32,
           margin: const EdgeInsets.only(top: AppDimensions.xs),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF6366F1), Color(0xFF9333EA)],
+              colors: [
+                AppColors.primary.withValues(alpha: 0.85),
+                AppColors.neonBlue.withValues(alpha: 0.7),
+              ],
             ),
             borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.2),
+            ),
           ),
           child: const Icon(
             Icons.smart_toy_outlined,
@@ -57,7 +62,6 @@ class _TypingIndicatorState extends State<TypingIndicator>
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
-        // Dots
         Padding(
           padding: const EdgeInsets.only(top: AppDimensions.md),
           child: Row(
@@ -77,7 +81,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
                   height: 8,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.6),
+                    color: AppColors.primary.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -91,10 +95,8 @@ class _TypingIndicatorState extends State<TypingIndicator>
 
   /// Creates a staggered bounce effect for each dot.
   double _bounce(double t, int index) {
-    // Offset each dot's animation by a third
     final delayed = (t - index * 0.15) % 1.0;
     if (delayed < 0.4) {
-      // Bounce up and down in the first 40% of the cycle
       return -6.0 * (0.5 - (delayed / 0.4 - 0.5).abs()) * 2;
     }
     return 0;

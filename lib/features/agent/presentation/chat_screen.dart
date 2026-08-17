@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/backend/models/ai_chat_message.dart';
-import '../../../core/backend/models/backend_chat_message.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/route_constants.dart';
 import '../../../core/theme/app_colors.dart';
@@ -13,15 +12,18 @@ import '../../../core/utils/connectivity_service.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/glass_panel.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/offline_banner.dart';
+import '../../../core/widgets/scaffold_shell.dart';
 import '../../decks/deck_repository.dart';
 import '../data/agent_repository.dart';
 import '../data/agent_text.dart';
-import 'chat_message_ui.dart';
+import '../data/chat_message.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_bubble.dart';
 import 'widgets/typing_indicator.dart';
+import '../../legal/widgets/ai_disclaimer_note.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.deckId});
@@ -37,7 +39,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   final _uuid = const Uuid();
 
-  List<ChatMessageUi> _messages = [];
+  List<ChatMessage> _messages = [];
   var _isLoadingHistory = true;
   var _isSending = false;
   var _hasHistoryError = false;
@@ -75,8 +77,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       orElse: () => null,
     );
 
-    return Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ScaffoldShell(
+      isDark: isDark,
+      extendBody: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: Column(
           children: [
             Text(
@@ -138,6 +147,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             // Messages area
             Expanded(child: _buildBody(agentName)),
 
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+              child: const AiDisclaimerNote(showReport: false),
+            ),
+
             // Message limit warning
             if (_isAtLimit)
               _MessageLimitBanner(onNewConversation: _startNewConversation),
@@ -159,6 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             // Input bar
             ChatInputBar(
+              isDark: isDark,
               controller: _inputController,
               enabled: isOnline && !_isAtLimit,
               isSending: _isSending,
@@ -222,11 +237,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final history = await repository.fetchChatHistory(widget.deckId);
       if (mounted) {
         setState(() {
-          _messages = history
-              .map(ChatMessageUi.fromBackend)
-              .toList()
-              .reversed
-              .toList();
+          _messages = history.reversed.toList();
           _isLoadingHistory = false;
         });
         _scrollToBottom();
@@ -252,9 +263,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
 
     // Add user message to UI immediately
-    final userMessage = ChatMessageUi(
+    final userMessage = ChatMessage(
       id: _uuid.v4(),
-      role: BackendChatRole.user,
+      role: ChatRole.user,
       content: text,
       createdAt: DateTime.now(),
     );
@@ -267,7 +278,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // Save user message to backend
       await repository.saveChatMessage(
         deckId: widget.deckId,
-        role: BackendChatRole.user,
+        role: ChatRole.user,
         content: text,
       );
 
@@ -286,15 +297,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // Save assistant reply to backend
       await repository.saveChatMessage(
         deckId: widget.deckId,
-        role: BackendChatRole.assistant,
+        role: ChatRole.assistant,
         content: reply,
       );
 
       // Add assistant message to UI
       if (mounted) {
-        final assistantMessage = ChatMessageUi(
+        final assistantMessage = ChatMessage(
           id: _uuid.v4(),
-          role: BackendChatRole.assistant,
+          role: ChatRole.assistant,
           content: reply,
           createdAt: DateTime.now(),
         );
@@ -353,22 +364,19 @@ class _MessageLimitBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.lg,
         vertical: AppDimensions.sm,
       ),
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.infoBg,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        border: Border.all(
-          color: isDark
-              ? AppColors.borderDark
-              : AppColors.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
+      child: GlassPanel(
+        isDark: isDark,
+        showGlow: false,
+        showTopHighlight: false,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderColor: AppColors.primary.withValues(alpha: 0.25),
+        padding: const EdgeInsets.all(AppDimensions.md),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -402,6 +410,7 @@ class _MessageLimitBanner extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

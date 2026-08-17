@@ -8,8 +8,13 @@ class CardModel {
     required this.back,
     required this.easeFactor,
     required this.intervalDays,
+    required this.repetitions,
     required this.dueDate,
-    required this.syncPending,
+    this.fsrsState = 1,
+    this.fsrsStep,
+    this.stability,
+    this.difficulty,
+    this.lastReview,
     this.insight,
     required this.createdAt,
     required this.updatedAt,
@@ -21,8 +26,13 @@ class CardModel {
   final String back;
   final double easeFactor;
   final int intervalDays;
+  final int repetitions;
   final DateTime dueDate;
-  final bool syncPending;
+  final int fsrsState;
+  final int? fsrsStep;
+  final double? stability;
+  final double? difficulty;
+  final DateTime? lastReview;
   final String? insight;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -35,8 +45,15 @@ class CardModel {
       back: card.back,
       easeFactor: card.easeFactor,
       intervalDays: card.intervalDays,
+      repetitions: card.repetitions,
       dueDate: DateTime.fromMillisecondsSinceEpoch(card.dueDate),
-      syncPending: card.syncPending,
+      fsrsState: card.fsrsState,
+      fsrsStep: card.fsrsStep,
+      stability: card.stability,
+      difficulty: card.difficulty,
+      lastReview: card.lastReview == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(card.lastReview!),
       insight: card.insight,
       createdAt: DateTime.fromMillisecondsSinceEpoch(card.createdAt),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(card.updatedAt),
@@ -46,9 +63,14 @@ class CardModel {
   CardModel copyWith({
     double? easeFactor,
     int? intervalDays,
+    int? repetitions,
     DateTime? dueDate,
-    bool? syncPending,
-    String? insight,
+    int? fsrsState,
+    Object? fsrsStep = _copyWithUnset,
+    Object? stability = _copyWithUnset,
+    Object? difficulty = _copyWithUnset,
+    Object? lastReview = _copyWithUnset,
+    Object? insight = _copyWithUnset,
     DateTime? updatedAt,
   }) {
     return CardModel(
@@ -58,11 +80,34 @@ class CardModel {
       back: back,
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
+      repetitions: repetitions ?? this.repetitions,
       dueDate: dueDate ?? this.dueDate,
-      syncPending: syncPending ?? this.syncPending,
-      insight: insight ?? this.insight,
+      fsrsState: fsrsState ?? this.fsrsState,
+      fsrsStep: identical(fsrsStep, _copyWithUnset)
+          ? this.fsrsStep
+          : fsrsStep as int?,
+      stability: identical(stability, _copyWithUnset)
+          ? this.stability
+          : stability as double?,
+      difficulty: identical(difficulty, _copyWithUnset)
+          ? this.difficulty
+          : difficulty as double?,
+      lastReview: identical(lastReview, _copyWithUnset)
+          ? this.lastReview
+          : lastReview as DateTime?,
+      insight: identical(insight, _copyWithUnset)
+          ? this.insight
+          : insight as String?,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  /// A card is new to FSRS until it has a memory state and a review time.
+  /// This is intentionally not based on legacy `repetitions`: a lapsed card
+  /// may have its old repetition counter reset to zero without becoming new.
+  bool get isNewForScheduling =>
+      repetitions == 0 && stability == null && lastReview == null;
 }
+
+const Object _copyWithUnset = Object();

@@ -1,43 +1,31 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../core/backend/backend_provider.dart';
+import '../../../core/backend/contracts/ai_gateway.dart';
+import '../../../core/backend/gateway_providers.dart';
 import '../../../core/backend/models/ai_chat_message.dart';
-import '../../../core/backend/models/backend_chat_message.dart';
 import '../../../core/database/app_database.dart';
-import '../../../core/sync/app_sync_service.dart';
-import '../../auth/auth_repository.dart';
 import '../../decks/deck_model.dart';
+import 'chat_message.dart';
 
 final agentRepositoryProvider = Provider<AgentRepository>((ref) {
   return AgentRepository(
     database: ref.watch(appDatabaseProvider),
-    backendClient: ref.watch(backendClientProvider),
-    syncService: ref.watch(appSyncServiceProvider),
-    authRepository: ref.watch(authRepositoryProvider),
+    aiGateway: ref.watch(aiGatewayProvider),
   );
 });
 
 class AgentRepository {
-  AgentRepository({
-    required AppDatabase database,
-    required dynamic backendClient,
-    required AppSyncService syncService,
-    required AuthRepository authRepository,
-  }) : _database = database,
-       _backendClient = backendClient,
-       _syncService = syncService,
-       _authRepository = authRepository;
+  AgentRepository({required AppDatabase database, required AiGateway aiGateway})
+    : _database = database,
+      _aiGateway = aiGateway;
 
   final AppDatabase _database;
-  final dynamic _backendClient;
-  final AppSyncService _syncService;
-  final AuthRepository _authRepository;
+  final AiGateway _aiGateway;
   final Uuid _uuid = const Uuid();
 
-  /// Updates the agent configuration on the deck (local + sync).
+  /// Grava a configuração do agente no deck.
   Future<void> updateAgentConfig({
     required DeckModel deck,
     required String agentName,
@@ -58,62 +46,53 @@ class AgentRepository {
         agentTemplate: Value(agentTemplate),
         agentLanguage: Value(agentLanguage),
         agentLevel: Value(agentLevel),
-        syncPending: const Value(true),
         createdAt: deck.createdAt.millisecondsSinceEpoch,
         updatedAt: now,
       ),
     );
-    _runSyncSilently(() => _syncService.syncDecks());
   }
 
-  /// Sends a message to the AI agent via [AiGateway].
+  /// Manda a mensagem para o tutor e devolve a resposta.
   Future<String> sendMessage({
     required String deckId,
     required List<AiChatMessage> messages,
     required String userMessage,
   }) {
-    return _backendClient.ai.chat(
+    return _aiGateway.chat(
       deckId: deckId,
       messages: messages,
       userMessage: userMessage,
     );
   }
 
-  /// Fetches chat history from the remote backend.
-  Future<List<BackendChatMessage>> fetchChatHistory(String deckId) {
-    return _backendClient.database.fetchChatMessages(deckId);
+  /// Histórico do deck, do mais antigo para o mais novo.
+  Future<List<ChatMessage>> fetchChatHistory(String deckId) async {
+    final messages = await _database.chatMessagesDao.getMessagesForDeck(deckId);
+    return messages.map(ChatMessage.fromLocal).toList();
   }
 
-  /// Saves a single chat message to the remote backend.
-  Future<BackendChatMessage> saveChatMessage({
+  Future<ChatMessage> saveChatMessage({
     required String deckId,
-    required BackendChatRole role,
+    required ChatRole role,
     required String content,
-  }) {
-    final session = _authRepository.currentSession;
-    if (session == null) {
-      throw StateError('Sessão expirada. Entre novamente.');
-    }
-
-    final message = BackendChatMessage(
+  }) async {
+    final message = ChatMessage(
       id: _uuid.v4(),
-      deckId: deckId,
-      userId: session.user.id,
       role: role,
       content: content,
       createdAt: DateTime.now(),
     );
 
-    return _backendClient.database.insertChatMessage(message);
-  }
+    await _database.chatMessagesDao.insertMessage(
+      ChatMessagesTableCompanion.insert(
+        id: message.id,
+        deckId: deckId,
+        role: role.name,
+        content: content,
+        createdAt: message.createdAt.millisecondsSinceEpoch,
+      ),
+    );
 
-  void _runSyncSilently(Future<void> Function() sync) {
-    Future<void>.value(sync()).catchError((
-      Object error,
-      StackTrace stackTrace,
-    ) {
-      debugPrint('Agent sync failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
-    });
+    return message;
   }
 }

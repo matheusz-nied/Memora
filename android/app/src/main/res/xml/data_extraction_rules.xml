@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+. O par de `android:allowBackup="false"`, que sozinho cobre só o
+  backup em nuvem: a transferência direta entre aparelhos é controlada aqui.
+
+  Nada sai automaticamente. O modo local guarda a chave da DeepSeek do usuário
+  em `SharedPreferences`, e o backup automático a copiaria em texto plano para
+  o Google Drive dele — uma credencial que cobra na conta dele, num lugar que
+  ele nunca escolheu. O caminho suportado para levar os dados a outro aparelho
+  é a tela de Backup, que exporta um .json explícito.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

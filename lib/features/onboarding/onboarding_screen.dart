@@ -8,6 +8,10 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/glass_panel.dart';
+import '../../core/widgets/scaffold_shell.dart';
+import '../legal/legal_links.dart';
+import '../legal/legal_text.dart';
 import 'onboarding_page_model.dart';
 import 'onboarding_state.dart';
 
@@ -30,16 +34,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _complete() async {
+  Future<void> _complete({bool openApiKey = false}) async {
     await ref.read(onboardingControllerProvider).complete();
-    if (mounted) {
-      context.go(RouteConstants.kRouteLogin);
+    if (!mounted) {
+      return;
+    }
+
+    context.go(RouteConstants.kRouteHome);
+    if (openApiKey) {
+      context.push(RouteConstants.kRouteApiKey);
     }
   }
 
   Future<void> _next() async {
     if (_isLastPage) {
-      await _complete();
+      await _complete(openApiKey: true);
       return;
     }
 
@@ -51,7 +60,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ScaffoldShell(
+      isDark: isDark,
       body: SafeArea(
         child: Responsive.constrainedContent(
           child: Padding(
@@ -86,7 +98,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       });
                     },
                     itemBuilder: (context, index) {
-                      return _OnboardingPage(page: OnboardingText.pages[index]);
+                      return _OnboardingPage(
+                        page: OnboardingText.pages[index],
+                        isDark: isDark,
+                      );
                     },
                   ),
                 ),
@@ -98,11 +113,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 const SizedBox(height: AppDimensions.xxl),
                 AppButton(
                   label: _isLastPage
-                      ? OnboardingText.start
+                      ? OnboardingText.setupKey
                       : OnboardingText.next,
-                  icon: Icons.arrow_forward,
+                  icon: _isLastPage ? Icons.key : Icons.arrow_forward,
                   onPressed: _next,
                 ),
+                if (_isLastPage) ...[
+                  const SizedBox(height: AppDimensions.sm),
+                  AppButton(
+                    label: OnboardingText.skipKey,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: _complete,
+                  ),
+                ],
+                if (_isLastPage) ...[
+                  const SizedBox(height: AppDimensions.lg),
+                  Text(
+                    LegalText.consent,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => LegalLinks.openPrivacyPolicy(context),
+                    child: const Text(LegalText.openPolicy),
+                  ),
+                ],
               ],
             ),
           ),
@@ -113,79 +150,106 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _OnboardingPage extends StatelessWidget {
-  const _OnboardingPage({required this.page});
+  const _OnboardingPage({required this.page, required this.isDark});
 
   final OnboardingPageModel page;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final secondaryTextColor = isDark
         ? AppColors.textSecDark
         : AppColors.textSecondary;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _HeroBadge(icon: page.icon),
-        const SizedBox(height: AppDimensions.huge),
-        Text(
-          AppConstants.appName,
-          style: theme.textTheme.labelLarge?.copyWith(color: AppColors.primary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppDimensions.md),
-        Text(
-          page.title,
-          style: theme.textTheme.displayLarge,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: AppDimensions.lg),
-        Text(
-          page.description,
-          style: theme.textTheme.bodyLarge?.copyWith(color: secondaryTextColor),
-          textAlign: TextAlign.center,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _HeroBadge(icon: page.icon, isDark: isDark),
+                const SizedBox(height: AppDimensions.huge),
+                GlassPanel(
+                  isDark: isDark,
+                  showGlow: false,
+                  showTopHighlight: false,
+                  borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.xxl,
+                    vertical: AppDimensions.xxxl,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        AppConstants.appName,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppDimensions.md),
+                      Text(
+                        page.title,
+                        style: theme.textTheme.displayLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppDimensions.lg),
+                      Text(
+                        page.description,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: secondaryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 class _HeroBadge extends StatelessWidget {
-  const _HeroBadge({required this.icon});
+  const _HeroBadge({required this.icon, required this.isDark});
 
   final IconData icon;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
-
-    return Container(
-      width: AppDimensions.onboardingHeroSize,
-      height: AppDimensions.onboardingHeroSize,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radius3Xl),
-        border: Border.all(color: borderColor),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.primaryShadow,
-            blurRadius: AppDimensions.xxxl,
-            offset: Offset(0, AppDimensions.lg),
+    return GlassPanel(
+      isDark: isDark,
+      showGlow: false,
+      showTopHighlight: true,
+      borderRadius: BorderRadius.circular(AppDimensions.radius3Xl),
+      padding: EdgeInsets.zero,
+      child: SizedBox(
+        width: AppDimensions.onboardingHeroSize,
+        height: AppDimensions.onboardingHeroSize,
+        child: Center(
+          child: Container(
+            width: AppDimensions.huge * 2,
+            height: AppDimensions.huge * 2,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: isDark ? 0.2 : 1),
+              borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: AppDimensions.huge,
+              color: AppColors.primary,
+            ),
           ),
-        ],
-      ),
-      child: Center(
-        child: Container(
-          width: AppDimensions.huge * 2,
-          height: AppDimensions.huge * 2,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-          ),
-          child: Icon(icon, size: AppDimensions.huge, color: AppColors.primary),
         ),
       ),
     );

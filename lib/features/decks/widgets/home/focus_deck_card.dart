@@ -9,6 +9,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../deck_card_counts_provider.dart';
 import '../../deck_model.dart';
 import '../../deck_text.dart';
+import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/neon_button.dart';
 import 'progress_ring.dart';
 
 class FocusDeckCard extends ConsumerWidget {
@@ -21,107 +23,67 @@ class FocusDeckCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final countsAsync = ref.watch(deckCardCountsStreamProvider(deck.id));
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-        border: Border.all(
-          color: isDark
-              ? AppColors.surface.withValues(alpha: 0.05)
-              : AppColors.textPrimary.withValues(alpha: 0.05),
-        ),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: AppColors.textPrimary.withValues(alpha: 0.04),
-                  blurRadius: AppDimensions.xxl,
-                  offset: const Offset(0, AppDimensions.sm),
-                ),
-              ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppDimensions.radius2Xl),
-        child: Stack(
-          children: [
-            if (isDark)
-              Positioned(
-                top: -40,
-                right: -40,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary.withValues(alpha: 0.12),
+    return GlassPanel(
+      isDark: isDark,
+      glowColor: AppColors.neonGlowStrong,
+      padding: const EdgeInsets.all(AppDimensions.xxl),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: -48,
+            right: -48,
+            child: IgnorePointer(
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: isDark ? 0.28 : 0.14),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(AppDimensions.xxl),
-              child: Column(
-                children: [
-                  Text(
-                    deck.title.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.textSecDark
-                          : AppColors.textSecondary,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.lg),
-                  countsAsync.maybeWhen(
-                    data: (counts) =>
-                        _DueProgress(counts: counts, isDark: isDark),
-                    orElse: () => const SizedBox.square(
-                      dimension: 180,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
-                  countsAsync.maybeWhen(
-                    data: (counts) => _StatsRow(counts: counts, isDark: isDark),
-                    orElse: () => _StatsRow(counts: null, isDark: isDark),
-                  ),
-                  const SizedBox(height: AppDimensions.xl),
-                  SizedBox(
-                    width: double.infinity,
-                    height: AppDimensions.minTouchTarget,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        context.push(RouteConstants.studyPath(deck.id));
-                      },
-                      icon: const Icon(Icons.play_arrow, size: 20),
-                      label: Text(
-                        DeckText.startReview,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.surface,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusLg,
-                          ),
-                        ),
-                        elevation: 4,
-                        shadowColor: AppColors.primary.withValues(alpha: 0.3),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
-          ],
-        ),
+          ),
+          Column(
+            children: [
+              Text(
+                deck.title.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.labelSmall.copyWith(
+                  color: isDark ? AppColors.neonCyan : AppColors.primary,
+                  letterSpacing: 1.8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: AppDimensions.lg),
+              countsAsync.maybeWhen(
+                data: (counts) => _DueProgress(counts: counts, isDark: isDark),
+                orElse: () => const SizedBox.square(
+                  dimension: 180,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              countsAsync.maybeWhen(
+                data: (counts) => _StatsRow(counts: counts, isDark: isDark),
+                orElse: () => _StatsRow(counts: null, isDark: isDark),
+              ),
+              const SizedBox(height: AppDimensions.xl),
+              NeonButton(
+                label: DeckText.startReview,
+                icon: Icons.play_arrow_rounded,
+                onPressed: () {
+                  context.push(RouteConstants.studyPath(deck.id));
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -142,9 +104,11 @@ class _DueProgress extends StatelessWidget {
     return ProgressRing(
       progress: progress,
       trackColor: isDark
-          ? AppColors.surface.withValues(alpha: 0.05)
-          : AppColors.textPrimary.withValues(alpha: 0.05),
-      progressColor: AppColors.primary,
+          ? AppColors.glassBorderDark
+          : AppColors.textPrimary.withValues(alpha: 0.06),
+      progressColor: isDark
+          ? AppColors.primary.withValues(alpha: 0.78)
+          : AppColors.primary.withValues(alpha: 0.88),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -162,6 +126,7 @@ class _DueProgress extends StatelessWidget {
               color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
               fontSize: 10,
               fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
             ),
           ),
         ],
@@ -181,20 +146,25 @@ class _StatsRow extends StatelessWidget {
     final hasCounts = counts != null;
     final total = counts?.total ?? 0;
     final due = counts?.due ?? 0;
-    final progressVal = total == 0 ? 100 : (((total - due) / total) * 100).round();
+    final progressVal = total == 0
+        ? 100
+        : (((total - due) / total) * 100).round();
 
     return Container(
+      margin: const EdgeInsets.only(top: AppDimensions.lg),
       padding: const EdgeInsets.symmetric(
         vertical: AppDimensions.md,
         horizontal: AppDimensions.lg,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.backgroundDark : AppColors.background,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        color: isDark
+            ? AppColors.surfaceDeep.withValues(alpha: 0.65)
+            : AppColors.background.withValues(alpha: 0.7),
         border: Border.all(
           color: isDark
-              ? AppColors.surface.withOpacity(0.05)
-              : AppColors.textPrimary.withOpacity(0.03),
+              ? AppColors.glassBorderDark
+              : AppColors.glassBorderLight,
         ),
       ),
       child: Row(
@@ -211,8 +181,8 @@ class _StatsRow extends StatelessWidget {
             width: 1,
             height: 28,
             color: isDark
-                ? AppColors.surface.withOpacity(0.1)
-                : AppColors.textPrimary.withOpacity(0.08),
+                ? AppColors.glassBorderDark
+                : AppColors.textPrimary.withValues(alpha: 0.08),
           ),
           Expanded(
             child: _StatValue(

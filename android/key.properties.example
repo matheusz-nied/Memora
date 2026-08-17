@@ -1,0 +1,17 @@
+# Copie para `android/key.properties` e preencha. O arquivo real está no
+# .gitignore e NUNCA deve ser commitado.
+#
+# Gerar o keystore (uma vez na vida do app):
+#
+#   keytool -genkey -v -keystore ~/memora-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# Guarde o .jks e estas senhas fora da máquina de desenvolvimento e fora do
+# GitHub. Perder o keystore significa nunca mais conseguir atualizar o app
+# publicado: a Play Store não aceita um APK assinado por outra chave, e a única
+# saída é lançar um app novo, do zero, sem os usuários.
+
+storeFile=/caminho/absoluto/para/memora-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=

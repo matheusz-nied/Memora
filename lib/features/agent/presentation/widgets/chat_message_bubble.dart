@@ -1,18 +1,21 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../chat_message_ui.dart';
+import '../../../../core/widgets/glass_panel.dart';
+import '../../data/chat_message.dart';
 
 /// A single chat message bubble.
 ///
-/// User messages are displayed on the right with primary color.
-/// Assistant messages are displayed on the left with surface color.
+/// User messages are displayed on the right with primary-tinted glass.
+/// Assistant messages are displayed on the left with frosted glass.
 class ChatMessageBubble extends StatelessWidget {
   const ChatMessageBubble({super.key, required this.message, this.agentName});
 
-  final ChatMessageUi message;
+  final ChatMessage message;
   final String? agentName;
 
   @override
@@ -40,9 +43,16 @@ class _UserBubble extends StatelessWidget {
     required this.isDark,
   });
 
-  final ChatMessageUi message;
+  final ChatMessage message;
   final ThemeData theme;
   final bool isDark;
+
+  static const _radius = BorderRadius.only(
+    topLeft: Radius.circular(AppDimensions.radiusLg),
+    topRight: Radius.circular(4),
+    bottomLeft: Radius.circular(AppDimensions.radiusLg),
+    bottomRight: Radius.circular(AppDimensions.radiusLg),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -55,32 +65,41 @@ class _UserBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.lg,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(4), // Asymmetric sharp top-right corner
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
+            ClipRRect(
+              borderRadius: _radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: AppDimensions.glassBlur,
+                  sigmaY: AppDimensions.glassBlur,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(isDark ? 0.15 : 0.22),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: _radius,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary.withValues(alpha: isDark ? 0.82 : 0.88),
+                        AppColors.primaryHover.withValues(alpha: isDark ? 0.72 : 0.78),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                    ),
                   ),
-                ],
-              ),
-              child: Text(
-                message.content,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: Colors.white,
-                  height: 1.4,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.lg,
+                      vertical: 12,
+                    ),
+                    child: Text(
+                      message.content,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -90,7 +109,7 @@ class _UserBubble extends StatelessWidget {
               child: Text(
                 'Você',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isDark ? const Color(0xFF64748B) : Colors.black38,
+                  color: isDark ? AppColors.textTertDark : AppColors.textTertiary,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                 ),
@@ -111,10 +130,17 @@ class _AssistantBubble extends StatelessWidget {
     required this.isDark,
   });
 
-  final ChatMessageUi message;
+  final ChatMessage message;
   final String agentName;
   final ThemeData theme;
   final bool isDark;
+
+  static const _radius = BorderRadius.only(
+    topLeft: Radius.circular(4),
+    topRight: Radius.circular(AppDimensions.radiusLg),
+    bottomLeft: Radius.circular(AppDimensions.radiusLg),
+    bottomRight: Radius.circular(AppDimensions.radiusLg),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -132,39 +158,20 @@ class _AssistantBubble extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark
-                      ? const Color(0xFFE2E8F0)
+                      ? AppColors.textPrimaryDark
                       : AppColors.textPrimary,
                   fontSize: 13,
                 ),
               ),
               const SizedBox(height: 6),
-              Container(
+              GlassPanel(
+                isDark: isDark,
+                showGlow: false,
+                showTopHighlight: false,
+                borderRadius: _radius,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.lg,
                   vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4), // Asymmetric sharp top-left corner
-                    topRight: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
-                  ),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.06)
-                        : Colors.black.withOpacity(0.06),
-                  ),
-                  boxShadow: isDark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                 ),
                 child: MarkdownBody(
                   data: message.content,
@@ -172,33 +179,41 @@ class _AssistantBubble extends StatelessWidget {
                   styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
                     p: theme.textTheme.bodyLarge?.copyWith(
                       color: isDark
-                          ? const Color(0xFFCBD5E1) // slate-300
+                          ? AppColors.textSecDark
                           : AppColors.textPrimary,
                       height: 1.5,
                       fontSize: 15,
                     ),
                     strong: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                       fontSize: 15,
                     ),
                     h1: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                     ),
                     h2: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                     ),
                     listBullet: theme.textTheme.bodyLarge?.copyWith(
                       color: AppColors.primary,
                       fontSize: 15,
                     ),
                     code: TextStyle(
-                      color: isDark ? const Color(0xFFF43F5E) : const Color(0xFFBE123C),
+                      color: isDark
+                          ? const Color(0xFFF43F5E)
+                          : const Color(0xFFBE123C),
                       backgroundColor: isDark
-                          ? Colors.white.withOpacity(0.06)
-                          : Colors.black.withOpacity(0.04),
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
                       fontFamily: 'monospace',
                       fontSize: 13,
                     ),
@@ -223,21 +238,20 @@ class _AgentAvatar extends StatelessWidget {
     return Container(
       width: 32,
       height: 32,
-      margin: const EdgeInsets.only(top: 18), // aligned with title gap offset
+      margin: const EdgeInsets.only(top: 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF6366F1), Color(0xFF9333EA)],
+          colors: [
+            AppColors.primary.withValues(alpha: 0.9),
+            AppColors.neonBlue.withValues(alpha: 0.75),
+          ],
         ),
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(isDark ? 0.25 : 0.35),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.25),
+        ),
       ),
       child: const Icon(
         Icons.smart_toy_outlined,

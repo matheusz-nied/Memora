@@ -17,7 +17,6 @@ class DecksTable extends Table {
       text().withDefault(const Constant('português'))();
   TextColumn get agentLevel =>
       text().withDefault(const Constant('intermediário'))();
-  BoolColumn get syncPending => boolean().withDefault(const Constant(false))();
   IntColumn get deletedAt => integer().nullable()();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();

@@ -4,41 +4,29 @@ import 'package:go_router/go_router.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/constants/route_constants.dart';
-import 'core/sync/app_sync_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/agent/presentation/agent_config_screen.dart';
 import 'features/agent/presentation/chat_screen.dart';
-import 'features/auth/auth_repository.dart';
-import 'features/auth/forgot_password_screen.dart';
-import 'features/auth/login_screen.dart';
-import 'features/auth/profile_screen.dart';
-import 'features/auth/register_screen.dart';
+import 'features/backup/backup_screen.dart';
 import 'features/decks/deck_screen.dart';
 import 'features/decks/home_screen.dart';
-import 'features/generate/generated_cards_review_args.dart';
+import 'features/cards/card_import_screen.dart';
+import 'features/generate/card_review_args.dart';
 import 'features/generate/import_content_screen.dart';
 import 'features/generate/review_cards_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/onboarding/onboarding_state.dart';
+import 'features/settings/api_key_screen.dart';
 import 'features/study/insight_screen.dart';
 import 'features/study/study_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authRepository = ref.read(authRepositoryProvider);
   final notifier = _RouterRefreshNotifier(
     onboardingCompleted: ref.read(onboardingCompletedProvider),
-    isAuthenticated: authRepository.currentSession != null,
   );
 
   ref.listen<bool>(onboardingCompletedProvider, (previous, next) {
     notifier.updateOnboardingCompleted(next);
-  });
-  ref.listen(authStateProvider, (previous, next) {
-    final isAuthenticated = next.maybeWhen(
-      data: (session) => session != null,
-      orElse: () => ref.read(authRepositoryProvider).currentSession != null,
-    );
-    notifier.updateIsAuthenticated(isAuthenticated);
   });
 
   final router = GoRouter(
@@ -52,33 +40,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
+/// O onboarding é o único portão que existe.
+///
+/// Não há login: a identidade nasce no bootstrap e nunca some, então quem
+/// terminou a apresentação vai direto para a biblioteca.
 String? _redirect(GoRouterState state, _RouterRefreshNotifier notifier) {
-  final path = state.uri.path;
-  final isOnboardingRoute = path == RouteConstants.kRouteOnboarding;
-  final isAuthRoute =
-      path == RouteConstants.kRouteLogin ||
-      path == RouteConstants.kRouteRegister;
-  final isForgotRoute = path == RouteConstants.kRouteForgotPass;
+  final isOnboardingRoute = state.uri.path == RouteConstants.kRouteOnboarding;
 
   if (!notifier.onboardingCompleted) {
     return isOnboardingRoute ? null : RouteConstants.kRouteOnboarding;
   }
 
-  if (isOnboardingRoute) {
-    return notifier.isAuthenticated
-        ? RouteConstants.kRouteHome
-        : RouteConstants.kRouteLogin;
-  }
-
-  if (!notifier.isAuthenticated && !isAuthRoute && !isForgotRoute) {
-    return RouteConstants.kRouteLogin;
-  }
-
-  if (notifier.isAuthenticated && isAuthRoute) {
-    return RouteConstants.kRouteHome;
-  }
-
-  return null;
+  return isOnboardingRoute ? RouteConstants.kRouteHome : null;
 }
 
 final _routes = [
@@ -87,20 +60,12 @@ final _routes = [
     builder: (context, state) => const OnboardingScreen(),
   ),
   GoRoute(
-    path: RouteConstants.kRouteLogin,
-    builder: (context, state) => const LoginScreen(),
+    path: RouteConstants.kRouteApiKey,
+    builder: (context, state) => const ApiKeyScreen(),
   ),
   GoRoute(
-    path: RouteConstants.kRouteRegister,
-    builder: (context, state) => const RegisterScreen(),
-  ),
-  GoRoute(
-    path: RouteConstants.kRouteForgotPass,
-    builder: (context, state) => const ForgotPasswordScreen(),
-  ),
-  GoRoute(
-    path: RouteConstants.kRouteProfile,
-    builder: (context, state) => const ProfileScreen(),
+    path: RouteConstants.kRouteBackup,
+    builder: (context, state) => const BackupScreen(),
   ),
   GoRoute(
     path: RouteConstants.kRouteHome,
@@ -117,7 +82,9 @@ final _routes = [
     path: RouteConstants.kRouteStudy,
     builder: (context, state) {
       final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
-      return StudyScreen(deckId: deckId);
+      final freeStudy =
+          state.uri.queryParameters[RouteConstants.freeStudyParam] == '1';
+      return StudyScreen(deckId: deckId, freeStudy: freeStudy);
     },
   ),
   GoRoute(
@@ -136,10 +103,17 @@ final _routes = [
     },
   ),
   GoRoute(
+    path: RouteConstants.kRouteCardImport,
+    builder: (context, state) {
+      final deckId = state.pathParameters[RouteConstants.deckIdParam]!;
+      return CardImportScreen(deckId: deckId);
+    },
+  ),
+  GoRoute(
     path: RouteConstants.kRouteReview,
     builder: (context, state) {
-      final args = state.extra is GeneratedCardsReviewArgs
-          ? state.extra as GeneratedCardsReviewArgs
+      final args = state.extra is CardReviewArgs
+          ? state.extra as CardReviewArgs
           : null;
       return ReviewCardsScreen(args: args);
     },
@@ -161,27 +135,15 @@ final _routes = [
 ];
 
 class _RouterRefreshNotifier extends ChangeNotifier {
-  _RouterRefreshNotifier({
-    required this.onboardingCompleted,
-    required this.isAuthenticated,
-  });
+  _RouterRefreshNotifier({required this.onboardingCompleted});
 
   bool onboardingCompleted;
-  bool isAuthenticated;
 
   void updateOnboardingCompleted(bool value) {
     if (onboardingCompleted == value) {
       return;
     }
     onboardingCompleted = value;
-    notifyListeners();
-  }
-
-  void updateIsAuthenticated(bool value) {
-    if (isAuthenticated == value) {
-      return;
-    }
-    isAuthenticated = value;
     notifyListeners();
   }
 }
@@ -191,7 +153,6 @@ class MemoraApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(appAutoSyncProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

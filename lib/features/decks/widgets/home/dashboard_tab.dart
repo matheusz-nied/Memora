@@ -8,8 +8,10 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
-import '../../../auth/auth_repository.dart';
-import '../../../auth/profile_text.dart';
+import '../../../../core/widgets/neon_button.dart';
+import '../../../backup/widgets/backup_reminder_card.dart';
+import '../../../settings/widgets/missing_api_key_card.dart';
+import '../../../stats/widgets/study_stats_card.dart';
 import '../../deck_model.dart';
 import '../../deck_repository.dart';
 import '../../deck_text.dart';
@@ -21,14 +23,12 @@ class DashboardTab extends ConsumerWidget {
   const DashboardTab({
     super.key,
     required this.isDark,
-    required this.onRefresh,
     required this.onCreateDeck,
     required this.onOpenDecksTab,
     required this.onOpenProfileTab,
   });
 
   final bool isDark;
-  final RefreshCallback onRefresh;
   final VoidCallback onCreateDeck;
   final VoidCallback onOpenDecksTab;
   final VoidCallback onOpenProfileTab;
@@ -38,53 +38,60 @@ class DashboardTab extends ConsumerWidget {
     final decksAsync = ref.watch(
       decksPageProvider(AppConstants.kLocalPageSize),
     );
-    final session = ref.watch(authStateProvider).value;
-    final userName = session?.user.displayName?.trim().isNotEmpty == true
-        ? session!.user.displayName!
-        : ProfileText.authenticatedUser;
 
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Responsive.constrainedContent(
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.xl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DashboardHeader(
-                  isDark: isDark,
-                  userName: userName,
-                  onOpenProfileTab: onOpenProfileTab,
-                ),
-                const SizedBox(height: AppDimensions.xxl),
-                decksAsync.when(
-                  loading: () => const LoadingState(),
-                  error: (_, __) =>
-                      const ErrorState(message: DeckText.loadError),
-                  data: (decks) => decks.isEmpty
-                      ? EmptyFocusCard(
-                          isDark: isDark,
-                          onCreateDeck: onCreateDeck,
-                        )
-                      : FocusDeckCard(deck: decks.first, isDark: isDark),
-                ),
-                const SizedBox(height: AppDimensions.xxl),
-                _RecentDecksHeader(
-                  isDark: isDark,
-                  onOpenDecksTab: onOpenDecksTab,
-                ),
-                const SizedBox(height: AppDimensions.sm),
-                _RecentDecksList(isDark: isDark, decksAsync: decksAsync),
-                const SizedBox(height: AppDimensions.xxl),
-                _CreateAiDeckCta(onCreateDeck: onCreateDeck),
-                const SizedBox(height: 120),
-              ],
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Responsive.constrainedContent(
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DashboardHeader(
+                    isDark: isDark,
+                    onOpenProfileTab: onOpenProfileTab,
+                  ),
+                  const SizedBox(height: AppDimensions.xxl),
+                  decksAsync.when(
+                    loading: () => const LoadingState(),
+                    error: (_, __) =>
+                        const ErrorState(message: DeckText.loadError),
+                    data: (decks) => decks.isEmpty
+                        ? EmptyFocusCard(
+                            isDark: isDark,
+                            onCreateDeck: onCreateDeck,
+                          )
+                        : FocusDeckCard(deck: decks.first, isDark: isDark),
+                  ),
+                  const SizedBox(height: AppDimensions.xxl),
+                  const MissingApiKeyCard(),
+                  const SizedBox(height: AppDimensions.lg),
+                  const BackupReminderCard(),
+                  const SizedBox(height: AppDimensions.lg),
+                  StudyStatsCard(isDark: isDark),
+                  const SizedBox(height: AppDimensions.xxl),
+                  _RecentDecksHeader(
+                    isDark: isDark,
+                    onOpenDecksTab: onOpenDecksTab,
+                  ),
+                  const SizedBox(height: AppDimensions.sm),
+                  _RecentDecksList(isDark: isDark, decksAsync: decksAsync),
+                  const SizedBox(height: AppDimensions.xxl),
+                  NeonButton(
+                    label: DeckText.createAiDeck,
+                    subtitle: DeckText.aiDeckCaption,
+                    icon: Icons.auto_awesome,
+                    onPressed: onCreateDeck,
+                  ),
+                  const SizedBox(height: 120),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -92,12 +99,10 @@ class DashboardTab extends ConsumerWidget {
 class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader({
     required this.isDark,
-    required this.userName,
     required this.onOpenProfileTab,
   });
 
   final bool isDark;
-  final String userName;
   final VoidCallback onOpenProfileTab;
 
   @override
@@ -108,21 +113,32 @@ class _DashboardHeader extends StatelessWidget {
         Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark ? AppColors.surfaceDark : AppColors.surface,
-                border: Border.all(
-                  color: isDark
-                      ? AppColors.surface.withValues(alpha: 0.1)
-                      : AppColors.textPrimary.withValues(alpha: 0.05),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.35),
+                    AppColors.neonCyan.withValues(alpha: 0.2),
+                  ],
                 ),
+                border: Border.all(
+                  color: AppColors.glassBorderDark,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.neonGlow.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                  ),
+                ],
               ),
               child: const Icon(
-                Icons.person,
-                color: AppColors.primary,
-                size: 20,
+                Icons.bolt_rounded,
+                color: AppColors.neonCyan,
+                size: 22,
               ),
             ),
             const SizedBox(width: AppDimensions.md),
@@ -136,25 +152,22 @@ class _DashboardHeader extends StatelessWidget {
                         ? AppColors.textSecDark
                         : AppColors.textSecondary,
                     fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  _greeting(),
-                  style: AppTypography.labelSmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecDark
-                        : AppColors.textSecondary,
                     letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  userName,
-                  style: AppTypography.headingLarge.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+                ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: isDark
+                        ? [AppColors.textPrimaryDark, AppColors.neonCyan]
+                        : [AppColors.textPrimary, AppColors.primary],
+                  ).createShader(bounds),
+                  child: Text(
+                    _greeting(),
+                    style: AppTypography.headingMedium.copyWith(
+                      color: AppColors.textPrimaryDark,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],
@@ -162,9 +175,19 @@ class _DashboardHeader extends StatelessWidget {
           ],
         ),
         IconButton(
+          style: IconButton.styleFrom(
+            backgroundColor: isDark
+                ? AppColors.surfaceDeep.withValues(alpha: 0.6)
+                : AppColors.surface.withValues(alpha: 0.8),
+            side: BorderSide(
+              color: isDark
+                  ? AppColors.glassBorderDark
+                  : AppColors.glassBorderLight,
+            ),
+          ),
           icon: Icon(
             Icons.account_circle_outlined,
-            color: isDark ? AppColors.textSecDark : AppColors.textSecondary,
+            color: isDark ? AppColors.neonCyan : AppColors.primary,
             size: 24,
           ),
           onPressed: onOpenProfileTab,
@@ -176,12 +199,12 @@ class _DashboardHeader extends StatelessWidget {
   String _greeting() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) {
-      return DeckText.goodMorning.toUpperCase();
+      return DeckText.goodMorning;
     }
     if (hour >= 12 && hour < 18) {
-      return DeckText.goodAfternoon.toUpperCase();
+      return DeckText.goodAfternoon;
     }
-    return DeckText.goodEvening.toUpperCase();
+    return DeckText.goodEvening;
   }
 }
 
@@ -211,7 +234,7 @@ class _RecentDecksHeader extends StatelessWidget {
           child: Text(
             DeckText.seeAll,
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.primary,
+              color: AppColors.neonCyan,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -259,77 +282,6 @@ class _RecentDecksList extends StatelessWidget {
               .toList(),
         );
       },
-    );
-  }
-}
-
-class _CreateAiDeckCta extends StatelessWidget {
-  const _CreateAiDeckCta({required this.onCreateDeck});
-
-  final VoidCallback onCreateDeck;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryHover],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: AppDimensions.lg,
-            offset: const Offset(0, AppDimensions.xs),
-          ),
-        ],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-        onTap: onCreateDeck,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppDimensions.xl,
-            horizontal: AppDimensions.xxl,
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add, color: AppColors.surface, size: 24),
-                  const SizedBox(width: AppDimensions.sm),
-                  Text(
-                    DeckText.createAiDeck,
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppColors.surface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.xs),
-                  Icon(
-                    Icons.auto_awesome,
-                    color: AppColors.surface.withValues(alpha: 0.7),
-                    size: 16,
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.xs),
-              Text(
-                DeckText.aiDeckCaption,
-                textAlign: TextAlign.center,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.surface.withValues(alpha: 0.7),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

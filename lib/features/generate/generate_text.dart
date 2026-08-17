@@ -1,3 +1,5 @@
+import '../../core/constants/app_constants.dart';
+
 class GenerateText {
   const GenerateText._();
 
@@ -20,14 +22,53 @@ class GenerateText {
       'A geração com IA requer internet. Conecte-se para gerar cards.';
   static const String textRequired = 'Informe um texto para gerar cards.';
   static const String textTooShort =
-      'Informe um texto com pelo menos 100 caracteres.';
+      'Informe um texto com pelo menos ${AppConstants.kMinTextInput} caracteres.';
   static const String textTooLong =
-      'O texto deve ter no máximo 4000 caracteres.';
+      'O texto deve ter no máximo ${AppConstants.kMaxTextInput} caracteres.';
   static const String invalidQuantity = 'Quantidade inválida.';
   static const String invalidPdf = 'Selecione um arquivo PDF válido.';
-  static const String pdfTooLarge = 'O PDF deve ter no máximo 5 MB.';
+  static const String pdfTooLarge =
+      'O PDF deve ter no máximo ${AppConstants.kMaxPdfSizeMb} MB.';
+  static const String pdfTooManyPages =
+      'O PDF deve ter no máximo ${AppConstants.kMaxPdfPages} páginas.';
+  static const String pdfNoText =
+      'Este PDF parece ser escaneado ou não tem texto selecionável. '
+      'Envie outro arquivo ou cole o conteúdo como texto.';
   static const String noPdf = 'Selecione um PDF para continuar.';
   static const String noSession = 'Sessão expirada. Entre novamente.';
+  static const String extractingPdf = 'Lendo o PDF...';
+  static const String aiTimeout =
+      'A IA demorou demais para responder. Tente novamente.';
+  static const String quotaExceeded =
+      'Seus créditos de IA deste mês acabaram. '
+      'Eles são renovados no início do próximo ciclo.';
+  static const String rateLimited =
+      'Muitas gerações seguidas. Aguarde alguns segundos e tente de novo.';
+  static const String partialTitle = 'Geração incompleta';
+  static const String usePartialCards = 'Usar os cards gerados';
+  static const String discardPartialCards = 'Descartar';
+
+  static String insufficientCredits({
+    required int needed,
+    required int available,
+  }) {
+    return 'Esta geração precisa de $needed créditos de IA e você tem '
+        '$available. Gere menos cards ou aguarde a renovação do ciclo.';
+  }
+
+  static String generatingBatch({
+    required int batch,
+    required int batches,
+    required int cards,
+    required int requested,
+  }) {
+    return 'Gerando lote $batch de $batches — $cards de $requested cards';
+  }
+
+  static String partialMessage({required int cards, required String reason}) {
+    return 'Geramos $cards cards antes de uma falha: $reason';
+  }
+
   static const String reviewTitle = 'Revise os cards';
   static const String reviewSubtitle =
       'Edite ou remova sugestões antes de salvar.';
