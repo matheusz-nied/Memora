@@ -91,7 +91,7 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
           ],
           error: (_, __) => [
             const SliverFillRemaining(
-              hasScrollBody: false,
+              hasScrollBody: true,
               child: ErrorState(message: DeckText.loadError),
             ),
           ],
@@ -102,7 +102,7 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
             if (filteredDecks.isEmpty) {
               return [
                 SliverFillRemaining(
-                  hasScrollBody: false,
+                  hasScrollBody: true,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppDimensions.xl,
