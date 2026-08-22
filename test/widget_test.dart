@@ -26,7 +26,7 @@ void main() {
     await tester.pumpWidget(_app(preferences: preferences));
     await tester.pumpAndSettle();
 
-    expect(find.text(OnboardingText.pages.first.title), findsOneWidget);
+    expect(find.textContaining('Estude'), findsOneWidget);
   });
 
   testWidgets(

@@ -1,14 +1,16 @@
-import 'package:flutter/material.dart';
+enum OnboardingVisualType { study, ai, privacy, apiKey }
 
 class OnboardingPageModel {
   const OnboardingPageModel({
-    required this.icon,
+    required this.visualType,
     required this.title,
+    required this.titleAccent,
     required this.description,
   });
 
-  final IconData icon;
+  final OnboardingVisualType visualType;
   final String title;
+  final String titleAccent;
   final String description;
 }
 
@@ -27,30 +29,34 @@ class OnboardingText {
   /// exatamente o que existe.
   static const List<OnboardingPageModel> pages = [
     OnboardingPageModel(
-      icon: Icons.psychology_outlined,
+      visualType: OnboardingVisualType.study,
       title: 'Estude o que está para esquecer',
+      titleAccent: 'para esquecer',
       description:
           'O Memora agenda cada card pela repetição espaçada e mostra só o '
           'que vence hoje. Você estuda menos e lembra mais.',
     ),
     OnboardingPageModel(
-      icon: Icons.auto_awesome,
+      visualType: OnboardingVisualType.ai,
       title: 'A IA é sua, com a sua chave',
+      titleAccent: 'sua chave',
       description:
           'Cole sua chave da DeepSeek e gere cards de textos e PDFs, peça '
           'explicações e converse com um tutor. Você paga direto à DeepSeek — '
           'o app não cobra nada nem intermedia.',
     ),
     OnboardingPageModel(
-      icon: Icons.phonelink_lock_outlined,
+      visualType: OnboardingVisualType.privacy,
       title: 'Seus dados não saem daqui',
+      titleAccent: 'não saem daqui',
       description:
           'Sem conta, sem servidor, sem nuvem: decks, cards e histórico ficam '
           'neste aparelho. Por isso, exporte um backup de vez em quando.',
     ),
     OnboardingPageModel(
-      icon: Icons.key_outlined,
+      visualType: OnboardingVisualType.apiKey,
       title: 'Falta só a chave',
+      titleAccent: 'a chave',
       description:
           'Crie uma chave em platform.deepseek.com e cole no app. Sem ela você '
           'ainda cria e estuda cards à mão — só os recursos de IA ficam '

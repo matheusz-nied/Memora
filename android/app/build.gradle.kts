@@ -20,7 +20,7 @@ val keystoreProperties = Properties().apply {
 val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
 
 android {
-    namespace = "app.memora.mobile"
+    namespace = "app.theusz.dev.memora"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -35,7 +35,7 @@ android {
 
     defaultConfig {
         // Definitivo: publicado, o `applicationId` não pode mais mudar.
-        applicationId = "app.memora.mobile"
+        applicationId = "app.theusz.dev.memora"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
