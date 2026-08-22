@@ -122,6 +122,8 @@ class _DecksLibraryTabState extends ConsumerState<DecksLibraryTab> {
                             title: DeckText.emptyTitle,
                             message: DeckText.emptyMessage,
                             actionLabel: DeckText.newDeck,
+                            actionIcon: Icons.add_rounded,
+                            compactAction: true,
                             onAction: widget.onCreateDeck,
                           ),
                   ),

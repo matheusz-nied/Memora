@@ -5,6 +5,7 @@ import '../theme/app_dimensions.dart';
 import '../theme/app_typography.dart';
 import 'app_button.dart';
 import 'glass_panel.dart';
+import 'pressable_scale.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -12,12 +13,16 @@ class EmptyState extends StatelessWidget {
     required this.title,
     required this.message,
     this.actionLabel,
+    this.actionIcon,
+    this.compactAction = false,
     this.onAction,
   });
 
   final String title;
   final String message;
   final String? actionLabel;
+  final IconData? actionIcon;
+  final bool compactAction;
   final VoidCallback? onAction;
 
   @override
@@ -64,7 +69,17 @@ class EmptyState extends StatelessWidget {
           ),
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: AppDimensions.lg),
-            AppButton(label: actionLabel!, onPressed: onAction),
+            compactAction
+                ? _CompactActionButton(
+                    label: actionLabel!,
+                    icon: actionIcon ?? Icons.add_rounded,
+                    onPressed: onAction,
+                  )
+                : AppButton(
+                    label: actionLabel!,
+                    icon: actionIcon,
+                    onPressed: onAction,
+                  ),
           ],
         ],
       ),
@@ -90,6 +105,74 @@ class EmptyState extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _CompactActionButton extends StatelessWidget {
+  const _CompactActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+
+    return PressableScale(
+      onTap: onPressed,
+      child: AnimatedContainer(
+        duration: AppDimensions.animNormal,
+        constraints: const BoxConstraints(
+          minHeight: AppDimensions.minTouchTarget,
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.lg,
+          vertical: AppDimensions.sm,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: enabled
+                ? [AppColors.primary, AppColors.primaryHover]
+                : [
+                    AppColors.primary.withValues(alpha: 0.4),
+                    AppColors.primaryHover.withValues(alpha: 0.4),
+                  ],
+          ),
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryStrongShadow.withValues(alpha: 0.45),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: AppColors.surface),
+            const SizedBox(width: AppDimensions.xs),
+            Text(
+              label,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.surface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

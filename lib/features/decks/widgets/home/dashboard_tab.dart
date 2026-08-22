@@ -58,32 +58,49 @@ class DashboardTab extends ConsumerWidget {
                     loading: () => const LoadingState(),
                     error: (_, __) =>
                         const ErrorState(message: DeckText.loadError),
-                    data: (decks) => decks.isEmpty
-                        ? EmptyFocusCard(
-                            isDark: isDark,
-                            onCreateDeck: onCreateDeck,
-                          )
-                        : FocusDeckCard(deck: decks.first, isDark: isDark),
-                  ),
-                  const SizedBox(height: AppDimensions.xxl),
-                  const MissingApiKeyCard(),
-                  const SizedBox(height: AppDimensions.lg),
-                  const BackupReminderCard(),
-                  const SizedBox(height: AppDimensions.lg),
-                  StudyStatsCard(isDark: isDark),
-                  const SizedBox(height: AppDimensions.xxl),
-                  _RecentDecksHeader(
-                    isDark: isDark,
-                    onOpenDecksTab: onOpenDecksTab,
-                  ),
-                  const SizedBox(height: AppDimensions.sm),
-                  _RecentDecksList(isDark: isDark, decksAsync: decksAsync),
-                  const SizedBox(height: AppDimensions.xxl),
-                  NeonButton(
-                    label: DeckText.createAiDeck,
-                    subtitle: DeckText.aiDeckCaption,
-                    icon: Icons.auto_awesome,
-                    onPressed: onCreateDeck,
+                    data: (decks) {
+                      final hasDecks = decks.isNotEmpty;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          hasDecks
+                              ? FocusDeckCard(
+                                  deck: decks.first,
+                                  isDark: isDark,
+                                )
+                              : EmptyFocusCard(
+                                  isDark: isDark,
+                                  onCreateDeck: onCreateDeck,
+                                ),
+                          const SizedBox(height: AppDimensions.xxl),
+                          const MissingApiKeyCard(),
+                          const SizedBox(height: AppDimensions.lg),
+                          const BackupReminderCard(),
+                          if (hasDecks) ...[
+                            const SizedBox(height: AppDimensions.lg),
+                            StudyStatsCard(isDark: isDark),
+                            const SizedBox(height: AppDimensions.xxl),
+                            _RecentDecksHeader(
+                              isDark: isDark,
+                              onOpenDecksTab: onOpenDecksTab,
+                            ),
+                            const SizedBox(height: AppDimensions.sm),
+                            _RecentDecksList(
+                              isDark: isDark,
+                              decks: decks,
+                            ),
+                            const SizedBox(height: AppDimensions.xxl),
+                            NeonButton(
+                              label: DeckText.createAiDeck,
+                              subtitle: DeckText.aiDeckCaption,
+                              icon: Icons.auto_awesome,
+                              onPressed: onCreateDeck,
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 120),
                 ],
@@ -245,43 +262,18 @@ class _RecentDecksHeader extends StatelessWidget {
 }
 
 class _RecentDecksList extends StatelessWidget {
-  const _RecentDecksList({required this.isDark, required this.decksAsync});
+  const _RecentDecksList({required this.isDark, required this.decks});
 
   final bool isDark;
-  final AsyncValue<List<DeckModel>> decksAsync;
+  final List<DeckModel> decks;
 
   @override
   Widget build(BuildContext context) {
-    return decksAsync.when(
-      loading: () => const SizedBox(
-        height: 120,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => const Text(DeckText.loadError),
-      data: (decks) {
-        if (decks.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(AppDimensions.lg),
-            child: Center(
-              child: Text(
-                DeckText.emptyMessage,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: isDark
-                      ? AppColors.textSecDark
-                      : AppColors.textSecondary,
-                ),
-              ),
-            ),
-          );
-        }
-
-        return Column(
-          children: decks
-              .take(3)
-              .map((deck) => RecentDeckTile(deck: deck, isDark: isDark))
-              .toList(),
-        );
-      },
+    return Column(
+      children: decks
+          .take(3)
+          .map((deck) => RecentDeckTile(deck: deck, isDark: isDark))
+          .toList(),
     );
   }
 }

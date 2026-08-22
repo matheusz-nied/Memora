@@ -51,75 +51,107 @@ class _EmptyFocusCardState extends State<EmptyFocusCard>
   Widget build(BuildContext context) {
     return GlassPanel(
       isDark: widget.isDark,
+      glowColor: AppColors.neonGlowStrong,
       padding: const EdgeInsets.all(AppDimensions.xxl),
-      child: Column(
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          AnimatedBuilder(
-            animation: _pulse,
-            builder: (context, child) {
-              return Container(
-                width: AppDimensions.huge + AppDimensions.lg,
-                height: AppDimensions.huge + AppDimensions.lg,
+          Positioned(
+            top: -48,
+            right: -48,
+            child: IgnorePointer(
+              child: Container(
+                width: 140,
+                height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.neonGlow.withValues(
-                        alpha: 0.25 + _pulse.value * 0.25,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.primary.withValues(
+                        alpha: widget.isDark ? 0.28 : 0.14,
                       ),
-                      blurRadius: AppDimensions.glowBlur + _pulse.value * 12,
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AnimatedBuilder(
+                animation: _pulse,
+                builder: (context, child) {
+                  return Container(
+                    width: AppDimensions.huge + AppDimensions.lg,
+                    height: AppDimensions.huge + AppDimensions.lg,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.neonGlow.withValues(
+                            alpha: 0.25 + _pulse.value * 0.25,
+                          ),
+                          blurRadius:
+                              AppDimensions.glowBlur + _pulse.value * 12,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: child,
-              );
-            },
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.18),
-                    AppColors.neonCyan.withValues(alpha: 0.12),
-                  ],
-                ),
-                border: Border.all(
-                  color: AppColors.glassBorderDark,
+                    child: child,
+                  );
+                },
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary.withValues(alpha: 0.18),
+                        AppColors.neonCyan.withValues(alpha: 0.12),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: AppColors.glassBorderDark,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.auto_awesome_outlined,
+                      size: AppDimensions.huge,
+                      color: AppColors.neonBlue,
+                    ),
+                  ),
                 ),
               ),
-              child: const Icon(
-                Icons.auto_awesome_outlined,
-                size: AppDimensions.huge,
-                color: AppColors.neonBlue,
+              const SizedBox(height: AppDimensions.lg),
+              Text(
+                DeckText.emptyTitle,
+                textAlign: TextAlign.center,
+                style: AppTypography.headingMedium.copyWith(
+                  color: widget.isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: AppDimensions.lg),
-          Text(
-            DeckText.emptyTitle,
-            style: AppTypography.headingMedium.copyWith(
-              color: widget.isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.xs),
-          Text(
-            DeckText.emptyMessage,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyMedium.copyWith(
-              color: widget.isDark
-                  ? AppColors.textSecDark
-                  : AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.xl),
-          NeonButton(
-            label: DeckText.newDeck,
-            icon: Icons.add_rounded,
-            onPressed: widget.onCreateDeck,
-            expand: false,
+              const SizedBox(height: AppDimensions.xs),
+              Text(
+                DeckText.emptyMessage,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: widget.isDark
+                      ? AppColors.textSecDark
+                      : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppDimensions.xl),
+              NeonButton(
+                label: DeckText.createAiDeck,
+                subtitle: DeckText.aiDeckCaption,
+                icon: Icons.auto_awesome,
+                onPressed: widget.onCreateDeck,
+              ),
+            ],
           ),
         ],
       ),
