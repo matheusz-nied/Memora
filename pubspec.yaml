@@ -156,8 +156,15 @@ flutter_launcher_icons:
   android: true
   adaptive_icon_background: assets/icon/icon_background.png
   adaptive_icon_foreground: assets/icon/icon_foreground.png
+  # A arte do foreground já tem ~19% de margem (zona segura do Android).
+  adaptive_icon_foreground_inset: 0
   ios: true
   remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/icon/icon.png
+    background_color: "#0A0E17"
+    theme_color: "#135BEC"
 
 # Tela de abertura, gerada nos recursos nativos por:
 #
@@ -175,13 +182,13 @@ flutter_native_splash:
 
   # O Android 12+ ignora a splash clássica e usa a API própria do sistema: ele
   # recorta a imagem num círculo e só garante os 2/3 centrais. Por isso aqui
-  # entra só a arte em transparente, com o azul da marca vindo do fundo — o
+  # entra só a arte em transparente, com o navy do ícone vindo do fundo — o
   # mesmo desenho do ícone adaptativo.
   android_12:
     image: assets/splash/splash_android12.png
     image_dark: assets/splash/splash_android12.png
-    icon_background_color: "#135BEC"
-    icon_background_color_dark: "#135BEC"
+    icon_background_color: "#0A0E17"
+    icon_background_color_dark: "#0A0E17"
     color: "#F6F6F8"
     color_dark: "#101622"
 
