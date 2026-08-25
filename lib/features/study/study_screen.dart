@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -159,6 +160,13 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
   }
 
   Future<void> _speak(String text, DeckModel deck) async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      await _tts.setIosAudioCategory(IosTextToSpeechAudioCategory.playback, [
+        IosTextToSpeechAudioCategoryOptions.duckOthers,
+      ], IosTextToSpeechAudioMode.spokenAudio);
+      await _tts.setSharedInstance(true);
+    }
+
     final lang = _ttsLanguage(deck.agentLanguage, text, deck.title);
     try {
       await _tts.setLanguage(lang);
