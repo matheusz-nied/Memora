@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/constants/route_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_controller.dart';
 import 'features/agent/presentation/agent_config_screen.dart';
 import 'features/agent/presentation/chat_screen.dart';
 import 'features/backup/backup_screen.dart';
@@ -154,11 +155,13 @@ class MemoraApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: AppConstants.appName,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

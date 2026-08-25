@@ -16,6 +16,7 @@ import '../../../backup/backup_text.dart';
 import '../../../legal/legal_links.dart';
 import '../../../legal/legal_text.dart';
 import '../../../profile/profile_text.dart';
+import '../../../profile/widgets/appearance_tile.dart';
 import '../../../settings/api_key_text.dart';
 import '../../deck_repository.dart';
 
@@ -139,6 +140,8 @@ class ProfileTab extends ConsumerWidget {
                   const _ApiKeyTile(),
                   const SizedBox(height: AppDimensions.md),
                   const _BackupTile(),
+                  const SizedBox(height: AppDimensions.md),
+                  const AppearanceTile(),
                   const SizedBox(height: AppDimensions.md),
                   const _PrivacyTile(),
                   const SizedBox(height: AppDimensions.xl),

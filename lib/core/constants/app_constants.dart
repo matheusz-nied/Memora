@@ -42,4 +42,5 @@ class AppConstants {
   static const int kNewCardsPerSession = 20;
   static const double kContentMaxWidth = 640.0;
   static const String kOnboardingKey = 'onboarding_complete';
+  static const String kThemeModeKey = 'theme_mode';
 }

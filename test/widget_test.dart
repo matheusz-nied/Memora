@@ -14,6 +14,7 @@ import 'package:memora/features/decks/deck_text.dart';
 import 'package:memora/features/legal/legal_text.dart';
 import 'package:memora/features/legal/privacy_consent.dart';
 import 'package:memora/features/onboarding/onboarding_page_model.dart';
+import 'package:memora/features/profile/profile_text.dart';
 import 'package:memora/features/settings/api_key_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -63,6 +64,29 @@ void main() {
     expect(find.text(DeckText.title), findsOneWidget);
   });
 
+  testWidgets('o tema inicial é escuro', (tester) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+
+    await tester.pumpWidget(_app(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(Scaffold).first);
+    expect(Theme.of(context).brightness, Brightness.dark);
+  });
+
+  testWidgets('o tema salvo é restaurado ao abrir o app', (tester) async {
+    final preferences = await _preferences(
+      onboardingCompleted: true,
+      themeMode: ThemeMode.light,
+    );
+
+    await tester.pumpWidget(_app(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(Scaffold).first);
+    expect(Theme.of(context).brightness, Brightness.light);
+  });
+
   testWidgets('o ícone de perfil abre a aba de perfil', (tester) async {
     final preferences = await _preferences(onboardingCompleted: true);
 
@@ -92,6 +116,30 @@ void main() {
     expect(find.text('Sair'), findsNothing);
     expect(find.text('Excluir minha conta'), findsNothing);
   });
+
+  testWidgets('o perfil permite escolher e salvar o tema claro', (
+    tester,
+  ) async {
+    final preferences = await _preferences(onboardingCompleted: true);
+
+    await tester.pumpWidget(_app(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.account_circle_outlined));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(ProfileText.appearance));
+    await tester.tap(find.text(ProfileText.appearance));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(ProfileText.lightTheme).last);
+    await tester.pumpAndSettle();
+
+    expect(
+      preferences.getString(AppConstants.kThemeModeKey),
+      ThemeMode.light.name,
+    );
+    final context = tester.element(find.byType(Scaffold).first);
+    expect(Theme.of(context).brightness, Brightness.light);
+  });
 }
 
 Widget _app({required SharedPreferences preferences}) {
@@ -119,9 +167,11 @@ Widget _app({required SharedPreferences preferences}) {
 
 Future<SharedPreferences> _preferences({
   required bool onboardingCompleted,
+  ThemeMode? themeMode,
 }) async {
   SharedPreferences.setMockInitialValues({
     AppConstants.kOnboardingKey: onboardingCompleted,
+    if (themeMode != null) AppConstants.kThemeModeKey: themeMode.name,
     // O bootstrap real grava isto antes da primeira tela.
     DeviceUserId.storageKey: 'device-user-1',
   });
