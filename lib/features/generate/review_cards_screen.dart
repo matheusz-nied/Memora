@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dimensions.dart';
 import '../../core/theme/app_typography.dart';
@@ -180,8 +179,17 @@ class _ReviewCardsScreenState extends ConsumerState<ReviewCardsScreen> {
       await repository.createCards(deckId: widget.args!.deckId, cards: drafts);
       if (mounted) {
         _showMessage(ReviewText.saved);
-        _allowPop = true;
-        context.go(RouteConstants.deckPath(widget.args!.deckId));
+        setState(() => _allowPop = true);
+        // Desfaz os pushes de import/generate + review, voltando ao deck com
+        // a stack intacta. O `go` trocava a stack inteira por [deck], e o
+        // voltar do deck (`pop`) não tinha para onde ir — o usuário ficava
+        // preso até reiniciar o app. O `NavigatorState` é capturado antes: o
+        // primeiro `pop` desmonta esta tela e o `context` deixa de valer.
+        final navigator = Navigator.of(context);
+        navigator.pop();
+        if (navigator.canPop()) {
+          navigator.pop();
+        }
       }
     } catch (error) {
       debugPrint('Falha ao salvar cards revisados: $error');
