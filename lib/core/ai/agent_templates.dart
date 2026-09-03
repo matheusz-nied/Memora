@@ -54,7 +54,60 @@ enum AgentTemplate {
 }
 
 /// Available language options for the agent.
-const List<String> kAgentLanguages = ['português', 'inglês', 'espanhol'];
+///
+/// O valor é guardado em `decks.agent_language` e também decide a voz do TTS
+/// no estudo — por isso cada sotaque inglês é uma opção própria em vez de um
+/// campo separado (sem migração de banco).
+const List<String> kAgentLanguages = [
+  'português',
+  'inglês (EUA)',
+  'inglês (Reino Unido)',
+  'espanhol',
+];
+
+/// Normaliza um valor antigo ou digitado para uma das opções atuais.
+///
+/// Decks criados antes da separação de sotaques guardam o genérico 'inglês',
+/// que equivale a 'inglês (EUA)'. Sem isto, a tela de config cairia para
+/// `kAgentLanguages.first` (português) ao abrir um deck antigo.
+String normalizeAgentLanguage(String language) {
+  final normalized = language.trim().toLowerCase();
+  if (normalized == 'inglês' || normalized == 'ingles') {
+    return 'inglês (EUA)';
+  }
+  for (final option in kAgentLanguages) {
+    if (option.toLowerCase() == normalized) {
+      return option;
+    }
+  }
+  return kAgentLanguages.first;
+}
+
+/// Locale de TTS (`flutter_tts.setLanguage`) para um idioma do agente.
+String ttsLocaleForAgentLanguage(String language) {
+  final normalized = language.toLowerCase();
+  if (normalized.contains('reino unido') ||
+      normalized.contains('brit') ||
+      normalized.contains('en-gb') ||
+      normalized.contains('en_gb')) {
+    return 'en-GB';
+  }
+  if (normalized.contains('ingl') ||
+      normalized.contains('english') ||
+      normalized.contains('en-us') ||
+      normalized.contains('en_us') ||
+      normalized.contains('eua') ||
+      normalized.contains('usa')) {
+    return 'en-US';
+  }
+  if (normalized.contains('espan') || normalized.contains('spanish')) {
+    return 'es-ES';
+  }
+  if (normalized.contains('portug')) {
+    return 'pt-BR';
+  }
+  return 'pt-BR';
+}
 
 /// Available level options for the agent.
 const List<String> kAgentLevels = ['iniciante', 'intermediário', 'avançado'];

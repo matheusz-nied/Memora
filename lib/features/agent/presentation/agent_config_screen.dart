@@ -99,9 +99,7 @@ class _AgentConfigScreenState extends ConsumerState<AgentConfigScreen> {
                 _nameController.text = deck.agentName;
                 _promptController.text = deck.agentPrompt ?? '';
                 _selectedTemplate = AgentTemplate.fromId(deck.agentTemplate);
-                _selectedLanguage = kAgentLanguages.contains(deck.agentLanguage)
-                    ? deck.agentLanguage
-                    : kAgentLanguages.first;
+                _selectedLanguage = normalizeAgentLanguage(deck.agentLanguage);
                 _selectedLevel = kAgentLevels.contains(deck.agentLevel)
                     ? deck.agentLevel
                     : kAgentLevels[1]; // intermediário

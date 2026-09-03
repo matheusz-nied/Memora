@@ -6,6 +6,7 @@ class StatsText {
   static const String accuracy = 'Acertos';
   static const String reviewsToday = 'Hoje';
   static const String windowTotal = 'Em 30 dias';
+  static const String windowStart = 'há 30 dias';
   static const String upcoming = 'Próximos 7 dias';
 
   static const String emptyTitle = 'Seu progresso aparece aqui';
@@ -15,16 +16,18 @@ class StatsText {
 
   static String days(int value) => value == 1 ? '1 dia' : '$value dias';
   static String cards(int value) => value == 1 ? '1 card' : '$value cards';
+  static String reviews(int value) =>
+      value == 1 ? '1 revisão' : '$value revisões';
   static String percent(double value) => '${(value * 100).round()}%';
 
-  /// Iniciais dos dias da semana, indexadas por `DateTime.weekday - 1`.
-  static const List<String> weekdayInitials = [
-    'S',
-    'T',
-    'Q',
-    'Q',
-    'S',
-    'S',
-    'D',
+  /// Abreviações dos dias da semana, indexadas por `DateTime.weekday - 1`.
+  static const List<String> weekdayShort = [
+    'Seg',
+    'Ter',
+    'Qua',
+    'Qui',
+    'Sex',
+    'Sáb',
+    'Dom',
   ];
 }

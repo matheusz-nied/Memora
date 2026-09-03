@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/ai/agent_templates.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -169,7 +170,10 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
     final lang = _ttsLanguage(deck.agentLanguage, text, deck.title);
     try {
-      await _tts.setLanguage(lang);
+      final result = await _tts.setLanguage(lang);
+      if (result == 0 || result == false) {
+        await _tts.setLanguage('en-US');
+      }
     } catch (_) {
       await _tts.setLanguage('en-US');
     }
@@ -289,15 +293,20 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
 
   String _ttsLanguage(String language, String text, String deckTitle) {
     final normalized = language.toLowerCase();
+    // Idioma configurado no deck vence: o mapa central conhece os sotaques
+    // ('inglês (Reino Unido)' → en-GB). Heurísticas abaixo só valem quando o
+    // idioma não diz nada (valor antigo/vazio).
+    if (normalized.contains('reino unido') ||
+        normalized.contains('brit') ||
+        normalized.contains('ingl') ||
+        normalized.contains('english') ||
+        normalized.contains('espan') ||
+        normalized.contains('spanish') ||
+        normalized.contains('portug')) {
+      return ttsLocaleForAgentLanguage(language);
+    }
     final normalizedTitle = deckTitle.toLowerCase();
     final normalizedText = text.toLowerCase().trim();
-
-    if (normalized.contains('ingl') || normalized.contains('english')) {
-      return 'en-US';
-    }
-    if (normalized.contains('espan') || normalized.contains('spanish')) {
-      return 'es-ES';
-    }
 
     // Heuristics: Check deck title for hints
     if (normalizedTitle.contains('ingl') ||
