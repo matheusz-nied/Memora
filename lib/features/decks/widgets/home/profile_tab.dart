@@ -16,6 +16,7 @@ import '../../../backup/backup_text.dart';
 import '../../../legal/legal_links.dart';
 import '../../../legal/legal_text.dart';
 import '../../../profile/profile_text.dart';
+import '../../../profile/widgets/app_version_footer.dart';
 import '../../../profile/widgets/appearance_tile.dart';
 import '../../../settings/api_key_text.dart';
 import '../../deck_repository.dart';
@@ -148,6 +149,10 @@ class ProfileTab extends ConsumerWidget {
 
                   // Detailed account parameters card
                   _ProfileDetailsCard(isDark: isDark, displayName: displayName),
+                  const SizedBox(height: AppDimensions.xl),
+
+                  // Versão instalada (version+buildNumber do pubspec).
+                  const AppVersionFooter(),
                   // Não há de onde sair nem conta a excluir: os dados vão
                   // embora com o app, pelo próprio sistema.
                   const SizedBox(height: 120), // Spacing for navigation bar

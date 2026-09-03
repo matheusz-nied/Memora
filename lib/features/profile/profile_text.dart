@@ -16,4 +16,9 @@ class ProfileText {
   /// Substitui o e-mail no cabeçalho: sem conta, o que define o perfil é o
   /// aparelho em que ele mora.
   static const String onThisDevice = 'Tudo guardado neste aparelho';
+
+  /// Rodapé com a versão instalada. Lido via `package_info_plus`, então
+  /// acompanha o `version:` do `pubspec.yaml` sem edição manual.
+  static String version(String version, String buildNumber) =>
+      'Versão $version+$buildNumber';
 }
