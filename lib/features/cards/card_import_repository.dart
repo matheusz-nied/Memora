@@ -44,6 +44,34 @@ class CardImportRepository {
     required String deckId,
     required Uint8List bytes,
   }) async {
+    final parsed = parseJson(bytes: bytes);
+    final existingCards = await _database.cardsDao.getCardsForDeck(deckId);
+    final seen = {
+      for (final card in existingCards) _cardKey(card.front, card.back),
+    };
+    final cards = <CardDraft>[];
+    var duplicateCards = parsed.duplicateCards;
+    for (final card in parsed.cards) {
+      if (!seen.add(_cardKey(card.front, card.back))) {
+        duplicateCards += 1;
+      } else {
+        cards.add(card);
+      }
+    }
+    if (cards.isEmpty) {
+      throw const CardImportException(CardText.importJsonNoCards);
+    }
+    return CardImportResult(
+      cards: cards,
+      invalidCards: parsed.invalidCards,
+      duplicateCards: duplicateCards,
+    );
+  }
+
+  /// Lê um arquivo sem depender de um deck existente.
+  ///
+  /// Usado pela importação em lote, que cria um deck novo para cada arquivo.
+  CardImportResult parseJson({required Uint8List bytes}) {
     final maxBytes = AppConstants.kMaxCardImportSizeMb * 1024 * 1024;
     if (bytes.length > maxBytes) {
       throw const CardImportException(CardText.importJsonTooLarge);
@@ -55,10 +83,7 @@ class CardImportRepository {
       throw const CardImportException(CardText.importJsonTooManyCards);
     }
 
-    final existingCards = await _database.cardsDao.getCardsForDeck(deckId);
-    final seen = {
-      for (final card in existingCards) _cardKey(card.front, card.back),
-    };
+    final seen = <String>{};
     final cards = <CardDraft>[];
     var invalidCards = 0;
     var duplicateCards = 0;

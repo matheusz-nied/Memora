@@ -1,11 +1,14 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_backdrop.dart';
 import 'deck_model.dart';
+import 'deck_import_repository.dart';
 import 'deck_repository.dart';
 import 'deck_text.dart';
+import 'widgets/deck_import_summary_dialog.dart';
 import 'widgets/deck_form_modal.dart';
 import 'widgets/home/dashboard_tab.dart';
 import 'widgets/home/decks_library_tab.dart';
@@ -62,7 +65,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       DecksLibraryTab(
                         isDark: isDark,
                         onCreateDeck: () => _showDeckForm(context),
-                        onEditDeck: (deck) => _showDeckForm(context, deck: deck),
+                        onEditDeck: (deck) =>
+                            _showDeckForm(context, deck: deck),
                         onDeleteDeck: (deck) =>
                             _confirmDeleteDeck(context: context, deck: deck),
                       ),
@@ -95,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => DeckFormModal(
         deck: deck,
+        onImportJson: deck == null ? _importDecks : null,
         onSubmit: (title, description) async {
           final repository = ref.read(deckRepositoryProvider);
           if (deck == null) {
@@ -112,6 +117,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _importDecks() async {
+    try {
+      final selection = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        allowMultiple: true,
+        withData: true,
+      );
+      if (!mounted || selection == null) {
+        return;
+      }
+
+      final messenger = ScaffoldMessenger.of(context);
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(content: Text(DeckText.importingDecks)));
+      final summary = await ref
+          .read(deckImportRepositoryProvider)
+          .importFiles(
+            selection.files
+                .map(
+                  (file) => DeckImportFile(name: file.name, bytes: file.bytes),
+                )
+                .toList(growable: false),
+          );
+      if (!mounted) {
+        return;
+      }
+      messenger.clearSnackBars();
+      await showDialog<void>(
+        context: context,
+        builder: (context) => DeckImportSummaryDialog(summary: summary),
+      );
+    } catch (error) {
+      debugPrint('Falha ao importar decks: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            const SnackBar(content: Text(DeckText.importDecksFailed)),
+          );
+      }
+    }
   }
 
   Future<void> _confirmDeleteDeck({

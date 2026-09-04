@@ -12,10 +12,16 @@ import '../deck_model.dart';
 import '../deck_text.dart';
 
 class DeckFormModal extends StatefulWidget {
-  const DeckFormModal({super.key, this.deck, required this.onSubmit});
+  const DeckFormModal({
+    super.key,
+    this.deck,
+    required this.onSubmit,
+    this.onImportJson,
+  });
 
   final DeckModel? deck;
   final Future<String?> Function(String title, String? description) onSubmit;
+  final Future<void> Function()? onImportJson;
 
   @override
   State<DeckFormModal> createState() => _DeckFormModalState();
@@ -61,7 +67,9 @@ class _DeckFormModalState extends State<DeckFormModal> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         borderSide: BorderSide(
-          color: isDark ? AppColors.glassBorderDark : AppColors.glassBorderLight,
+          color: isDark
+              ? AppColors.glassBorderDark
+              : AppColors.glassBorderLight,
         ),
       ),
       focusedBorder: OutlineInputBorder(
@@ -289,20 +297,31 @@ class _DeckFormModalState extends State<DeckFormModal> {
                       ],
                     ),
                   ),
+                  if (widget.onImportJson != null) ...[
+                    const SizedBox(height: AppDimensions.sm),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        minimumSize: const Size.fromHeight(48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.md,
+                          vertical: AppDimensions.sm,
+                        ),
+                      ),
+                      onPressed: _importJson,
+                      child: Text(
+                        DeckText.importDecksJson,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
 
-                const SizedBox(height: AppDimensions.xl),
-                // Footer explanatory text
-                Text(
-                  'AI generation uses your notes or topic to create cards automatically.',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textTertDark
-                        : AppColors.textTertiary,
-                    fontSize: 11,
-                  ),
-                ),
+
               ] else ...[
                 _isSaving
                     ? const Center(
@@ -366,5 +385,14 @@ class _DeckFormModalState extends State<DeckFormModal> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  Future<void> _importJson() async {
+    final onImportJson = widget.onImportJson;
+    if (onImportJson == null) {
+      return;
+    }
+    Navigator.of(context).pop();
+    await onImportJson();
   }
 }

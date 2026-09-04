@@ -10,6 +10,52 @@ class DeckText {
   static const String description = 'Descrição';
   static const String descriptionHint = 'Contexto, objetivo ou prova';
   static const String createManually = 'Criar manualmente';
+  static const String importDecksJson = 'Importar decks por JSON';
+  static const String importingDecks = 'Importando decks...';
+  static const String importDecksFailed =
+      'Não foi possível importar os arquivos selecionados.';
+  static const String importDecksResultTitle = 'Importação concluída';
+  static const String importDecksFailuresTitle = 'Arquivos não importados';
+  static const String importDecksFileFailed =
+      'Não foi possível criar o deck deste arquivo.';
+  static const String importedDeckFallbackName = 'Deck importado';
+  static const String close = 'Fechar';
+  static String importedDeckDuplicateSuffix(int number) => ' ($number)';
+  static String importFailureDetail(String fileName, String message) =>
+      '• $fileName: $message';
+  static String importDecksSummary({
+    required int decks,
+    required int cards,
+    required int failures,
+    required int ignored,
+  }) {
+    final parts = <String>[];
+    if (decks == 0) {
+      parts.add('Nenhum deck foi criado.');
+    } else {
+      final created = decks == 1 ? '1 deck criado' : '$decks decks criados';
+      final importedCards = cards == 1
+          ? '1 card importado'
+          : '$cards cards importados';
+      parts.add('$created, com $importedCards.');
+    }
+    if (ignored > 0) {
+      parts.add(
+        ignored == 1
+            ? '1 card inválido ou repetido foi ignorado.'
+            : '$ignored cards inválidos ou repetidos foram ignorados.',
+      );
+    }
+    if (failures > 0) {
+      parts.add(
+        failures == 1
+            ? '1 arquivo não foi importado.'
+            : '$failures arquivos não foram importados.',
+      );
+    }
+    return parts.join(' ');
+  }
+
   static const String save = 'Salvar';
   static const String syncNow = 'Sincronizar agora';
   static const String syncSuccess = 'Sincronização concluída.';
